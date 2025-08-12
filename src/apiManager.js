@@ -1,5 +1,6 @@
 /** ApiManager class for handling API requests, responses, and interactions.
  * Note: Fetch spying is done in main.js, not here.
+ * @class ApiManager
  * @since 0.11.1
  */
 

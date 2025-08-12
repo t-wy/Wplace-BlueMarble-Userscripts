@@ -61,6 +61,7 @@
     <li>I don't want to waste your time, so double check with me before starting a big change like adding a new feature. For example, imagine you spend 50 hours making a bot that automatically places pixels, then your pull request was rejected because a bot that automatically places pixles does not align with the "Mission" of Blue Marble. That would be sad :(</li>
     <li>Follow the style of the project. E.g., if all overlays are made by calling `Overlay()`, and you want to make a new overlay, you should probably call `Overlay()` as well.</li>
     <li>Low quality code will be rejected.</li>
+    <li>You can find documentation for Blue Marble <a href="https://swingthevine.github.io/Wplace-BlueMarble/index.html" target="_blank" rel="noopener noreferrer">here</a>.</li>
   </ul>
 </p>
 
@@ -78,7 +79,7 @@
 <h2>What Can I Contribute?</h2>
 <h3>Programming</h3>
   <p>
-    Most of the work to be done in this userscript is related to programming. It is helpful to have a background in programming, but not required. If you are looking to learn JavaScript and its syntax, check out this <a href="https://roadmap.sh/javascript" target="_blank" rel="noopener noreferrer">roadmap for learning JavaScript</a>. We strongly recommend that you understand functions, methods, classes, and Object-Oriented-Programming if you plan to implement a brand new feature. More technical knowledge like method chaining and lambda expressions are useful but not required.
+    Most of the work to be done in this userscript is related to programming. It is helpful to have a background in programming, but not required. If you are looking to learn JavaScript and its syntax, check out this <a href="https://roadmap.sh/javascript" target="_blank" rel="noopener noreferrer">roadmap for learning JavaScript</a>. We strongly recommend that you understand functions, methods, classes, and Object-Oriented-Programming if you plan to implement a brand new feature. More technical knowledge like method chaining and lambda expressions are useful but not required. You can find the documentation for Blue Marble <a href="https://swingthevine.github.io/Wplace-BlueMarble/index.html" target="_blank" rel="noopener noreferrer">here</a>.
   </p>
 <h3>Translation</h3>
 <p>

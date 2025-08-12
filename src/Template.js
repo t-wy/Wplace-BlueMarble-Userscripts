@@ -2,6 +2,7 @@ import { uint8ToBase64 } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
+ * @class Template
  * @since 0.65.2
  */
 export default class Template {

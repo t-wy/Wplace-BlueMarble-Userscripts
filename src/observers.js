@@ -1,5 +1,6 @@
 /** This class contains all MutationObservers used (which is 1 probably).
  * This is not an object, but rather a "collection" of functions (in a class).
+ * @class Observers
  * @since 0.43.2
  */
 export default class Observers {

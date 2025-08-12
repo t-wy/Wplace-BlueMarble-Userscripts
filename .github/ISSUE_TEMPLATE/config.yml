@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Community Support & Questions
+  - name: Community Support & Questions (Discord)
     url: https://discord.gg/tpeBPy46hf
-    about: Join the Discord if you have questions or want to discuss this mod with the community.
+    about: Join the Discord if you have questions or want to discuss Blue Marble with the community.
+  - name: Community Support & Questions (GitHub)
+    url: https://github.com/SwingTheVine/Wplace-BlueMarble/discussions
+    about: Go to the "Discussion" tab if you have questions or want to discuss Blue Marble with the community.
   - name: Partnership Request
     url: https://discord.com/channels/796124137042608188/1257365507812888589
     about: Open a ticket in the Discord server to discuss a partnership.

@@ -4,6 +4,9 @@
     <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=banner4"></a></td>
   </tr>
   <tr>
+    <td>&emsp;<a href="#quick-guide">Quick Guide</a></td>
+  </tr>
+  <tr>
     <td>&emsp;<a href="#overview">Overview</a></td>
   </tr>
   <tr>
@@ -39,22 +42,72 @@
 </table>
 
 <h1>Blue Marble</h1>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Latest Version" src="https://img.shields.io/badge/Latest_Version-0.78.0-lightblue?style=flat"></a>
+<a href="https://wplacestatus.sobakintech.xyz" target="_blank" rel="noopener noreferrer"><img alt="Wplace Status" src="https://wplacestatus.sobakintech.xyz/api/badge/15/status"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Latest Version" src="https://img.shields.io/badge/Latest_Version-Version-lightblue?style=flat"></a>
 <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases" target="_blank" rel="noopener noreferrer"><img alt="Latest Release" src="https://img.shields.io/github/v/release/SwingTheVine/Wplace-BlueMarble?sort=semver&style=flat&label=Latest%20Release&color=blue"></a>
 <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/LICENSE.txt" target="_blank" rel="noopener noreferrer"><img alt="Software License: MPL-2.0" src="https://img.shields.io/badge/Software_License-MPL--2.0-slateblue?style=flat"></a>
 <a href="https://discord.gg/tpeBPy46hf" target="_blank" rel="noopener noreferrer"><img alt="Contact Me" src="https://img.shields.io/badge/Contact_Me-gray?style=flat&logo=Discord&logoColor=white&logoSize=auto&labelColor=cornflowerblue"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="WakaTime" src="https://img.shields.io/badge/Coding_Time-91hrs_0mins-blue?style=flat&logo=wakatime&logoColor=black&logoSize=auto&labelColor=white"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="WakaTime" src="https://img.shields.io/badge/Coding_Time-111hrs_12mins-blue?style=flat&logo=wakatime&logoColor=black&logoSize=auto&labelColor=white"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Patches" src="https://img.shields.io/badge/Total_Patches-494-black?style=flat"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Lines of Code" src="https://tokei.rs/b1/github/SwingTheVine/Wplace-BlueMarble?category=code"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Comments" src="https://tokei.rs/b1/github/SwingTheVine/Wplace-BlueMarble?category=comments"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Compression" src="https://img.shields.io/badge/Compression-73.86%25-blue"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Visitors" src="https://img.shields.io/badge/Visitors-37_847-gainsboro?style=flat"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Compression" src="https://img.shields.io/badge/Compression-74.77%25-blue"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/SwingTheVine/Wplace-BlueMarble"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Visitors" src="https://img.shields.io/badge/Visitors-84_851-gainsboro?style=flat"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Downloads" src="https://img.shields.io/github/downloads/SwingTheVine/Wplace-BlueMarble/total.svg"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Build" src="https://github.com/SwingTheVine/Wplace-BlueMarble/actions/workflows/build.yml/badge.svg"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="CodeQL" src="https://github.com/SwingTheVine/Wplace-BlueMarble/actions/workflows/github-code-scanning/codeql/badge.svg"></a>
 
+<h2>Quick Guide</h2>
+<p>
+  Press the arrows to reveal the option you want.
+  <details>
+    <summary>
+      <b>I want to download Blue Marble.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="#installation-instructions">Click here</a> to view the installation instructions.
+  </details>
+  <details>
+    <summary>
+      <b>I want to ask questions about Blue Marble.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://discord.gg/tpeBPy46hf" target="_blank" rel="noopener noreferrer">Click here</a> for the Discord server invite to the Blue Marble support server.
+    <br>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/discussions/categories/q-a">Click here</a> for the GitHub help & question page for Blue Marble.
+  </details>
+  <details>
+    <summary>
+      <b>I want to report a bug.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/issues/new/choose">Click here</a> to report a bug, then choose the "Bug Report" option.
+  </details>
+  <details>
+    <summary>
+      <b>I want to suggest a feature.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/issues/new/choose">Click here</a> to suggest a feature, then choose the Feature Request" option.
+  </details>
+  <details>
+    <summary>
+      <b>I want to contribute.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/CONTRIBUTING.md">Click here</a> to read the contributing guidelines.
+  </details>
+</p>
+
 <h2>Overview</h2>
 <p>
-  Welcome to Blue Marble! Blue Marble is a userscript for the website <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a>. If you like this userscript, please ⭐ the repository! If you wish to contribute to Blue Marble, check out the <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a> file in <code>docs/</code>.
+  Welcome to Blue Marble! Blue Marble is a userscript for the website <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a>. The purpose of Blue Marble is to allow you to take an image, and layer it onto the canvas! That way, you can easily trace the image of your art, without having to look back and forth between multiple tabs/monitors. In addition, Blue Marble supports some neat extra features such as: 
+  <ul>
+    <li>Displaying the number of pixels you need to level up</li>
+    <li>Displaying a simple coordinate system (tile coordinats & pixel coordinates)</li>
+    <li>Allowing you to move the color palette to the top of the screen when placing pixels</li>
+    <li>Allowing you to use the eyedropper on the template image, provided the colors are correct</li>
+    <li>...and more!</li>
+  </ul>
+  If you like this userscript, please ⭐ the repository! If you wish to contribute to Blue Marble, check out the <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a> file in <code>docs/</code>.
+
+  <img alt="Showcase image of Blue Marble template" src="./assets/Showcase1.png">
 
   <h3>Installation Instructions</h3>
   <a href="" target="_blank" rel="noopener noreferrer"><img alt="Supported Browsers" src="https://img.shields.io/badge/Supported%20Browsers-Chrome%20%7C%20Firefox%2A%20%7C%20Safari%20%7C%20Edge%20%7C%20Brave-orange?style=flat"></a>
@@ -65,7 +118,7 @@
     Installation instructions for Blue Marble are below. Click the arrows to expand the instructions you want to see. Blue text is a link.
     <details>
       <summary>
-        <b>Install Chrome (Computer)</b> <sup>(Click to Expand)</sup>
+        <b>Install Chrome</b> <sup>(Click to Expand)</sup>
       </summary>
       <a href="https://www.youtube.com/watch?v=gg5oiJcftEc" target="_blank" rel="noopener noreferrer"><img alt="Install Tutorial" src="https://img.shields.io/badge/Install_Tutorial-gray?style=flat&logo=YouTube&logoColor=white&logoSize=auto&labelColor=darkred"></a>
       <ol>
@@ -80,25 +133,15 @@
         <br>
         <img alt="Enable 'Developer Mode' and 'Allow user scripts'" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall3.png"></li>
         <li>Enable "Allow user scripts."</li>
-        <li>Download the <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases" target="_blank" rel="noopener noreferrer">BlueMarble.user.js</a> file in the "assets" of the latest release.</li>
-        <li>Open the TamperMonkey Dashboard.
+        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases/download/vVersion/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
         <br>
-        <img alt="Enter the TamperMonkey 'Dashboard'" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall4.png"></li>
-        <li>Drag the <code>BlueMarble.user.js</code> file inside the dashboard of TamperMonkey.
-        <br>
-        <img alt="Drag the userscript into the dashboard" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall5.png"></li>
-        <li>Click the "Install" button to install Blue Marble.
-        <br>
-        <img alt="Click the 'Install' button" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall6.png"></li>
-        <li>Enable Blue Marble inside the TamperMonkey dashboard.
-        <br>
-        <img alt="Enable Blue Marble" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall7.png"></li>
+        TamperMonkey will automatically detect the userscript and prompt you to Install it.</li>
         <li>Refresh the <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a> webpage.</li>
       </ol>
     </details>
     <details>
       <summary>
-        <b>Install Edge (Computer)</b> <sup>(Click to Expand)</sup>
+        <b>Install Edge</b> <sup>(Click to Expand)</sup>
       </summary>
       <ol>
         <li>Install the <a href="https://microsoftedge.microsoft.com/addons/detail/iikmkjmpaadaobahmlepeloendndfphd" target="_blank" rel="noopener noreferrer">TamperMonkey</a> plugin for Microsoft Edge.
@@ -117,8 +160,8 @@
         <img alt="Enter the TamperMonkey 'Dashboard'" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerEdgeInstall4.png"></li>
         <li>Drag the <code>BlueMarble.user.js</code> file inside the dashboard of TamperMonkey.
         <br>
-        <img alt="Drag the userscript into the dashboard" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerEdgeInstall5.png"></li>
-        <li>Click the "Install" button to install Blue Marble.
+        <img alt="Drag the userscript into the dashboard" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall5.png"></li>
+        <li>Click the "Install" button to Install Blue Marble.
         <br>
         <img alt="Click the 'Install' button" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall6.png"></li>
         <li>Enable Blue Marble inside the TamperMonkey dashboard.
@@ -129,25 +172,15 @@
     </details>
     <details>
       <summary>
-        <b>Install Firefox (Computer)</b> <sup>(Click to Expand)</sup>
+        <b>Install FireFox</b> <sup>(Click to Expand)</sup>
       </summary>
       <ol>
         <li>Install the <a href="https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/" target="_blank" rel="noopener noreferrer">TamperMonkey</a> plugin for Firefox.
         <br>
-        <img alt="Click the 'Add to Firefox' button" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerFirefoxInstall1.png"></li>
-        <li>Download the <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases" target="_blank" rel="noopener noreferrer">BlueMarble.user.js</a> file in the "assets" of the latest release.</li>
-        <li>Open the TamperMonkey Dashboard.
+        <img alt="Click the 'Add to FireFox' button" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerFireFoxInstall1.png"></li>
+        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases/download/vVersion/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
         <br>
-        <img alt="Enter the TamperMonkey 'Dashboard'" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerFirefoxInstall2.png"></li>
-        <li>Drag the <code>BlueMarble.user.js</code> file inside the dashboard of TamperMonkey.
-        <br>
-        <img alt="Drag the userscript into the dashboard" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerFirefoxInstall3.png"></li>
-        <li>Click the "Install" button to install Blue Marble.
-        <br>
-        <img alt="Click the 'Install' button" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall6.png"></li>
-        <li>Enable Blue Marble inside the TamperMonkey dashboard.
-        <br>
-        <img alt="Enable Blue Marble" src="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/assets/ComputerChromeInstall7.png"></li>
+        TamperMonkey will automatically detect the userscript and prompt you to Install it.</li>
         <li>Refresh the <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a> webpage.</li>
       </ol>
     </details>

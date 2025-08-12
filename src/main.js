@@ -1,4 +1,4 @@
-/** The main file. Everything in the userscript is executed from here.
+/** @file The main file. Everything in the userscript is executed from here.
  * @since 0.0.0
  */
 

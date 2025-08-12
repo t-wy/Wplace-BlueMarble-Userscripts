@@ -1,5 +1,6 @@
 /** The overlay builder for the Blue Marble script.
  * @description This class handles the overlay UI for the Blue Marble script.
+ * @class Overlay
  * @since 0.0.2
  * @example
  * const overlay = new Overlay();

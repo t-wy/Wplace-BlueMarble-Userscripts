@@ -4,6 +4,7 @@ import { base64ToUint8, numberToEncoded } from "./utils";
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
  * It serves as the central coordinator between template instances and the user interface.
+ * @class TemplateManager
  * @since 0.55.8
  * @example
  * // JSON structure for a template
