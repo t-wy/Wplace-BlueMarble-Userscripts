@@ -1,4 +1,4 @@
-import { uint8ToBase64 } from "./utils";
+import { uint8ToBase64, colorpalette } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -39,6 +39,25 @@ export default class Template {
     this.chunked = chunked;
     this.tileSize = tileSize;
     this.pixelCount = 0; // Total pixel count in template
+    this.requiredPixelCount = 0; // Total number of non-transparent, non-#deface pixels
+    this.defacePixelCount = 0; // Number of #deface pixels (represents Transparent color in-game)
+    this.colorPalette = {}; // key: "r,g,b" -> { count: number, enabled: boolean }
+    this.tilePrefixes = new Set(); // Set of "xxxx,yyyy" tiles this template touches
+    this.storageKey = null; // Key used inside templatesJSON to persist settings
+
+    // Build allowed color set from site palette (exclude special Transparent entry by name)
+    const allowed = Array.isArray(colorpalette) ? colorpalette : [];
+    this.allowedColorsSet = new Set(
+      allowed
+        .filter(c => (c?.name || '').toLowerCase() !== 'transparent' && Array.isArray(c?.rgb))
+        .map(c => `${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`)
+    );
+    // Map rgb-> {id, premium}
+    this.rgbToMeta = new Map(
+      allowed
+        .filter(c => Array.isArray(c?.rgb))
+        .map(c => [ `${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`, { id: c.id, premium: !!c.premium, name: c.name } ])
+    );
   }
 
   /** Creates chunks of the template for each tile.
@@ -61,6 +80,54 @@ export default class Template {
     
     // Store pixel count in instance property for access by template manager and UI components
     this.pixelCount = totalPixels;
+
+    // ==================== REQUIRED/DEFACE PIXEL COUNTING ====================
+    // Build a 1× scale canvas to inspect original pixels and count required vs deface
+    try {
+      const inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
+      const inspectCtx = inspectCanvas.getContext('2d', { willReadFrequently: true });
+      inspectCtx.imageSmoothingEnabled = false;
+      inspectCtx.clearRect(0, 0, imageWidth, imageHeight);
+      inspectCtx.drawImage(bitmap, 0, 0);
+      const inspectData = inspectCtx.getImageData(0, 0, imageWidth, imageHeight).data;
+
+      let required = 0;
+      let deface = 0;
+      const paletteMap = new Map();
+      for (let y = 0; y < imageHeight; y++) {
+        for (let x = 0; x < imageWidth; x++) {
+          const idx = (y * imageWidth + x) * 4;
+          const r = inspectData[idx];
+          const g = inspectData[idx + 1];
+          const b = inspectData[idx + 2];
+          const a = inspectData[idx + 3];
+          if (a === 0) { continue; } // Ignored transparent pixel
+          if (r === 222 && g === 250 && b === 206) { // #deface
+            deface++;
+            continue; // Do not include in required count so progress reflects paintable pixels
+          }
+          const key = `${r},${g},${b}`;
+          if (!this.allowedColorsSet.has(key)) { continue; } // Skip non-palette colors
+          required++;
+          paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
+        }
+      }
+
+      this.requiredPixelCount = required;
+      this.defacePixelCount = deface;
+
+      // Persist palette with all colors enabled by default
+      const paletteObj = {};
+      for (const [key, count] of paletteMap.entries()) {
+        paletteObj[key] = { count, enabled: true };
+      }
+      this.colorPalette = paletteObj;
+    } catch (err) {
+      // Fail-safe: if OffscreenCanvas not available or any error, fall back to width×height
+      this.requiredPixelCount = Math.max(0, this.pixelCount);
+      this.defacePixelCount = 0;
+      console.warn('Failed to compute required/deface counts. Falling back to total pixels.', err);
+    }
 
     const templateTiles = {}; // Holds the template tiles
     const templateTilesBuffers = {}; // Holds the buffers of the template tiles
@@ -146,6 +213,14 @@ export default class Template {
               }
             } else if (x % shreadSize !== 1 || y % shreadSize !== 1) { // Otherwise only draw the middle pixel
               imageData.data[pixelIndex + 3] = 0; // Make the pixel transparent on the alpha channel
+            } else {
+              // Center pixel: keep only if in allowed site palette
+              const r = imageData.data[pixelIndex];
+              const g = imageData.data[pixelIndex + 1];
+              const b = imageData.data[pixelIndex + 2];
+              if (!this.allowedColorsSet.has(`${r},${g},${b}`)) {
+                imageData.data[pixelIndex + 3] = 0; // hide non-palette colors
+              }
             }
           }
         }
@@ -164,6 +239,8 @@ export default class Template {
           .padStart(3, '0')},${(pixelY % 1000).toString().padStart(3, '0')}`;
 
         templateTiles[templateTileName] = await createImageBitmap(canvas); // Creates the bitmap
+        // Record tile prefix for fast lookup later
+        this.tilePrefixes.add(templateTileName.split(',').slice(0,2).join(','));
         
         const canvasBlob = await canvas.convertToBlob();
         const canvasBuffer = await canvasBlob.arrayBuffer();

@@ -392,3 +392,14 @@ export const colorpalette = [
     "rgb": [205, 197, 158]
   }
 ];
+
+// Annotate palette entries with ID (index) and premium flag.
+try {
+  for (let i = 0; i < colorpalette.length; i++) {
+    const c = colorpalette[i];
+    if (c && typeof c === 'object') {
+      c.id = i;
+      c.premium = i >= 32; // Premium colors are indices 32–63 (0-based)
+    }
+  }
+} catch (_) { /* no-op */ }
