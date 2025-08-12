@@ -339,10 +339,24 @@ export default class TemplateManager {
               const tg = tData[tIdx + 1];
               const tb = tData[tIdx + 2];
               const ta = tData[tIdx + 3];
-              // Ignore transparent and semi-transparent (deface checkerboard uses alpha 32)
-              if (ta < 64) { continue; }
-              // Ignore #deface explicitly if it sneaks through with higher alpha
-              if (tr === 222 && tg === 250 && tb === 206) { continue; }
+              // Handle template transparent pixel (alpha < 64): wrong if board has any site palette color here
+              if (ta < 64) {
+                try {
+                  const activeTemplate = this.templatesArray?.[0];
+                  const tileIdx = (gy * drawSize + gx) * 4;
+                  const pr = tilePixels[tileIdx];
+                  const pg = tilePixels[tileIdx + 1];
+                  const pb = tilePixels[tileIdx + 2];
+                  const pa = tilePixels[tileIdx + 3];
+                  const key = `${pr},${pg},${pb}`;
+                  const isSiteColor = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : false;
+                  if (pa >= 64 && isSiteColor) {
+                    wrongCount++;
+                  }
+                } catch (_) {}
+                continue;
+              }
+              // Treat #deface as Transparent palette color (required and paintable)
               // Ignore non-palette colors (match against allowed set when available)
               try {
                 const activeTemplate = this.templatesArray?.[0];

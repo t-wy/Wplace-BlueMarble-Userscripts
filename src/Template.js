@@ -52,12 +52,22 @@ export default class Template {
         .filter(c => (c?.name || '').toLowerCase() !== 'transparent' && Array.isArray(c?.rgb))
         .map(c => `${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`)
     );
+    // Ensure template #deface marker is treated as allowed (maps to Transparent color)
+    const defaceKey = '222,250,206';
+    this.allowedColorsSet.add(defaceKey);
     // Map rgb-> {id, premium}
     this.rgbToMeta = new Map(
       allowed
         .filter(c => Array.isArray(c?.rgb))
         .map(c => [ `${c.rgb[0]},${c.rgb[1]},${c.rgb[2]}`, { id: c.id, premium: !!c.premium, name: c.name } ])
     );
+    // Map #deface to Transparent meta for UI naming and ID continuity
+    try {
+      const transparent = allowed.find(c => (c?.name || '').toLowerCase() === 'transparent');
+      if (transparent && Array.isArray(transparent.rgb)) {
+        this.rgbToMeta.set(defaceKey, { id: transparent.id, premium: !!transparent.premium, name: transparent.name });
+      }
+    } catch (_) {}
   }
 
   /** Creates chunks of the template for each tile.
@@ -102,12 +112,9 @@ export default class Template {
           const b = inspectData[idx + 2];
           const a = inspectData[idx + 3];
           if (a === 0) { continue; } // Ignored transparent pixel
-          if (r === 222 && g === 250 && b === 206) { // #deface
-            deface++;
-            continue; // Do not include in required count so progress reflects paintable pixels
-          }
           const key = `${r},${g},${b}`;
-          if (!this.allowedColorsSet.has(key)) { continue; } // Skip non-palette colors
+          if (r === 222 && g === 250 && b === 206) { deface++; }
+          if (!this.allowedColorsSet.has(key)) { continue; } // Skip non-palette colors (but #deface added to allowed)
           required++;
           paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
         }
