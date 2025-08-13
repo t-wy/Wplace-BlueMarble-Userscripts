@@ -127,6 +127,21 @@ export function base64ToUint8(base64) {
   return array;
 }
 
+/** Returns the coordinate input fields
+ * @returns {Element[]} The 4 coordinate Inputs
+ * @since 0.74.0
+ */
+export function selectAllCoordinateInputs(document) {
+  coords = [];
+
+  coords.push(document.querySelector('#bm-input-tx'));
+  coords.push(document.querySelector('#bm-input-ty'));
+  coords.push(document.querySelector('#bm-input-px'));
+  coords.push(document.querySelector('#bm-input-py'));
+
+  return coords;
+}
+
 /** The color palette used by wplace.live
  * @since 0.78.0
  * @examples
@@ -200,5 +215,4 @@ export const colorpalette = [
   { "id": 62, "premium": true,  "name": "Stone",         "rgb": [148, 140, 107] },
   { "id": 63, "premium": true,  "name": "Light Stone",   "rgb": [205, 197, 158] }
 ];
-
 // All entries include fixed id (index-based) and premium flag by design.

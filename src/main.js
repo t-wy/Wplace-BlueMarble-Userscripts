@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs } from './utils.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -494,6 +494,22 @@ function buildOverlayMain() {
           }
         ).buildElement()
         .addInput({'type': 'number', 'id': 'bm-input-tx', 'placeholder': 'Tl X', 'min': 0, 'max': 2047, 'step': 1, 'required': true, 'value': (savedCoords.tx ?? '')}, (instance, input) => {
+          //if a paste happens on tx, split and format it into other coordinates if possible
+          input.addEventListener("paste", (event) => {
+            let splitText = (event.clipboardData || window.clipboardData).getData("text").split(" ").filter(n => n).map(Number).filter(n => !isNaN(n)); //split and filter all Non Numbers
+
+            if (splitText.length !== 4 ) { //if we dont have 4 clean coordinates end the function
+              return;
+            }
+
+            let coords = selectAllCoordinateInputs(document); 
+
+            for (let i = 0; i < coords.length; i++) { 
+              coords[i].value = splitText[i]; //add the split vales
+            }
+
+            event.preventDefault(); //prevent the pasting of the original paste that would overide the split value
+          })
           const handler = () => persistCoords();
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
