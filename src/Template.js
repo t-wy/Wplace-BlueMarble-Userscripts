@@ -214,10 +214,12 @@ export default class Template {
                 imageData.data[pixelIndex] = 0;
                 imageData.data[pixelIndex + 1] = 0;
                 imageData.data[pixelIndex + 2] = 0;
-                imageData.data[pixelIndex + 3] = 32; // Translucent black
-              } else { // Transparent negative space
-                imageData.data[pixelIndex + 3] = 0;
+              } else {
+                imageData.data[pixelIndex] = 255;
+                imageData.data[pixelIndex + 1] = 255;
+                imageData.data[pixelIndex + 2] = 255;
               }
+              imageData.data[pixelIndex + 3] = 32; // Make it translucent
             } else if (x % shreadSize !== 1 || y % shreadSize !== 1) { // Otherwise only draw the middle pixel
               imageData.data[pixelIndex + 3] = 0; // Make the pixel transparent on the alpha channel
             } else {
