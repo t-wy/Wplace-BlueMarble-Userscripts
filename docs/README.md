@@ -147,6 +147,43 @@
   </details>
 </p>
 
+<h2>Quick Guide</h2>
+<p>
+  Press the arrows to reveal the option you want.
+  <details>
+    <summary>
+      <b>I want to download Blue Marble.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="#installation-instructions">Click here</a> to view the installation instructions.
+  </details>
+  <details>
+    <summary>
+      <b>I want to ask questions about Blue Marble.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://discord.gg/tpeBPy46hf" target="_blank" rel="noopener noreferrer">Click here</a> for the Discord server invite to the Blue Marble support server.
+    <br>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/discussions/categories/q-a">Click here</a> for the GitHub help & question page for Blue Marble.
+  </details>
+  <details>
+    <summary>
+      <b>I want to report a bug.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/issues/new/choose">Click here</a> to report a bug, then choose the "Bug Report" option.
+  </details>
+  <details>
+    <summary>
+      <b>I want to suggest a feature.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/issues/new/choose">Click here</a> to suggest a feature, then choose the Feature Request" option.
+  </details>
+  <details>
+    <summary>
+      <b>I want to contribute.</b> <sup>(Click to Expand)</sup>
+    </summary>
+    <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/docs/CONTRIBUTING.md">Click here</a> to read the contributing guidelines.
+  </details>
+</p>
+
 <h2>Overview</h2>
 <p>
   Welcome to Blue Marble! Blue Marble is a userscript for the website <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a>. The purpose of Blue Marble is to allow you to take an image, and layer it onto the canvas! That way, you can easily trace the image of your art, without having to look back and forth between multiple tabs/monitors. In addition, Blue Marble supports some neat extra features such as: 
@@ -253,18 +290,6 @@
   <h3>Script Settings</h3>
   <p>
     There are many settings available for the Blue Marble userscript! Through these settings, you can control how the script behaves.
-    <!--
-    <h4>Stealth Mode</h4>
-    <a href="" target="_blank"><img alt="Default: Enabled" src="https://img.shields.io/badge/Default-Enabled-lightgreen?style=flat"></a>
-    <p>
-      Stealth Mode, when enabled, requires the game to make a request to the server instead of Blue Marble making its own requests. However, this means Blue Marble will wait indefinitely until the request is made. <b>This should be used with Possessed Mode</b> so Blue Marble can "suggest" the game make certain requests instead of waiting for the requests to naturally occur.
-    </p>
-    <h4>Possessed Mode</h4>
-    <a href="" target="_blank"><img alt="Default: Enabled" src="https://img.shields.io/badge/Default-Enabled-lightgreen?style=flat"></a>
-    <p>
-      In Possessed Mode, Blue Marble will prioritize controling the game over directly interacting with the server. For example, assume a situation where Blue Marble is trying to place a pixel. However, the tile is not loaded. Typically, Blue Marble would make a request to the server to fetch the tile. When <b>Possessed Mode</b> is enabled, Blue Marble will teleport the game to the tile, which causes the game to fetch the tile. The difference lies in <i>who</i> sends the request to the server. When <b>Stealth Mode</b> and <b>Possessed Mode</b> are both enabled, it is harder to detect the userscript since most actions are made through the game, not the userscript.
-    </p>
-    -->
   </p>
 
   <h3>Template Settings</h3>
