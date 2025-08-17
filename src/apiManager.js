@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { escapeHTML, numberToEncoded, serverTPtoDisplayTP } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP } from "./utils.js";
 
 export default class ApiManager {
 
@@ -140,5 +140,111 @@ export default class ApiManager {
           break;
       }
     });
+  }
+
+  // Sends a heartbeat to the telemetry server
+  async sendHeartbeat(version) {
+
+    console.log('Sending heartbeat to telemetry server...');
+
+    let userSettings = GM_getValue('bmUserSettings', '{}')
+    userSettings = JSON.parse(userSettings);
+
+    if (!userSettings || !userSettings.telemetry || !userSettings.uuid) {
+      console.log('Telemetry is disabled, not sending heartbeat.');
+      return; // If telemetry is disabled, do not send heartbeat
+    }
+
+    const ua = navigator.userAgent;
+    let browser = await this.#getBrowserFromUA(ua);
+    let os = this.#getOS(ua);
+
+    GM_xmlhttpRequest({
+      method: 'POST',
+      url: 'https://telemetry.thebluecorner.net/heartbeat',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: JSON.stringify({
+        uuid: userSettings.uuid,
+        version: version,
+        browser: browser,
+        os: os,
+      }),
+      onload: (response) => {
+        if (response.status !== 200) {
+          consoleError('Failed to send heartbeat:', response.statusText);
+        }
+      },
+      onerror: (error) => {
+        consoleError('Error sending heartbeat:', error);
+      }
+    });
+  }
+
+  async #getBrowserFromUA(ua = navigator.userAgent) {
+    ua = ua || "";
+
+    // Opera
+    if (ua.includes("OPR/") || ua.includes("Opera")) return "Opera";
+
+    // Edge (Chromium-based uses "Edg/")
+    if (ua.includes("Edg/")) return "Edge";
+
+    // Vivaldi
+    if (ua.includes("Vivaldi")) return "Vivaldi";
+
+    // Yandex
+    if (ua.includes("YaBrowser")) return "Yandex";
+
+    // Kiwi (not guaranteed, but typically shows "Kiwi")
+    if (ua.includes("Kiwi")) return "Kiwi";
+
+    // Brave (doesn't expose in UA by default; heuristic via Brave/ token in some versions)
+    if (ua.includes("Brave")) return "Brave";
+
+    // Firefox
+    if (ua.includes("Firefox/")) return "Firefox";
+
+    // Chrome (catch-all for Chromium browsers)
+    if (ua.includes("Chrome/")) return "Chrome";
+
+    // Safari (must be after Chrome check)
+    if (ua.includes("Safari/")) return "Safari";
+
+    // Brave special check
+    if (navigator.brave && typeof navigator.brave.isBrave === "function") {
+      if (await navigator.brave.isBrave()) return "Brave";
+    }
+
+    // Fallback
+    return 'Unknown';
+  }
+
+  #getOS(ua = navigator.userAgent) {
+    ua = ua || "";
+
+    if (/Windows NT 11/i.test(ua)) return "Windows 11";
+    if (/Windows NT 10/i.test(ua)) return "Windows 10";
+    if (/Windows NT 6\.3/i.test(ua)) return "Windows 8.1";
+    if (/Windows NT 6\.2/i.test(ua)) return "Windows 8";
+    if (/Windows NT 6\.1/i.test(ua)) return "Windows 7";
+    if (/Windows NT 6\.0/i.test(ua)) return "Windows Vista";
+    if (/Windows NT 5\.1|Windows XP/i.test(ua)) return "Windows XP";
+
+    if (/Mac OS X 10[_\.]15/i.test(ua)) return "macOS Catalina";
+    if (/Mac OS X 10[_\.]14/i.test(ua)) return "macOS Mojave";
+    if (/Mac OS X 10[_\.]13/i.test(ua)) return "macOS High Sierra";
+    if (/Mac OS X 10[_\.]12/i.test(ua)) return "macOS Sierra";
+    if (/Mac OS X 10[_\.]11/i.test(ua)) return "OS X El Capitan";
+    if (/Mac OS X 10[_\.]10/i.test(ua)) return "OS X Yosemite";
+    if (/Mac OS X 10[_\.]/i.test(ua)) return "macOS"; // Generic fallback
+
+    if (/Android/i.test(ua)) return "Android";
+    if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+
+    if (/Linux/i.test(ua)) return "Linux";
+
+    return "Unknown";
   }
 }

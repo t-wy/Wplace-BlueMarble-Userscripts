@@ -185,6 +185,26 @@ const storageTemplates = JSON.parse(GM_getValue('bmTemplates', '{}'));
 console.log(storageTemplates);
 templateManager.importJSON(storageTemplates); // Loads the templates
 
+const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}')); // Loads the user settings
+console.log(userSettings);
+console.log(Object.keys(userSettings).length);
+if (Object.keys(userSettings).length == 0) {
+  const uuid = crypto.randomUUID(); // Generates a random UUID
+  console.log(uuid);
+  GM.setValue('bmUserSettings', JSON.stringify({
+    'uuid': uuid
+  }));
+}
+setInterval(() => apiManager.sendHeartbeat(version), 1000 * 60 * 30); // Sends a heartbeat every 30 minutes
+
+console.log(`Telemetry is ${userSettings?.telemetry == undefined}`);
+if ((userSettings?.telemetry == undefined) || (userSettings?.telemetry > 1)) { // Increment 1 to retrigger telemetry notice
+  const telemetryOverlay = new Overlay(name, version);
+  telemetryOverlay.setApiManager(apiManager); // Sets the API manager for the telemetry overlay
+  buildTelemetryOverlay(telemetryOverlay); // Notifies the user about telemetry
+  telemetryOverlay.handleDrag('#bm-overlay-telemetry', '#bm-bar-drag-telemetry'); // Creates dragging capability on the drag bar for dragging the overlay
+}
+
 buildOverlayMain(); // Builds the main overlay
 
 overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
@@ -695,6 +715,44 @@ function buildOverlayMain() {
       }
     } catch (_) {}
   }, 0);
+}
+
+function buildTelemetryOverlay(overlay) {
+  overlay.addDiv({'id': 'bm-overlay-telemetry', style: 'top: 20%'})
+    .addDiv({'id': 'bm-contain-header-telemetry'})
+      .addDiv({'id': 'bm-bar-drag-telemetry'}).buildElement()
+      .addHeader(1, {'textContent': `${name} Telemetry`}).buildElement()
+    .buildElement()
+
+    .addHr().buildElement()
+
+    .addDiv({'id': 'bm-contain-telemetry'})
+      .addP({'textContent': 'We collect anonymous telemetry data such as your browser, OS, and script version to make the experience better for everyone. The data is never shared personally. The data is never sold. You can turn this off anytime by pressing the \'Disable\' button, but keeping it on helps us improve features and reliability faster. Thank you for supporting the Blue Marble!'}).buildElement()
+      .addP({'textContent': 'You can disable telemetry by pressing the "Disable" button below.'}).buildElement()
+      .addButton({'id': 'bm-button-telemetry-enable', 'textContent': 'Enable Telemetry'}, (instance, button) => {
+        button.onclick = () => {
+          const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}'));
+          userSettings.telemetry = 1;
+          GM.setValue('bmUserSettings', JSON.stringify(userSettings));
+          const element = document.getElementById('bm-overlay-telemetry');
+          if (element) {
+            element.style.display = 'none';
+          }
+        }
+      }).buildElement()
+      .addButton({'id': 'bm-button-telemetry-disable', 'textContent': 'Disable Telemetry'}, (instance, button) => {
+        button.onclick = () => {
+          const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}'));
+          userSettings.telemetry = 0;
+          GM.setValue('bmUserSettings', JSON.stringify(userSettings));
+          const element = document.getElementById('bm-overlay-telemetry');
+          if (element) {
+            element.style.display = 'none';
+          }
+        }
+      }).buildElement()
+    .buildElement()
+  .buildOverlay(document.body);
 }
 
 function buildOverlayTabTemplate() {
