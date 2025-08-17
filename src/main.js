@@ -517,7 +517,7 @@ function buildOverlayMain() {
           input.addEventListener("paste", (event) => {
             let splitText = (event.clipboardData || window.clipboardData).getData("text").split(" ").filter(n => n).map(Number).filter(n => !isNaN(n)); //split and filter all Non Numbers
 
-            if (splitText.length !== 4 ) { //if we dont have 4 clean coordinates end the function
+            if (splitText.length !== 4 ) { // If we don't have 4 clean coordinates, end the function.
               return;
             }
 
