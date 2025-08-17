@@ -81,12 +81,12 @@ jobs:
 
       - name: Update static version numbers
         run: |
-          current_version="${{ steps.get_latest_tag.outputs.latest_tag_no_v }}"
+          current_version="${{ steps.get_version.outputs.current_version }}"
+          latest_tag="${{ steps.get_latest_tag.outputs.latest_tag_no_v }}"
           if [ -f "docs/README.md" ]; then
             echo "README.md exists. Modifying..."
             sed -i \
               -e 's|\(Latest_Version-\)[^-\ ]*\(-lightblue\)|\1'"$current_version"'\2|' \
-              -e 's|v[0-9]\+\.[0-9]\+\.[0-9]\+|v'"$current_version"'|g' \
               docs/README.md
           else
             echo "README.md was not found. Skipping..."

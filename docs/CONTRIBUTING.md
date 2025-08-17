@@ -50,7 +50,7 @@
 <h1>Contributing</h1>
 <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/LICENSE.txt" target="_blank" rel="noopener noreferrer"><img alt="Software License: MPL-2.0" src="https://img.shields.io/badge/Software_License-MPL--2.0-slateblue?style=flat"></a>
 <p>
-  Thank you for wanting to contribute to the userscript "Blue Marble"! It means a lot to me that someone likes my project enough to want to help it grow. If you haven't already done so, consider joining our Discord. You can ask questions about the userscript there and receive feedback.
+  Thank you for wanting to contribute to the userscript "Blue Marble"! It means a lot to me that someone likes my project enough to want to help it grow. If you haven't already done so, consider joining our Discord. You can ask questions about the userscript there and receive feedback. You can also visit the <a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer">official Blue Marble website</a> for more information.
   <br>
   <b>Note</b>: If you are using AI, and you want to tell the AI how the codebase files are related to each-other, go to the <code>Class diagram of relationships for Blue Marble</code> diagram in the chart section of this file. Copy the chart, and give it to the AI.
 </p>

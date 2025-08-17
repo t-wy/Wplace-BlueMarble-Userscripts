@@ -3,13 +3,14 @@
     "include": ["src"],
     "exclude": ["node_modules", "build", "dist"]
   },
+  "homepage": "https://bluemarble.camilledaguin.fr/",
   "opts": {
     "destination": "docs",
     "template": "node_modules/minami",
     "recurse": true,
     "encoding": "utf8"
   },
-  "plugins": [],
+  "plugins": ["plugins/markdown"],
   "templates": {
     "cleverLinks": false,
     "monospaceLinks": false

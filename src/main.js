@@ -626,6 +626,12 @@ function buildOverlayMain() {
               window.open('https://pepoafonso.github.io/color_converter_wplace/', '_blank', 'noopener noreferrer');
             });
           }).buildElement()
+          .addButton({'id': 'bm-button-website', 'className': 'bm-help', 'innerHTML': '🌐', 'title': 'Official Blue Marble Website'}, 
+            (instance, button) => {
+            button.addEventListener('click', () => {
+              window.open('https://bluemarble.camilledaguin.fr/', '_blank', 'noopener noreferrer');
+            });
+          }).buildElement()
         .buildElement()
         .addSmall({'textContent': 'Made by SwingTheVine', 'style': 'margin-top: auto;'}).buildElement()
       .buildElement()

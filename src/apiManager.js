@@ -20,7 +20,7 @@ export default class ApiManager {
     this.templateCoordsTilePixel = []; // Contains the last "enabled" template coords
   }
 
-  /** Determines if the spontaneously recieved response is something we want.
+  /** Determines if the spontaneously received response is something we want.
    * Otherwise, we can ignore it.
    * Note: Due to aggressive compression, make your calls like `data['jsonData']['name']` instead of `data.jsonData.name`
    * 
