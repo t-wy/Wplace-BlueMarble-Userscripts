@@ -11,6 +11,7 @@ import { consoleLog, consoleWarn, selectAllCoordinateInputs } from './utils.js';
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
 const consoleStyle = 'color: cornflowerblue;'; // The styling for the console logs
+const CSS_BM_File = "https://raw.githubusercontent.com/SwingTheVine/Wplace-BlueMarble/8d02ac9cbe8f6861248152f2b0d632a0b4a830ee/dist/BlueMarble.user.css";
 
 /** Injects code into the client
  * This code will execute outside of TamperMonkey's sandbox
@@ -158,8 +159,7 @@ inject(() => {
 });
 
 // Imports the CSS file from dist folder on github
-const cssOverlay = GM_getResourceText("CSS-BM-File");
-GM_addStyle(cssOverlay);
+fetch(CSS_BM_File).then(cssOverlay => cssOverlay.text()).then(GM.addStyle);
 
 // Imports the Roboto Mono font family
 var stylesheetLink = document.createElement('link');
@@ -181,11 +181,17 @@ const apiManager = new ApiManager(templateManager); // Constructs a new ApiManag
 
 overlayMain.setApiManager(apiManager); // Sets the API manager
 
-const storageTemplates = JSON.parse(GM_getValue('bmTemplates', '{}'));
+GM.getValue('bmTemplates', '{}').then(storageTemplatesValue => {
+  const storageTemplates = JSON.parse(storageTemplatesValue);
+
 console.log(storageTemplates);
 templateManager.importJSON(storageTemplates); // Loads the templates
 
-const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}')); // Loads the user settings
+})
+
+GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
+  const userSettings = JSON.parse(userSettingsValue);
+
 console.log(userSettings);
 console.log(Object.keys(userSettings).length);
 if (Object.keys(userSettings).length == 0) {
@@ -203,6 +209,9 @@ if ((userSettings?.telemetry == undefined) || (userSettings?.telemetry > 1)) { /
   telemetryOverlay.setApiManager(apiManager); // Sets the API manager for the telemetry overlay
   buildTelemetryOverlay(telemetryOverlay); // Notifies the user about telemetry
 }
+
+})
+
 
 buildOverlayMain(); // Builds the main overlay
 
@@ -263,7 +272,13 @@ function buildOverlayMain() {
   let isMinimized = false; // Overlay state tracker (false = maximized, true = minimized)
   // Load last saved coordinates (if any)
   let savedCoords = {};
-  try { savedCoords = JSON.parse(GM_getValue('bmCoords', '{}')) || {}; } catch (_) { savedCoords = {}; }
+
+  GM.getValue('bmCoords', '{}').then( savedCoordsValue => {
+    savedCoords = JSON.parse(savedCoordsValue) || {};
+  }).catch(() => {
+    savedCoords = {};
+  }).finally(() => {
+
   const persistCoords = () => {
     try {
       const tx = Number(document.querySelector('#bm-input-tx')?.value || '');
@@ -638,6 +653,8 @@ function buildOverlayMain() {
     .buildElement()
   .buildOverlay(document.body);
 
+  });
+
   // ------- Helper: Build the color filter list -------
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
@@ -743,24 +760,32 @@ function buildTelemetryOverlay(overlay) {
         .addDiv({style: 'width: fit-content; margin: auto; text-align: center;'})
           .addButton({'id': 'bm-button-telemetry-enable', 'textContent': 'Enable Telemetry', 'style': 'margin-right: 2ch;'}, (instance, button) => {
             button.onclick = () => {
-              const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}'));
+              GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
+                const userSettings = JSON.parse(userSettingsValue);
+
               userSettings.telemetry = 1;
               GM.setValue('bmUserSettings', JSON.stringify(userSettings));
               const element = document.getElementById('bm-overlay-telemetry');
               if (element) {
                 element.style.display = 'none';
               }
+
+              })
             }
           }).buildElement()
           .addButton({'id': 'bm-button-telemetry-disable', 'textContent': 'Disable Telemetry'}, (instance, button) => {
             button.onclick = () => {
-              const userSettings = JSON.parse(GM_getValue('bmUserSettings', '{}'));
+              GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
+                const userSettings = JSON.parse(userSettingsValue);
+
               userSettings.telemetry = 0;
               GM.setValue('bmUserSettings', JSON.stringify(userSettings));
               const element = document.getElementById('bm-overlay-telemetry');
               if (element) {
                 element.style.display = 'none';
               }
+
+              })
             }
           }).buildElement()
         .buildElement()
