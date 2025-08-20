@@ -11,7 +11,7 @@ import { consoleLog, consoleWarn, selectAllCoordinateInputs } from './utils.js';
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
 const consoleStyle = 'color: cornflowerblue;'; // The styling for the console logs
-const CSS_BM_File = "https://raw.githubusercontent.com/SwingTheVine/Wplace-BlueMarble/8d02ac9cbe8f6861248152f2b0d632a0b4a830ee/dist/BlueMarble.user.css";
+const CSS_BM_File = "https://raw.githubusercontent.com/SwingTheVine/Wplace-BlueMarble/051271c433a42db968a865b00f81bb979ee7d13f/dist/BlueMarble.user.css";
 
 /** Injects code into the client
  * This code will execute outside of TamperMonkey's sandbox
@@ -674,31 +674,40 @@ function buildOverlayMain() {
       .sort((a,b) => b[1].count - a[1].count); // sort by frequency desc
 
     for (const [rgb, meta] of entries) {
-      const [r,g,b] = rgb.split(',').map(Number);
-
-      const row = document.createElement('div');
+      let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
       row.style.gap = '8px';
       row.style.margin = '4px 0';
 
-      const swatch = document.createElement('div');
+      let swatch = document.createElement('div');
       swatch.style.width = '14px';
       swatch.style.height = '14px';
       swatch.style.border = '1px solid rgba(255,255,255,0.5)';
-      swatch.style.background = `rgb(${r},${g},${b})`;
 
-      const label = document.createElement('span');
+      let label = document.createElement('span');
       label.style.fontSize = '12px';
       let labelText = `${meta.count.toLocaleString()}`;
-      try {
-        const tMeta = templateManager.templatesArray?.[0]?.rgbToMeta?.get(rgb);
-        if (tMeta && typeof tMeta.id === 'number') {
-          const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
-          const starLeft = tMeta.premium ? '★ ' : '';
-          labelText = `#${tMeta.id} ${starLeft}${displayName} • ${labelText}`;
-        }
-      } catch (_) {}
+
+      // Special handling for "other" and "transparent"
+      if (rgb === 'other') {
+        swatch.style.background = '#888'; // Neutral color for "Other"
+        labelText = `Other • ${labelText}`;
+      } else if (rgb === '#deface') {
+        swatch.style.background = '#deface';
+        labelText = `Transparent • ${labelText}`;
+      } else {
+        const [r, g, b] = rgb.split(',').map(Number);
+        swatch.style.background = `rgb(${r},${g},${b})`;
+        try {
+          const tMeta = templateManager.templatesArray?.[0]?.rgbToMeta?.get(rgb);
+          if (tMeta && typeof tMeta.id === 'number') {
+            const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
+            const starLeft = tMeta.premium ? '★ ' : '';
+            labelText = `#${tMeta.id} ${starLeft}${displayName} • ${labelText}`;
+          }
+        } catch (ignored) {}
+      }
       label.textContent = labelText;
 
       const toggle = document.createElement('input');

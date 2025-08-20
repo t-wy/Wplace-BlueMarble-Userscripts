@@ -53,15 +53,19 @@
   Thank you for wanting to contribute to the userscript "Blue Marble"! It means a lot to me that someone likes my project enough to want to help it grow. If you haven't already done so, consider joining our Discord. You can ask questions about the userscript there and receive feedback. You can also visit the <a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer">official Blue Marble website</a> for more information.
   <br>
   <b>Note</b>: If you are using AI, and you want to tell the AI how the codebase files are related to each-other, go to the <code>Class diagram of relationships for Blue Marble</code> diagram in the chart section of this file. Copy the chart, and give it to the AI.
+  <br>
+  <b>Note</b>: If you are contributing to the documentation of this project, make your fork from the <code>documentation</code> branch. If you are contributing to the code/programming of this project, make your fork from the <code>code</code> branch. If you fork main, and make a PR from <code>main</code> -> <code>main</code> your PR might be rejected. This is because <code>main</code> is not up-to-date, and your changes might conflict with up-to-date changes.
 </p>
 
 <h2>Summary</h2>
 <p>
   <ul>
     <li>I don't want to waste your time, so double check with me before starting a big change like adding a new feature. For example, imagine you spend 50 hours making a bot that automatically places pixels, then your pull request was rejected because a bot that automatically places pixles does not align with the "Mission" of Blue Marble. That would be sad :(</li>
-    <li>Follow the style of the project. E.g., if all overlays are made by calling `Overlay()`, and you want to make a new overlay, you should probably call `Overlay()` as well.</li>
+    <li>Follow the style of the project. E.g., if all overlays are made by calling <code>Overlay()</code>, and you want to make a new overlay, you should probably call <code>Overlay()</code> as well.</li>
     <li>Low quality code will be rejected.</li>
     <li>You can find documentation for Blue Marble <a href="https://swingthevine.github.io/Wplace-BlueMarble/index.html" target="_blank" rel="noopener noreferrer">here</a>.</li>
+    <li>Don't fork the <code>main</code> branch! Fork either <code>code</code> or <code>documentation</code>.</li>
+    <li>If you are adding a new feature, and it is feasable to stick your feature inside a function, then use a function. This will make your code conflict less with other people's code. Make your code <a href="https://en.wikipedia.org/wiki/Modular_programming" target="_blank" rel="noopener noreferrer">modular</a>.</li>
   </ul>
 </p>
 
@@ -79,7 +83,14 @@
 <h2>What Can I Contribute?</h2>
 <h3>Programming</h3>
   <p>
-    Most of the work to be done in this userscript is related to programming. It is helpful to have a background in programming, but not required. If you are looking to learn JavaScript and its syntax, check out this <a href="https://roadmap.sh/javascript" target="_blank" rel="noopener noreferrer">roadmap for learning JavaScript</a>. We strongly recommend that you understand functions, methods, classes, and Object-Oriented-Programming if you plan to implement a brand new feature. More technical knowledge like method chaining and lambda expressions are useful but not required. You can find the documentation for Blue Marble <a href="https://swingthevine.github.io/Wplace-BlueMarble/index.html" target="_blank" rel="noopener noreferrer">here</a>.
+    Most of the work to be done in this userscript is related to programming. It is helpful to have a background in programming, but not required. If you are looking to learn JavaScript and its syntax, check out this <a href="https://roadmap.sh/javascript" target="_blank" rel="noopener noreferrer">roadmap for learning JavaScript</a>. We strongly recommend that you understand functions, methods, classes, and Object-Oriented-Programming if you plan to implement a brand new feature. More technical knowledge like method chaining and lambda expressions are useful but not required. You can find the documentation for Blue Marble <a href="https://swingthevine.github.io/Wplace-BlueMarble/index.html" target="_blank" rel="noopener noreferrer">here</a>. Make your code modular when possible. In other words, you should "blackbox" your code by putting it in a function when possible. For example, if you are adding a color filter to remove colors from being displayed on the template, the function should pass in the template information and tile information, and output the filtered template/tile information. This way, other people's code can't interfere with the color filter. For example:
+    <br>
+    <ol>
+      <li>The template image is generated and the tile information is retrieved.</li>
+      <li>The color filter function is passed in the template image and the tile information. The color filter overrides the template image with the filtered colors, and outputs that as the template image.</li>
+      <li>The pixel counter function is passed in the modified template image and the tile information, and outputs the pixel count.</li>
+      <li>The modified template image and the tile information is used to render the template.</li>
+    </ol>
   </p>
 <h3>Translation</h3>
 <p>

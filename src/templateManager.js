@@ -314,33 +314,46 @@ export default class TemplateManager {
       // honoring color enable/disable from the active template's palette
       if (tilePixels) {
         try {
-          const tempW = template.bitmap.width;
-          const tempH = template.bitmap.height;
-          const tempCanvas = new OffscreenCanvas(tempW, tempH);
-          const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-          tempCtx.imageSmoothingEnabled = false;
-          tempCtx.clearRect(0, 0, tempW, tempH);
-          tempCtx.drawImage(template.bitmap, 0, 0);
-              const tImg = tempCtx.getImageData(0, 0, tempW, tempH);
-              const tData = tImg.data;
+          
+          const tempWidth = template.bitmap.width;
+          const tempHeight = template.bitmap.height;
+          const tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
+          const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
+          tempContext.imageSmoothingEnabled = false;
+          tempContext.clearRect(0, 0, tempWidth, tempHeight);
+          tempContext.drawImage(template.bitmap, 0, 0);
+          const tImg = tempContext.getImageData(0, 0, tempWidth, tempHeight);
+          const tData = tImg.data; // Tile Data, Template Data, or Temp Data????
 
           const offsetX = Number(template.pixelCoords[0]) * this.drawMult;
           const offsetY = Number(template.pixelCoords[1]) * this.drawMult;
 
-          for (let y = 0; y < tempH; y++) {
-            for (let x = 0; x < tempW; x++) {
+          // Loops over all pixels in the template
+          // Assigns each pixel a color (if center pixel)
+          for (let y = 0; y < tempHeight; y++) {
+            for (let x = 0; x < tempWidth; x++) {
+              // Purpose: Count which pixels are painted correctly???
+
               // Only evaluate the center pixel of each shread block
+              // Skip if not the center pixel of the shread block
               if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
+
               const gx = x + offsetX;
               const gy = y + offsetY;
+
+              // IF the pixel is out of bounds of the template, OR if the pixel is outside of the tile, then skip the pixel
               if (gx < 0 || gy < 0 || gx >= drawSize || gy >= drawSize) { continue; }
-              const tIdx = (y * tempW + x) * 4;
-              const tr = tData[tIdx];
-              const tg = tData[tIdx + 1];
-              const tb = tData[tIdx + 2];
-              const ta = tData[tIdx + 3];
+
+              const templatePixelCenter = (y * tempWidth + x) * 4; // Shread block center pixel
+              const templatePixelCenterRed = tData[templatePixelCenter]; // Shread block's center pixel's RED value
+              const templatePixelCenterGreen = tData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
+              const templatePixelCenterBlue = tData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
+              const templatePixelCenterAlpha = tData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
+
+              // Possibly needs to be removed 
               // Handle template transparent pixel (alpha < 64): wrong if board has any site palette color here
-              if (ta < 64) {
+              // If the alpha of the center pixel is less than 64...
+              if (templatePixelCenterAlpha < 64) {
                 try {
                   const activeTemplate = this.templatesArray?.[0];
                   const tileIdx = (gy * drawSize + gx) * 4;
@@ -348,85 +361,127 @@ export default class TemplateManager {
                   const pg = tilePixels[tileIdx + 1];
                   const pb = tilePixels[tileIdx + 2];
                   const pa = tilePixels[tileIdx + 3];
-                  const key = `${pr},${pg},${pb}`;
+
+                  const key = activeTemplate.allowedColorsSet.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
+
                   const isSiteColor = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : false;
+                  
+                  // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
                   if (pa >= 64 && isSiteColor) {
                     wrongCount++;
                   }
-                } catch (_) {}
-                continue;
+                } catch (ignored) {}
+
+                continue; // Continue to the next pixel
               }
+
               // Treat #deface as Transparent palette color (required and paintable)
-              // Ignore non-palette colors (match against allowed set when available)
-              try {
-                const activeTemplate = this.templatesArray?.[0];
-                if (activeTemplate?.allowedColorsSet && !activeTemplate.allowedColorsSet.has(`${tr},${tg},${tb}`)) {
-                  continue;
-                }
-              } catch (_) {}
+              // Ignore non-palette colors (match against allowed set when available) for counting required template pixels
+              // try {
+
+              //   const activeTemplate = this.templatesArray?.[0]; // Get the first template
+
+              //   // IF the stored palette data exists, AND the pixel is not in the allowed palette
+              //   if (activeTemplate?.allowedColorsSet && !activeTemplate.allowedColorsSet.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
+
+              //     continue; // Skip this pixel if it is not in the allowed palette
+              //   }
+              // } catch (ignored) {}
 
               requiredCount++;
 
               // Strict center-pixel matching. Treat transparent tile pixels as unpainted (not wrong)
-              const tileIdx = (gy * drawSize + gx) * 4;
-              const pr = tilePixels[tileIdx];
-              const pg = tilePixels[tileIdx + 1];
-              const pb = tilePixels[tileIdx + 2];
-              const pa = tilePixels[tileIdx + 3];
+              const realPixelCenter = (gy * drawSize + gx) * 4;
+              const realPixelRed = tilePixels[realPixelCenter];
+              const realPixelCenterGreen = tilePixels[realPixelCenter + 1];
+              const realPixelCenterBlue = tilePixels[realPixelCenter + 2];
+              const realPixelCenterAlpha = tilePixels[realPixelCenter + 3];
 
-              if (pa < 64) {
+              // IF the alpha of the pixel is less than 64...
+              if (realPixelCenterAlpha < 64) {
                 // Unpainted -> neither painted nor wrong
-              } else if (pr === tr && pg === tg && pb === tb) {
-                paintedCount++;
+
+                // ELSE IF the pixel matches the template center pixel color
+              } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
+                paintedCount++; // ...the pixel is painted correctly
               } else {
-                wrongCount++;
+                wrongCount++; // ...the pixel is NOT painted correctly
               }
             }
           }
-        } catch (e) {
-          console.warn('Failed to compute per-tile painted/wrong stats:', e);
+        } catch (exception) {
+          console.warn('Failed to compute per-tile painted/wrong stats:', exception);
         }
       }
 
       // Draw the template overlay for visual guidance, honoring color filter
       try {
-        const activeTemplate = this.templatesArray?.[0];
-        const palette = activeTemplate?.colorPalette || {};
-        const hasDisabled = Object.values(palette).some(v => v?.enabled === false);
+
+        const activeTemplate = this.templatesArray?.[0]; // Get the first template
+        const palette = activeTemplate?.colorPalette || {}; // Obtain the color palette of the template
+        const hasDisabled = Object.values(palette).some(v => v?.enabled === false); // Check if any color is disabled
+
+        // If none of the template colors are disabled, then draw the image normally
         if (!hasDisabled) {
           context.drawImage(template.bitmap, Number(template.pixelCoords[0]) * this.drawMult, Number(template.pixelCoords[1]) * this.drawMult);
         } else {
+          // ELSE we need to apply the color filter
+
+          console.log('Applying color filter...');
+
           const tempW = template.bitmap.width;
           const tempH = template.bitmap.height;
+
           const filterCanvas = new OffscreenCanvas(tempW, tempH);
           const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
-          filterCtx.imageSmoothingEnabled = false;
+          filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
           filterCtx.clearRect(0, 0, tempW, tempH);
           filterCtx.drawImage(template.bitmap, 0, 0);
+
           const img = filterCtx.getImageData(0, 0, tempW, tempH);
           const data = img.data;
+
+          // For every pixel...
           for (let y = 0; y < tempH; y++) {
             for (let x = 0; x < tempW; x++) {
+
+              // If this pixel is NOT the center pixel, then skip the pixel
               if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
+
               const idx = (y * tempW + x) * 4;
               const r = data[idx];
               const g = data[idx + 1];
               const b = data[idx + 2];
               const a = data[idx + 3];
+
               if (a < 1) { continue; }
-              const key = `${r},${g},${b}`;
+
+              let key = activeTemplate.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
+
               // Hide if color is not in allowed palette or explicitly disabled
-              const inSitePalette = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : true;
-              const enabled = palette?.[key]?.enabled !== false;
-              if (!inSitePalette || !enabled) {
+              const inWplacePalette = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : true;
+
+              // if (inWplacePalette) {
+              //   key = 'other'; // Map all non-palette colors to "other"
+              //   console.log('Added color to other');
+              // }
+
+              const isPaletteColorEnabled = palette?.[key]?.enabled !== false;
+              if (!inWplacePalette || !isPaletteColorEnabled) {
                 data[idx + 3] = 0; // hide disabled color center pixel
               }
             }
           }
+
+          // Draws the template with somes colors disabled
           filterCtx.putImageData(img, 0, 0);
           context.drawImage(filterCanvas, Number(template.pixelCoords[0]) * this.drawMult, Number(template.pixelCoords[1]) * this.drawMult);
         }
-      } catch (_) {
+      } catch (exception) {
+
+        // If filtering fails, we can log the error or handle it accordingly
+        console.warn('Failed to apply color filter:', exception);
+
         // Fallback to drawing raw bitmap if filtering fails
         context.drawImage(template.bitmap, Number(template.pixelCoords[0]) * this.drawMult, Number(template.pixelCoords[1]) * this.drawMult);
       }
@@ -457,6 +512,7 @@ export default class TemplateManager {
         sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
       const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
 
+      // Turns numbers into formatted number strings. E.g., 1234 -> 1,234 OR 1.234 based on location of user
       const paintedStr = new Intl.NumberFormat().format(aggPainted);
       const requiredStr = new Intl.NumberFormat().format(totalRequired);
       const wrongStr = new Intl.NumberFormat().format(totalRequired - aggPainted); // Used to be aggWrong, but that is bugged
@@ -549,7 +605,7 @@ export default class TemplateManager {
                     if (a < 64) { continue; }
                     if (r === 222 && g === 250 && b === 206) { continue; }
                     requiredPixelCount++;
-                    const key = `${r},${g},${b}`;
+                    const key = activeTemplate.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
                     paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
                   }
                 }
