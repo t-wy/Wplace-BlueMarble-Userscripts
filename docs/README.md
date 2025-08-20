@@ -43,18 +43,18 @@
 
 <h1>Blue Marble</h1>
 <a href="https://status.wplace.lol" target="_blank" rel="noopener noreferrer"><img alt="Wplace Status" src="https://status.wplace.lol/badge/_/status?labelColor=5f5f5f&color=&style=flat&label=Wplace%20Status"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Latest Version" src="https://img.shields.io/badge/Latest_Version-0.84.0-lightblue?style=flat"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Latest Version" src="https://img.shields.io/badge/Latest_Version-0.84.14-lightblue?style=flat"></a>
 <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/releases" target="_blank" rel="noopener noreferrer"><img alt="Latest Release" src="https://img.shields.io/github/v/release/SwingTheVine/Wplace-BlueMarble?sort=semver&style=flat&label=Latest%20Release&color=blue"></a>
 <a href="https://github.com/SwingTheVine/Wplace-BlueMarble/blob/main/LICENSE.txt" target="_blank" rel="noopener noreferrer"><img alt="Software License: MPL-2.0" src="https://img.shields.io/badge/Software_License-MPL--2.0-slateblue?style=flat"></a>
 <a href="https://discord.gg/tpeBPy46hf" target="_blank" rel="noopener noreferrer"><img alt="Contact Me" src="https://img.shields.io/badge/Contact_Me-gray?style=flat&logo=Discord&logoColor=white&logoSize=auto&labelColor=cornflowerblue"></a>
 <a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer"><img alt="Blue Marble Website" src="https://img.shields.io/badge/Blue_Marble_Website-Camille_Daguin-blue?style=flat&logo=globe&logoColor=white"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="WakaTime" src="https://img.shields.io/badge/Coding_Time-111hrs_12mins-blue?style=flat&logo=wakatime&logoColor=black&logoSize=auto&labelColor=white"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Patches" src="https://img.shields.io/badge/Total_Patches-495-black?style=flat"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="WakaTime" src="https://img.shields.io/badge/Coding_Time-124hrs_4mins-blue?style=flat&logo=wakatime&logoColor=black&logoSize=auto&labelColor=white"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Patches" src="https://img.shields.io/badge/Total_Patches-503-black?style=flat"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Lines of Code" src="https://tokei.rs/b1/github/SwingTheVine/Wplace-BlueMarble?category=code"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Comments" src="https://tokei.rs/b1/github/SwingTheVine/Wplace-BlueMarble?category=comments"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Compression" src="https://img.shields.io/badge/Compression-69.52%25-blue"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Repo Size" src="https://img.shields.io/github/repo-size/SwingTheVine/Wplace-BlueMarble"></a>
-<a href="" target="_blank" rel="noopener noreferrer"><img alt="Visitors" src="https://img.shields.io/badge/Visitors-354_340-gainsboro?style=flat"></a>
+<a href="" target="_blank" rel="noopener noreferrer"><img alt="Visitors" src="https://img.shields.io/badge/Visitors-439_667-gainsboro?style=flat"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Downloads" src="https://img.shields.io/github/downloads/SwingTheVine/Wplace-BlueMarble/total.svg"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Build" src="https://github.com/SwingTheVine/Wplace-BlueMarble/actions/workflows/build.yml/badge.svg"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Pages" src="https://github.com/SwingTheVine/Wplace-BlueMarble/actions/workflows/pages/pages-build-deployment/badge.svg?branch=wiki"></a>
