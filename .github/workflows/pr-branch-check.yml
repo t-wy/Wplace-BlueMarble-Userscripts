@@ -2,7 +2,6 @@ name: Enforce allowed branches for PRs to main
 
 permissions:
   contents: read
-
 on:
   pull_request:
     branches:

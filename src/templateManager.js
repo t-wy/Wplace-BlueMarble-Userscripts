@@ -448,7 +448,6 @@ export default class TemplateManager {
               // If this pixel is NOT the center pixel, then skip the pixel
               if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
 
-
               const idx = (y * tempW + x) * 4;
               const r = data[idx];
               const g = data[idx + 1];
