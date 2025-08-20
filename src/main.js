@@ -187,7 +187,7 @@ GM.getValue('bmTemplates', '{}').then(storageTemplatesValue => {
 console.log(storageTemplates);
 templateManager.importJSON(storageTemplates); // Loads the templates
 
-})
+}).then(() => { return (
 
 GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
   const userSettings = JSON.parse(userSettingsValue);
@@ -212,19 +212,22 @@ if ((userSettings?.telemetry == undefined) || (userSettings?.telemetry > 1)) { /
 
 })
 
+)}).then(() => 
 
 buildOverlayMain() // Builds the main overlay
-.then(() => {
+
+).then(() => {
 
 overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
 
-});
 
 apiManager.spontaneousResponseListener(overlayMain); // Reads spontaneous fetch responces
 
 observeBlack(); // Observes the black palette color
 
 consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
+
+});
 
 /** Observe the black color, and add the "Move" button.
  * @since 0.66.3
@@ -658,8 +661,6 @@ function buildOverlayMain() {
     .buildElement()
   .buildOverlay(document.body);
 
-  }));
-
   // ------- Helper: Build the color filter list -------
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
@@ -751,6 +752,9 @@ function buildOverlayMain() {
       }
     } catch (_) {}
   }, 0);
+
+  }));
+
 }
 
 function buildTelemetryOverlay(overlay) {
