@@ -213,9 +213,12 @@ if ((userSettings?.telemetry == undefined) || (userSettings?.telemetry > 1)) { /
 })
 
 
-buildOverlayMain(); // Builds the main overlay
+buildOverlayMain() // Builds the main overlay
+.then(() => {
 
 overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
+
+});
 
 apiManager.spontaneousResponseListener(overlayMain); // Reads spontaneous fetch responces
 
@@ -272,6 +275,8 @@ function buildOverlayMain() {
   let isMinimized = false; // Overlay state tracker (false = maximized, true = minimized)
   // Load last saved coordinates (if any)
   let savedCoords = {};
+
+  return (
 
   GM.getValue('bmCoords', '{}').then( savedCoordsValue => {
     savedCoords = JSON.parse(savedCoordsValue) || {};
@@ -653,7 +658,7 @@ function buildOverlayMain() {
     .buildElement()
   .buildOverlay(document.body);
 
-  });
+  }));
 
   // ------- Helper: Build the color filter list -------
   window.buildColorFilterList = function buildColorFilterList() {
