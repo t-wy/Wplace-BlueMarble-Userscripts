@@ -652,31 +652,40 @@ function buildOverlayMain() {
       .sort((a,b) => b[1].count - a[1].count); // sort by frequency desc
 
     for (const [rgb, meta] of entries) {
-      const [r,g,b] = rgb.split(',').map(Number);
-
-      const row = document.createElement('div');
+      let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
       row.style.gap = '8px';
       row.style.margin = '4px 0';
 
-      const swatch = document.createElement('div');
+      let swatch = document.createElement('div');
       swatch.style.width = '14px';
       swatch.style.height = '14px';
       swatch.style.border = '1px solid rgba(255,255,255,0.5)';
-      swatch.style.background = `rgb(${r},${g},${b})`;
 
-      const label = document.createElement('span');
+      let label = document.createElement('span');
       label.style.fontSize = '12px';
       let labelText = `${meta.count.toLocaleString()}`;
-      try {
-        const tMeta = templateManager.templatesArray?.[0]?.rgbToMeta?.get(rgb);
-        if (tMeta && typeof tMeta.id === 'number') {
-          const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
-          const starLeft = tMeta.premium ? '★ ' : '';
-          labelText = `#${tMeta.id} ${starLeft}${displayName} • ${labelText}`;
-        }
-      } catch (_) {}
+
+      // Special handling for "other" and "transparent"
+      if (rgb === 'other') {
+        swatch.style.background = '#888'; // Neutral color for "Other"
+        labelText = `Other • ${labelText}`;
+      } else if (rgb === '#deface') {
+        swatch.style.background = '#deface';
+        labelText = `Transparent • ${labelText}`;
+      } else {
+        const [r, g, b] = rgb.split(',').map(Number);
+        swatch.style.background = `rgb(${r},${g},${b})`;
+        try {
+          const tMeta = templateManager.templatesArray?.[0]?.rgbToMeta?.get(rgb);
+          if (tMeta && typeof tMeta.id === 'number') {
+            const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
+            const starLeft = tMeta.premium ? '★ ' : '';
+            labelText = `#${tMeta.id} ${starLeft}${displayName} • ${labelText}`;
+          }
+        } catch (ignored) {}
+      }
       label.textContent = labelText;
 
       const toggle = document.createElement('input');
