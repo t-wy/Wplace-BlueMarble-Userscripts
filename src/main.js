@@ -1,7 +1,7 @@
 /** @file The main file. Everything in the userscript is executed from here.
  * @since 0.0.0
  */
-
+import "./polyfill.js";
 import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
