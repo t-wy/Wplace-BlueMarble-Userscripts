@@ -657,6 +657,8 @@ export default class TemplateManager {
         window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-color-list' }, '*');
       } catch (_) { /* no-op */ }
     }
+    
+    this.templatesJSON = json;
   }
 
   /** Parses the OSU! Place JSON object
