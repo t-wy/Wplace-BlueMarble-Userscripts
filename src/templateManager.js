@@ -50,13 +50,17 @@ export default class TemplateManager {
     this.encodingBase = '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'; // Characters to use for encoding/decoding
     this.tileSize = 1000; // The number of pixels in a tile. Assumes the tile is square
 
-    const context = (new OffscreenCanvas(5000,5000)).getContext('2d');
+    const canvas = new OffscreenCanvas(5000,5000);
+    const context = canvas.getContext('2d');
     context.fillRect(4999, 4999, 1, 1);
     if (context.getImageData(4999, 4999, 1, 1).data[3] !== 0) {
       this.drawMult = 5; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
     } else {
       this.drawMult = 4;
     }
+    // Release canvas
+    canvas.height = 0;
+    canvas.width = 0;
 
     this.drawMultCenter = this.drawMult >> 1;
     
