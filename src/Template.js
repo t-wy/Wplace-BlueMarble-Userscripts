@@ -84,6 +84,19 @@ export default class Template {
     console.log('Allowed colors for template:', this.allowedColorsSet);
   }
 
+  customMask(x, y, shreadSize) {
+    // Original: Center dot
+    // return x % shreadSize == 1 && y % shreadSize == 1;
+    // Modifed: + cross
+    const center = shreadSize >> 1;
+    return (
+      x % shreadSize == center || y % shreadSize == center
+    ) && (
+      x % shreadSize >= center - 1 && x % shreadSize <= center + 1 &&
+      y % shreadSize >= center - 1 && y % shreadSize <= center + 1
+    );
+  }
+
   /** Creates chunks of the template for each tile.
    * 
    * @returns {Object} Collection of template bitmaps & buffers organized by tile coordinates
@@ -92,7 +105,7 @@ export default class Template {
   async createTemplateTiles() {
     console.log('Template coordinates:', this.coords);
 
-    const shreadSize = 3; // Scale image factor for pixel art enhancement (must be odd)
+    const shreadSize = 5; // Scale image factor for pixel art enhancement (must be odd)
     const bitmap = await createImageBitmap(this.file); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
@@ -234,7 +247,7 @@ export default class Template {
                 imageData.data[pixelIndex + 2] = 255;
               }
               imageData.data[pixelIndex + 3] = 32; // Make it translucent
-            } else if (x % shreadSize !== 1 || y % shreadSize !== 1) { // Otherwise only draw the middle pixel
+            } else if (!this.customMask(x, y, shreadSize)) { // Otherwise only draw the middle pixel
               imageData.data[pixelIndex + 3] = 0; // Make the pixel transparent on the alpha channel
             } else {
               // Center pixel: keep only if in allowed site palette

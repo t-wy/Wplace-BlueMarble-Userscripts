@@ -49,7 +49,8 @@ export default class TemplateManager {
     this.userID = null; // The ID of the current user
     this.encodingBase = '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'; // Characters to use for encoding/decoding
     this.tileSize = 1000; // The number of pixels in a tile. Assumes the tile is square
-    this.drawMult = 3; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
+    this.drawMult = 5; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
+    this.drawMultCenter = this.drawMult >> 1;
     
     // Template
     this.canvasTemplate = null; // Our canvas
@@ -336,7 +337,7 @@ export default class TemplateManager {
 
               // Only evaluate the center pixel of each shread block
               // Skip if not the center pixel of the shread block
-              if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
+              if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
 
               const gx = x + offsetX;
               const gy = y + offsetY;
@@ -446,7 +447,7 @@ export default class TemplateManager {
             for (let x = 0; x < tempW; x++) {
 
               // If this pixel is NOT the center pixel, then skip the pixel
-              if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
+              if (!activeTemplate.customMask(x, y, this.drawMult)) { continue; }
 
               const idx = (y * tempW + x) * 4;
               const r = data[idx];
@@ -596,7 +597,7 @@ export default class TemplateManager {
                 for (let y = 0; y < h; y++) {
                   for (let x = 0; x < w; x++) {
                     // Only count center pixels of 3x blocks
-                    if ((x % this.drawMult) !== 1 || (y % this.drawMult) !== 1) { continue; }
+                    if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
                     const idx = (y * w + x) * 4;
                     const r = data[idx];
                     const g = data[idx + 1];
@@ -658,7 +659,6 @@ export default class TemplateManager {
       } catch (_) { /* no-op */ }
     }
     
-    this.templatesJSON = json;
   }
 
   /** Parses the OSU! Place JSON object
