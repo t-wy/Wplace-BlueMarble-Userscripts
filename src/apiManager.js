@@ -18,6 +18,34 @@ export default class ApiManager {
     this.disableAll = false; // Should the entire userscript be disabled?
     this.coordsTilePixel = []; // Contains the last detected tile/pixel coordinate pair requested
     this.templateCoordsTilePixel = []; // Contains the last "enabled" template coords
+    this.charges = null;
+    this.chargesUpdated = null;
+    this.chargeTimeout = null;
+  }
+
+  getCurrentCharges() {
+    const currentTime = Date.now();
+    const timeDiff = currentTime - this.chargesUpdated;
+    const chargesDelta = timeDiff / this.charges["cooldownMs"];
+    const currentCharges = this.charges["count"] + chargesDelta;
+    if (currentCharges > this.charges["max"]) {
+      return this.charges["max"];
+    }
+    return currentCharges;
+  }
+
+  #updateCharges(overlay) {
+    overlay.updateInnerHTML('bm-user-charges', `Charges: <b>${new Intl.NumberFormat().format(Math.floor(this.getCurrentCharges()))}</b>`); // Updates the text content of the charges field
+  }
+
+  #setUpTimeout(overlay) {
+    this.#updateCharges(overlay);
+    if (this.chargeTimeout) {
+      clearTimeout(this.chargeTimeout);
+    }
+    this.chargeTimeout = setTimeout(() => {
+      this.#updateCharges(overlay);
+    }, 1000);
   }
 
   /** Determines if the spontaneously received response is something we want.
@@ -72,8 +100,11 @@ export default class ApiManager {
             ));
           }
           this.templateManager.userID = dataJSON['id'];
+          this.charges = dataJSON['charges'];
+          this.chargesUpdated = Date.now();
           
           overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
+          this.#setUpTimeout(overlay);
           overlay.updateInnerHTML('bm-user-droplets', `Droplets: <b>${new Intl.NumberFormat().format(dataJSON['droplets'])}</b>`); // Updates the text content of the droplets field
           overlay.updateInnerHTML('bm-user-nextlevel', `Next level in <b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> pixel${nextLevelPixels == 1 ? '' : 's'}`); // Updates the text content of the next level field
           break;
