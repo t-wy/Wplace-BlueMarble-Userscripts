@@ -11,7 +11,7 @@ import { consoleLog, consoleWarn, selectAllCoordinateInputs } from './utils.js';
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
 const consoleStyle = 'color: cornflowerblue;'; // The styling for the console logs
-const CSS_BM_File = "https://raw.githubusercontent.com/SwingTheVine/Wplace-BlueMarble/051271c433a42db968a865b00f81bb979ee7d13f/dist/BlueMarble.user.css";
+const CSS_BM_File = "https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/refs/heads/custom-improve/dist/BlueMarble.user.css";
 
 /** Injects code into the client
  * This code will execute outside of TamperMonkey's sandbox
