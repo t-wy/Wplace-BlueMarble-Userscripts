@@ -97,6 +97,13 @@ export default class Template {
     );
   }
 
+  testCanvas() {
+    const context = (new OffscreenCanvas(5000,5000)).getContext('2d');
+    context.fillRect(4999, 4999, 1, 1);
+    return context.getImageData(4999, 4999, 1, 1).data[3] !== 0;
+    // one liner: ((context=(new OffscreenCanvas(5000,5000)).getContext('2d')).fillRect.apply(context, [4999,4999,1,1]) || context.getImageData(4999, 4999, 1, 1).data[3]) === 255
+  }
+
   /** Creates chunks of the template for each tile.
    * 
    * @returns {Object} Collection of template bitmaps & buffers organized by tile coordinates
@@ -105,7 +112,7 @@ export default class Template {
   async createTemplateTiles() {
     console.log('Template coordinates:', this.coords);
 
-    const shreadSize = 5; // Scale image factor for pixel art enhancement (must be odd)
+    const shreadSize = this.testCanvas() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
     const bitmap = await createImageBitmap(this.file); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
