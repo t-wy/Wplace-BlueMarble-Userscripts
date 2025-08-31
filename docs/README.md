@@ -164,7 +164,7 @@
         <br>
         <img alt="Enable 'Developer Mode' and 'Allow user scripts'" src="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/assets/ComputerChromeInstall3.png"></li>
         <li>Enable "Allow user scripts."</li>
-        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/releases/download/pre/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
+        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
         <br>
         TamperMonkey will automatically detect the userscript and prompt you to Install it.</li>
         <li>Refresh the <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a> webpage.</li>
@@ -185,7 +185,7 @@
         <li>Enable "Developer Mode."
         <br>
         <img alt="Enable 'Developer Mode'" src="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/assets/ComputerEdgeInstall3.png"></li>
-        <li>Download the <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/releases" target="_blank" rel="noopener noreferrer">BlueMarble.user.js</a> file in the "Assets" of the latest release.</li>
+        <li>Download the <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer">BlueMarble.user.js</a> file.</li>
         <li>Open the TamperMonkey Dashboard.
         <br>
         <img alt="Enter the TamperMonkey 'Dashboard'" src="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/assets/ComputerEdgeInstall4.png"></li>
@@ -209,7 +209,7 @@
         <li>Install the <a href="https://addons.mozilla.org/en-US/firefox/addon/tampermonkey/" target="_blank" rel="noopener noreferrer">TamperMonkey</a> plugin for Firefox.
         <br>
         <img alt="Click the 'Add to Firefox' button" src="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/assets/ComputerFireFoxInstall1.png"></li>
-        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/releases/download/pre/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
+        <li><strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
         <br>
         TamperMonkey will automatically detect the userscript and prompt you to install it.</li>
         <li>Refresh the <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a> webpage.</li>
@@ -224,7 +224,7 @@
         <br>
         Make sure that appropriate permissions have been given to the App and Safari is configured to enable the extension.</li>
         <br>
-        <li>Download the Blue Marble script and save to the Save Location as specified by the App: <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/releases/download/pre/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Download Blue Marble</strong></a>
+        <li>Download the Blue Marble script and save to the Save Location as specified by the App: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Download Blue Marble</strong></a>
         <br>
         Userscripts will automatically detect the userscript.</li>
         <li>Refresh the <a href="https://wplace.live/" target="_blank" rel="noopener noreferrer">wplace.live</a> webpage.</li>
