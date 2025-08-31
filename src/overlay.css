@@ -3,7 +3,7 @@
 /* The entire overlay */
 #bm-overlay {
   position: fixed;
-  background-color: rgba(21, 48, 99, 0.9);
+  background-color: rgba(21, 48, 99, 0.5);
   color: white;
   padding: 10px;
   border-radius: 8px;
