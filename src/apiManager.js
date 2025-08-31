@@ -20,7 +20,7 @@ export default class ApiManager {
     this.templateCoordsTilePixel = []; // Contains the last "enabled" template coords
     this.charges = null;
     this.chargesUpdated = null;
-    this.chargeTimeout = null;
+    this.chargeInterval = null;
   }
 
   getCurrentCharges() {
@@ -40,10 +40,10 @@ export default class ApiManager {
 
   #setUpTimeout(overlay) {
     this.#updateCharges(overlay);
-    if (this.chargeTimeout) {
-      clearTimeout(this.chargeTimeout);
+    if (this.chargeInterval) {
+      clearInterval(this.chargeInterval);
     }
-    this.chargeTimeout = setTimeout(() => {
+    this.chargeInterval = setInterval(() => {
       this.#updateCharges(overlay);
     }, 1000);
   }
