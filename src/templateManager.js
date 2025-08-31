@@ -605,7 +605,7 @@ export default class TemplateManager {
                     if (a < 64) { continue; }
                     if (r === 222 && g === 250 && b === 206) { continue; }
                     requiredPixelCount++;
-                    const key = activeTemplate.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
+                    const key = Object.hasOwn(templates[templateKey].palette, `${r},${g},${b}`) ? `${r},${g},${b}` : "other";
                     paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
                   }
                 }
