@@ -97,7 +97,8 @@ export default class Template {
     );
   }
 
-  testCanvas() {
+  testCanvasSize() {
+    // Check if the browser support canvas size more than 4096 x 4096 for 5x to work
     const canvas = new OffscreenCanvas(5000,5000);
     const context = canvas.getContext('2d');
     context.fillRect(4999, 4999, 1, 1);
@@ -116,7 +117,7 @@ export default class Template {
   async createTemplateTiles() {
     console.log('Template coordinates:', this.coords);
 
-    const shreadSize = this.testCanvas() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
+    const shreadSize = this.testCanvasSize() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
     const bitmap = await createImageBitmap(this.file); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
