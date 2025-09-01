@@ -88,7 +88,7 @@ export default class Template {
     // Original: Center dot
     // return x % shreadSize == 1 && y % shreadSize == 1;
     // Modifed: + cross
-    const center = shreadSize >> 1;
+    const center = (shreadSize - 1) >> 1; // Even: better be up left than down right
     return (
       x % shreadSize == center || y % shreadSize == center
     ) && (

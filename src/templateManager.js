@@ -62,7 +62,7 @@ export default class TemplateManager {
     canvas.height = 0;
     canvas.width = 0;
 
-    this.drawMultCenter = this.drawMult >> 1;
+    this.drawMultCenter = (this.drawMult - 1) >> 1; // Even: better be up left than down right
     
     // Template
     this.canvasTemplate = null; // Our canvas
