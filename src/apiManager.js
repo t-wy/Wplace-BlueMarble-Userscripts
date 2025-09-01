@@ -158,12 +158,15 @@ export default class ApiManager {
           const blobData = data['blobData'];
           const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
           const lastModified = data["lastModified"];
+          const activeTemplate = this.templateManager.templatesArray?.[0]; // Get the first template
+          const palette = activeTemplate?.colorPalette || {}; // Obtain the color palette of the template
+          const paletteKey = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join('|');
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {
-            if (this.tileCache[tileKey][0] === lastModified) {
+            if (this.tileCache[tileKey][0] === lastModified && this.tileCache[tileKey][1] === paletteKey) {
               console.log(`Unchanged tile: "${tileKey}"`);
-              templateBlob = this.tileCache[tileKey][1];
+              templateBlob = this.tileCache[tileKey][2];
             }
           }
           
@@ -181,7 +184,7 @@ export default class ApiManager {
                 return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
               })
             ) {
-              this.tileCache[tileKey] = [ lastModified, templateBlob ];
+              this.tileCache[tileKey] = [ lastModified, paletteKey, templateBlob ];
             }
           }
 
