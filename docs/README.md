@@ -67,13 +67,27 @@
     For users who do not want to purchase the TamperMonkey App from the App Store, which is a paid app unlike other browser platforms, the Userscripts app seems to be a free alternative as a userscript manager.
   </p>
   <p>
-  However, the supported GM API by Userscripts is much smaller than what TamperMonkey supports, especially for old synchronous APIs that Blue Marble uses that have been dropped by Greasemonkey in Greasemonkey 4.0+ that has to be replaced by alternatives:
+    However, the supported GM API by Userscripts is much smaller than what TamperMonkey supports, especially for old synchronous APIs that Blue Marble uses that have been dropped by Greasemonkey in Greasemonkey 4.0+ that has to be replaced by alternatives:
   </p>
 
   <ul>
     <li>GM_addStyle → GM.addStyle</li>
     <li>GM_getValue → GM.getValue</li>
     <li>GM_getResourceText → Replaced (GM.getResourceText does not exist)</li>
+  </ul>
+
+  <p>
+    Check the <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve">Custom-Improve Branch</a> for extra implemented features and improvements that are not yet in the original repository: 
+  </p>
+
+  <ul>
+    <li>Show Charges Count outside the Button that may be covered by Cloudflare Turnstile.</li>
+    <li>Display the palette hints as crosshair instead of a dot for better visibility.</li>
+    <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
+    <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged)</li>
+    <li>Testing semi-transparency for the Blue Marble Overlay.</li>
+    <li>Fixed the non-persistent palette toggle bug.</li>
+    <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
   </ul>
 </p>
 
