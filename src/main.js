@@ -87,7 +87,6 @@ inject(() => {
 
       // Since this code does not run in the userscript, we can't use consoleLog().
       console.log(`%c${name}%c: Sending JSON message about endpoint "${endpointName}"`, consoleStyle, '');
-
       // Sends a message about the endpoint it spied on
       cloned.json()
         .then(jsonData => {
@@ -132,6 +131,7 @@ inject(() => {
         window.postMessage({
           source: 'blue-marble',
           endpoint: endpointName,
+          lastModified: response.headers.get("Last-Modified"),
           blobID: blobUUID,
           blobData: blob,
           blink: blink

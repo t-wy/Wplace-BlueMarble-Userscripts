@@ -21,6 +21,7 @@ export default class ApiManager {
     this.charges = null;
     this.chargesUpdated = null;
     this.chargeInterval = null;
+    this.tileCache = {};
   }
 
   getCurrentCharges() {
@@ -155,8 +156,34 @@ export default class ApiManager {
           
           const blobUUID = data['blobID'];
           const blobData = data['blobData'];
+          const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
+          const lastModified = data["lastModified"];
+
+          let templateBlob = null;
+          if (this.tileCache[tileKey]) {
+            if (this.tileCache[tileKey][0] === lastModified) {
+              console.log(`Unchanged tile: "${tileKey}"`);
+              templateBlob = this.tileCache[tileKey][1];
+            }
+          }
           
-          const templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
+          if (templateBlob === null) {
+            templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
+            if (
+              this.templateManager.templatesShouldBeDrawn &&
+              this.templateManager.templatesArray.some(t => {
+                if (!t?.chunked) { return false; }
+                // Fast path via recorded tile prefixes if available
+                if (t.tilePrefixes && t.tilePrefixes.size > 0) {
+                  return t.tilePrefixes.has(tileKey);
+                }
+                // Fallback: scan chunked keys
+                return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
+              })
+            ) {
+              this.tileCache[tileKey] = [ lastModified, templateBlob ];
+            }
+          }
 
           window.postMessage({
             source: 'blue-marble',
