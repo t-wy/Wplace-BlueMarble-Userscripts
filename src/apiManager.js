@@ -36,7 +36,7 @@ export default class ApiManager {
   }
 
   #updateCharges(overlay) {
-    overlay.updateInnerHTML('bm-user-charges', `Charges: <b>${new Intl.NumberFormat().format(Math.floor(this.getCurrentCharges()))}</b>`); // Updates the text content of the charges field
+    overlay.updateInnerHTML('bm-user-charges', `Charges: <b>${new Intl.NumberFormat().format(Math.floor(this.getCurrentCharges()))} / ${new Intl.NumberFormat().format(this.charges["max"])}</b>`); // Updates the text content of the charges field
   }
 
   #setUpTimeout(overlay) {
