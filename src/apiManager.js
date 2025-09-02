@@ -29,8 +29,9 @@ export default class ApiManager {
     const timeDiff = currentTime - this.chargesUpdated;
     const chargesDelta = timeDiff / this.charges["cooldownMs"];
     const currentCharges = this.charges["count"] + chargesDelta;
-    if (currentCharges > this.charges["max"]) {
-      return this.charges["max"];
+    const trueMax = this.charges["count"] > this.charges["max"] ? this.charges["count"] : this.charges["max"];
+    if (currentCharges > trueMax) {
+      return trueMax;
     }
     return currentCharges;
   }
