@@ -234,7 +234,8 @@ export default class TemplateManager {
     if (!this.templatesShouldBeDrawn) {return tileBlob;}
 
     const drawSize = this.tileSize * this.drawMult; // Calculate draw multiplier for scaling
-
+    
+    const tileCoordsRaw = tileCoords; // We want the number version for later example finding
     // Format tile coordinates with proper padding for consistent lookup
     tileCoords = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
 
@@ -294,6 +295,9 @@ export default class TemplateManager {
     let paintedCount = 0;
     let wrongCount = 0;
     let requiredCount = 0;
+  
+    // Per-color stat
+    let paletteStats = {};
     
     const tileBitmap = await createImageBitmap(tileBlob);
 
@@ -410,6 +414,7 @@ export default class TemplateManager {
               const realPixelCenterBlue = tilePixels[realPixelCenter + 2];
               const realPixelCenterAlpha = tilePixels[realPixelCenter + 3];
 
+              let isPainted = false;
               // IF the alpha of the pixel is less than 64...
               if (realPixelCenterAlpha < 64) {
                 // Unpainted -> neither painted nor wrong
@@ -417,8 +422,26 @@ export default class TemplateManager {
                 // ELSE IF the pixel matches the template center pixel color
               } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
                 paintedCount++; // ...the pixel is painted correctly
+                isPainted = true;
               } else {
                 wrongCount++; // ...the pixel is NOT painted correctly
+              }
+              if (!isPainted) {
+                // add to palette stat
+                const r = templatePixelCenterRed;
+                const g = templatePixelCenterGreen;
+                const b = templatePixelCenterBlue;
+                const key = `${r},${g},${b}`;
+                if (paletteStats[key] === undefined) {
+                  paletteStats[key] = {
+                    missing: 0,
+                    example: [ // use this tile as example
+                      tileCoordsRaw[0] * this.tileSize + Math.floor(gx / this.drawMult),
+                      tileCoordsRaw[1] * this.tileSize + Math.floor(gy / this.drawMult)
+                    ]
+                  }
+                }
+                paletteStats[key]["missing"]++;
               }
             }
           }
@@ -507,6 +530,7 @@ export default class TemplateManager {
         painted: paintedCount,
         required: requiredCount,
         wrong: wrongCount,
+        palette: paletteStats,
       });
 
       // Aggregate painted/wrong across tiles we've processed

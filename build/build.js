@@ -101,6 +101,8 @@ let resultTerser = await terser.minify(resultEsbuildJS.text, {
   }
 });
 
+// resultTerser.code = resultEsbuildJS.text; // for debug
+
 // Writes the obfuscated/mangled JS code to a file
 fs.writeFileSync('dist/BlueMarble.user.js', resultTerser.code, 'utf8');
 

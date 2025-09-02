@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette } from "./utils.js";
 
 export default class ApiManager {
 
@@ -192,6 +192,52 @@ export default class ApiManager {
             source: 'blue-marble',
             blobID: blobUUID,
             blobData: templateBlob,
+            blink: data['blink']
+          });
+          break;
+
+        case 'today': // Request to retrieve alliance information
+          const blobUUID_ = data['blobID'];
+
+          const activeTemplate_ = this.templateManager.templatesArray?.[0]; // Get the first template
+          const palette_ = activeTemplate_?.colorPalette || {}; // Obtain the color palette of the template
+          const combinedPalette = {};
+          for (const stats of this.templateManager.tileProgress.values()) {
+            Object.entries(stats.palette).forEach(([colorKey, content]) => {
+              if (combinedPalette[colorKey] === undefined) {
+                combinedPalette[colorKey] = content;
+              } else {
+                combinedPalette[colorKey].missing += content.missing;
+              }
+            })
+          }
+
+          const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
+            const [r, g, b] = color.rgb;
+            return [`${r},${g},${b}`, color];
+          }))
+
+          const jsonData = Object.keys(palette_).filter(
+            colorKey => combinedPalette[colorKey] !== undefined
+          ).map(colorKey => {
+            const entry = combinedPalette[colorKey];
+            const relX = (entry.example[0] + 0.5) / (2048 * 1000); // Relative X
+            const relY = 1 - (entry.example[1] + 0.5) / (2048 * 1000); // Relative Y
+            return {
+              "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
+              "name": colorpaletteRev[colorKey]?.name ?? colorKey,
+              "equippedFlag": 0,
+              "pixelsPainted": -entry.missing,
+              "lastLatitude": 360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
+              "lastLongitude": relX * 360 - 180,
+              // "discord": ""
+            };
+          }).sort((a, b) => a.pixelsPainted - b.pixelsPainted);
+
+          window.postMessage({
+            source: 'blue-marble',
+            blobID: blobUUID_,
+            blobData: JSON.stringify(jsonData),
             blink: data['blink']
           });
           break;
