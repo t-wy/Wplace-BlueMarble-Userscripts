@@ -89,6 +89,7 @@
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
     <li>Show the number of remaining count of each color and the coordinates of one of the pixels to be filled in the Alliance Leaderboard.</li>
+    <li>Show also geographical coordinates besides tile coordinates.</li>
   </ul>
 </p>
 

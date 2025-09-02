@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords } from "./utils.js";
 
 export default class ApiManager {
 
@@ -112,9 +112,9 @@ export default class ApiManager {
           break;
 
         case 'pixel': // Request to retrieve pixel data
-          const coordsTile = data['endpoint'].split('?')[0].split('/').filter(s => s && !isNaN(Number(s))); // Retrieves the tile coords as [x, y]
+          const coordsTile = data['endpoint'].split('?')[0].split('/').filter(s => s && !isNaN(Number(s))).map(s => Number(s)); // Retrieves the tile coords as [x, y]
           const payloadExtractor = new URLSearchParams(data['endpoint'].split('?')[1]); // Declares a new payload deconstructor and passes in the fetch request payload
-          const coordsPixel = [payloadExtractor.get('x'), payloadExtractor.get('y')]; // Retrieves the deconstructed pixel coords from the payload
+          const coordsPixel = [+payloadExtractor.get('x'), +payloadExtractor.get('y')]; // Retrieves the deconstructed pixel coords from the payload
           
           // Don't save the coords if there are previous coords that could be used
           if (this.coordsTilePixel.length && (!coordsTile.length || !coordsPixel.length)) {
@@ -132,8 +132,11 @@ export default class ApiManager {
             if (element.textContent.trim().includes(`${displayTP[0]}, ${displayTP[1]}`)) {
 
               let displayCoords = document.querySelector('#bm-display-coords'); // Find the additional pixel coords span
+              let displayCoords2 = document.querySelector('#bm-display-coords2'); // Find the additional pixel coords span
 
+              const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
               const text = `(Tl X: ${coordsTile[0]}, Tl Y: ${coordsTile[1]}, Px X: ${coordsPixel[0]}, Px Y: ${coordsPixel[1]})`;
+              const text2 = `(${geoCoords[0].toFixed(5)}, ${geoCoords[1].toFixed(5)})`;
               
               // If we could not find the addition coord span, we make it then update the textContent with the new coords
               if (!displayCoords) {
@@ -142,8 +145,18 @@ export default class ApiManager {
                 displayCoords.textContent = text;
                 displayCoords.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
                 element.parentNode.parentNode.parentNode.insertAdjacentElement('afterend', displayCoords);
+                
+                const br = document.createElement('br');
+                displayCoords.insertAdjacentElement('afterend', br);
+
+                displayCoords2 = document.createElement('span');
+                displayCoords2.id = 'bm-display-coords2';
+                displayCoords2.textContent = text2;
+                displayCoords2.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
+                br.insertAdjacentElement('afterend', displayCoords2);
               } else {
                 displayCoords.textContent = text;
+                displayCoords2.textContent = text2;
               }
             }
           }
@@ -222,15 +235,14 @@ export default class ApiManager {
             colorKey => combinedPalette[colorKey] !== undefined
           ).map(colorKey => {
             const entry = combinedPalette[colorKey];
-            const relX = (entry.example[0] + 0.5) / (2048 * 1000); // Relative X
-            const relY = 1 - (entry.example[1] + 0.5) / (2048 * 1000); // Relative Y
+            const geoCoords = coordsTileToGeoCoords(entry.example[0], entry.example[1]);
             return {
               "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
               "name": colorpaletteRev[colorKey]?.name ?? colorKey,
               "equippedFlag": 0,
               "pixelsPainted": -entry.missing,
-              "lastLatitude": 360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
-              "lastLongitude": relX * 360 - 180,
+              "lastLatitude": geoCoords[0],
+              "lastLongitude": geoCoords[1],
               // "discord": ""
             };
           }).sort((a, b) => a.pixelsPainted - b.pixelsPainted);

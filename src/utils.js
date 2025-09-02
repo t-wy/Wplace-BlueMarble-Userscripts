@@ -216,3 +216,19 @@ export const colorpalette = [
   { "id": 63, "premium": true,  "name": "Light Stone",   "rgb": [205, 197, 158] }
 ];
 // All entries include fixed id (index-based) and premium flag by design.
+
+
+/** Returns the real World coordinates
+ * @param {number[]} coordsTile
+ * @param {number[]} coordsPixel
+ * @returns {number[]} [latitude, longitude]
+ * @since 0.85.4
+ */
+export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
+  const relX = (coordsTile[0] * 1000 + coordsPixel[0] + 0.5) / (2048 * 1000); // Relative X
+  const relY = 1 - (coordsTile[1] * 1000 + coordsPixel[1] + 0.5) / (2048 * 1000); // Relative Y
+  return [
+    360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
+    relX * 360 - 180
+  ];
+}

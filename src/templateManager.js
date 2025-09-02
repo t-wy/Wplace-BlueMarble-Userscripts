@@ -436,8 +436,11 @@ export default class TemplateManager {
                   paletteStats[key] = {
                     missing: 0,
                     example: [ // use this tile as example
-                      tileCoordsRaw[0] * this.tileSize + Math.floor(gx / this.drawMult),
-                      tileCoordsRaw[1] * this.tileSize + Math.floor(gy / this.drawMult)
+                      tileCoordsRaw,
+                      [
+                        Math.floor(gx / this.drawMult),
+                        Math.floor(gy / this.drawMult)
+                      ]
                     ]
                   }
                 }
