@@ -341,6 +341,8 @@ export default class TemplateManager {
           tempContext.drawImage(template.bitmap, 0, 0);
           const tImg = tempContext.getImageData(0, 0, tempWidth, tempHeight);
           const tData = tImg.data; // Tile Data, Template Data, or Temp Data????
+          tempCanvas.width = 0;
+          tempCanvas.height = 0;
 
           const offsetX = Number(template.pixelCoords[0]) * this.drawMult;
           const offsetY = Number(template.pixelCoords[1]) * this.drawMult;
@@ -434,7 +436,7 @@ export default class TemplateManager {
                 const key = `${r},${g},${b}`;
                 if (paletteStats[key] === undefined) {
                   paletteStats[key] = {
-                    missing: 0,
+                    missing: 1,
                     example: [ // use this tile as example
                       tileCoordsRaw,
                       [
@@ -443,8 +445,20 @@ export default class TemplateManager {
                       ]
                     ]
                   }
+                } else {
+                  // missing count >= 1
+                  paletteStats[key]["missing"]++;
+                  if (Math.random() * paletteStats[key]["missing"] < 1) {
+                    // pick random sample, so the new entry share the same weight
+                    paletteStats[key]["example"] = [
+                      tileCoordsRaw,
+                      [
+                        Math.floor(gx / this.drawMult),
+                        Math.floor(gy / this.drawMult)
+                      ]
+                    ]
+                  }
                 }
-                paletteStats[key]["missing"]++;
               }
             }
           }
@@ -515,6 +529,9 @@ export default class TemplateManager {
           // Draws the template with somes colors disabled
           filterCtx.putImageData(img, 0, 0);
           context.drawImage(filterCanvas, Number(template.pixelCoords[0]) * this.drawMult, Number(template.pixelCoords[1]) * this.drawMult);
+
+          filterCanvas.width = 0;
+          filterCanvas.height = 0;
         }
       } catch (exception) {
 
@@ -564,7 +581,12 @@ export default class TemplateManager {
       this.overlay.handleDisplayStatus(`Displaying ${templateCount} templates.`);
     }
 
-    return await canvas.convertToBlob({ type: 'image/png' });
+    const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
+
+    canvas.width = 0;
+    canvas.height = 0;
+
+    return resultBlob;
   }
 
   /** Imports the JSON object, and appends it to any JSON object already loaded
@@ -634,6 +656,8 @@ export default class TemplateManager {
                 cx.clearRect(0, 0, w, h);
                 cx.drawImage(templateBitmap, 0, 0);
                 const data = cx.getImageData(0, 0, w, h).data;
+                c.width = 0;
+                c.height = 0;
                 for (let y = 0; y < h; y++) {
                   for (let x = 0; x < w; x++) {
                     // Only count center pixels of 3x blocks
