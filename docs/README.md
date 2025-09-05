@@ -1,10 +1,15 @@
 Preview Image of This Fork:
 ![Preview Image](assets/Preview.png)
 
+More Information [Here](#regarding-this-fork).
+
 <table>
   <tr>
     <td><a href="#blue-marble">Blue Marble</a></td>
     <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=banner4"></a></td>
+  </tr>
+  <tr>
+    <td>&emsp;<a href="#regarding-this-fork">Regarding this fork</a></td>
   </tr>
   <tr>
     <td>&emsp;<a href="#quick-guide">Quick Guide</a></td>
