@@ -1,4 +1,4 @@
-import { uint8ToBase64, colorpalette } from "./utils";
+import { uint8ToBase64, colorpalette, cleanUpCanvas } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -99,13 +99,12 @@ export default class Template {
 
   testCanvasSize() {
     // Check if the browser support canvas size more than 4096 x 4096 for 5x to work
-    const canvas = new OffscreenCanvas(5000,5000);
+    let canvas = new OffscreenCanvas(5000,5000);
     const context = canvas.getContext('2d');
     context.fillRect(4999, 4999, 1, 1);
     const result = context.getImageData(4999, 4999, 1, 1).data[3] !== 0;
-    // Release canvas
-    canvas.height = 0;
-    canvas.width = 0;
+    cleanUpCanvas(canvas);
+    canvas = null;
     return result;
   }
 
@@ -133,15 +132,14 @@ export default class Template {
     // ==================== REQUIRED/DEFACE PIXEL COUNTING ====================
     // Build a 1× scale canvas to inspect original pixels and count required vs deface
     try {
-      const inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
+      let inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
       const inspectCtx = inspectCanvas.getContext('2d', { willReadFrequently: true });
       inspectCtx.imageSmoothingEnabled = false;
       inspectCtx.clearRect(0, 0, imageWidth, imageHeight);
       inspectCtx.drawImage(bitmap, 0, 0);
       const inspectData = inspectCtx.getImageData(0, 0, imageWidth, imageHeight).data;
-      // Release canvas for good memory
-      inspectCanvas.height = 0;
-      inspectCanvas.width = 0;
+      cleanUpCanvas(inspectCanvas);
+      inspectCanvas = null;
 
       let required = 0;
       let deface = 0;
@@ -181,7 +179,7 @@ export default class Template {
     const templateTiles = {}; // Holds the template tiles
     const templateTilesBuffers = {}; // Holds the buffers of the template tiles
 
-    const canvas = new OffscreenCanvas(this.tileSize, this.tileSize);
+    let canvas = new OffscreenCanvas(this.tileSize, this.tileSize);
     const context = canvas.getContext('2d', { willReadFrequently: true });
 
     // For every tile...
@@ -297,9 +295,8 @@ export default class Template {
         const canvasBuffer = await canvasBlob.arrayBuffer();
         const canvasBufferBytes = Array.from(new Uint8Array(canvasBuffer));
         templateTilesBuffers[templateTileName] = uint8ToBase64(canvasBufferBytes); // Stores the buffer
-        // Release canvas for good memory
-        canvas.height = 0;
-        canvas.width = 0;
+        cleanUpCanvas(canvas);
+        canvas = null;
 
         console.log(templateTiles);
 

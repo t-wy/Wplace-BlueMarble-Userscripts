@@ -232,3 +232,13 @@ export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
     relX * 360 - 180
   ];
 }
+
+/** Releases the canvas content to free up memory.
+ * @since 0.85.5
+ */
+export function cleanUpCanvas(canvas) {
+  canvas.width = 0;
+  canvas.height = 0;
+  if (canvas.constructor === HTMLCanvasElement) canvas.remove(); // not for OffscreenCanvas
+  canvas = null;
+}

@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -50,7 +50,7 @@ export default class TemplateManager {
     this.encodingBase = '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'; // Characters to use for encoding/decoding
     this.tileSize = 1000; // The number of pixels in a tile. Assumes the tile is square
 
-    const canvas = new OffscreenCanvas(5000,5000);
+    let canvas = new OffscreenCanvas(5000,5000);
     const context = canvas.getContext('2d');
     context.fillRect(4999, 4999, 1, 1);
     if (context.getImageData(4999, 4999, 1, 1).data[3] !== 0) {
@@ -59,8 +59,8 @@ export default class TemplateManager {
       this.drawMult = 4;
     }
     // Release canvas
-    canvas.height = 0;
-    canvas.width = 0;
+    cleanUpCanvas(canvas);
+    canvas = null;
 
     this.drawMultCenter = (this.drawMult - 1) >> 1; // Even: better be up left than down right
     
@@ -301,7 +301,7 @@ export default class TemplateManager {
     
     const tileBitmap = await createImageBitmap(tileBlob);
 
-    const canvas = new OffscreenCanvas(drawSize, drawSize);
+    let canvas = new OffscreenCanvas(drawSize, drawSize);
     const context = canvas.getContext('2d');
 
     context.imageSmoothingEnabled = false; // Nearest neighbor
@@ -334,15 +334,15 @@ export default class TemplateManager {
           
           const tempWidth = template.bitmap.width;
           const tempHeight = template.bitmap.height;
-          const tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
+          let tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
           const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
           tempContext.imageSmoothingEnabled = false;
           tempContext.clearRect(0, 0, tempWidth, tempHeight);
           tempContext.drawImage(template.bitmap, 0, 0);
           const tImg = tempContext.getImageData(0, 0, tempWidth, tempHeight);
           const tData = tImg.data; // Tile Data, Template Data, or Temp Data????
-          tempCanvas.width = 0;
-          tempCanvas.height = 0;
+          cleanUpCanvas(tempCanvas);
+          tempCanvas = null;
 
           const offsetX = Number(template.pixelCoords[0]) * this.drawMult;
           const offsetY = Number(template.pixelCoords[1]) * this.drawMult;
@@ -485,7 +485,7 @@ export default class TemplateManager {
           const tempW = template.bitmap.width;
           const tempH = template.bitmap.height;
 
-          const filterCanvas = new OffscreenCanvas(tempW, tempH);
+          let filterCanvas = new OffscreenCanvas(tempW, tempH);
           const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
           filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
           filterCtx.clearRect(0, 0, tempW, tempH);
@@ -530,8 +530,8 @@ export default class TemplateManager {
           filterCtx.putImageData(img, 0, 0);
           context.drawImage(filterCanvas, Number(template.pixelCoords[0]) * this.drawMult, Number(template.pixelCoords[1]) * this.drawMult);
 
-          filterCanvas.width = 0;
-          filterCanvas.height = 0;
+          cleanUpCanvas(filterCanvas);
+          filterCanvas = null;
         }
       } catch (exception) {
 
@@ -583,8 +583,8 @@ export default class TemplateManager {
 
     const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
 
-    canvas.width = 0;
-    canvas.height = 0;
+    cleanUpCanvas(canvas);
+    canvas = null;
 
     return resultBlob;
   }
@@ -650,14 +650,14 @@ export default class TemplateManager {
               try {
                 const w = templateBitmap.width;
                 const h = templateBitmap.height;
-                const c = new OffscreenCanvas(w, h);
+                let c = new OffscreenCanvas(w, h);
                 const cx = c.getContext('2d', { willReadFrequently: true });
                 cx.imageSmoothingEnabled = false;
                 cx.clearRect(0, 0, w, h);
                 cx.drawImage(templateBitmap, 0, 0);
                 const data = cx.getImageData(0, 0, w, h).data;
-                c.width = 0;
-                c.height = 0;
+                cleanUpCanvas(c);
+                c = null;
                 for (let y = 0; y < h; y++) {
                   for (let x = 0; x < w; x++) {
                     // Only count center pixels of 3x blocks
