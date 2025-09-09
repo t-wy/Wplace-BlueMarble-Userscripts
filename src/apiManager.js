@@ -175,12 +175,17 @@ export default class ApiManager {
           const activeTemplate = this.templateManager.templatesArray?.[0]; // Get the first template
           const palette = activeTemplate?.colorPalette || {}; // Obtain the color palette of the template
           const paletteKey = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join('|');
+          const templateKey = Object.keys(activeTemplate?.chunked || {}).sort().join('|');
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {
-            if (this.tileCache[tileKey][0] === lastModified && this.tileCache[tileKey][1] === paletteKey) {
+            if (
+              this.tileCache[tileKey][0] === lastModified &&
+              this.tileCache[tileKey][1] === paletteKey &&
+              this.tileCache[tileKey][2] === templateKey
+            ) {
               console.log(`Unchanged tile: "${tileKey}"`);
-              templateBlob = this.tileCache[tileKey][2];
+              templateBlob = this.tileCache[tileKey][3];
             }
           }
           
@@ -198,7 +203,7 @@ export default class ApiManager {
                 return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
               })
             ) {
-              this.tileCache[tileKey] = [ lastModified, paletteKey, templateBlob ];
+              this.tileCache[tileKey] = [ lastModified, paletteKey, templateKey, templateBlob ];
             }
           }
 
@@ -235,7 +240,8 @@ export default class ApiManager {
             colorKey => combinedPalette[colorKey] !== undefined
           ).map(colorKey => {
             const entry = combinedPalette[colorKey];
-            const geoCoords = coordsTileToGeoCoords(entry.example[0], entry.example[1]);
+            const exampleIndex = Math.floor(Math.random() * entry["examples"].length);
+            const geoCoords = coordsTileToGeoCoords(entry["examples"][exampleIndex][0], entry["examples"][exampleIndex][1]);
             return {
               "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
               "name": colorpaletteRev[colorKey]?.name ?? colorKey,

@@ -2,7 +2,9 @@ Preview Image of This Fork:
 
 ![Preview Image](assets/Preview.png)
 
-More Information [Here](#regarding-this-fork).
+More Information Regarding this Fork [Here](#regarding-this-fork).
+
+<strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong>
 
 <table>
   <tr>

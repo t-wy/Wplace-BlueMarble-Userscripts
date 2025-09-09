@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -322,6 +322,11 @@ export default class TemplateManager {
       // If reading fails for any reason, we will skip stats
     }
 
+    const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
+      const [r, g, b] = color.rgb;
+      return [`${r},${g},${b}`, color];
+    }))
+
     // For each template in this tile, draw them.
     for (const template of templatesToDraw) {
       console.log(`Template:`);
@@ -433,30 +438,31 @@ export default class TemplateManager {
                 const r = templatePixelCenterRed;
                 const g = templatePixelCenterGreen;
                 const b = templatePixelCenterBlue;
-                const key = `${r},${g},${b}`;
+                let key = `${r},${g},${b}`;
+                if (colorpaletteRev[key] === undefined) key = 'other';
+                const example = [ // use this tile as example
+                  tileCoordsRaw,
+                  [
+                    Math.floor(gx / this.drawMult),
+                    Math.floor(gy / this.drawMult)
+                  ]
+                ];
                 if (paletteStats[key] === undefined) {
+                   // save at most 10 examples for random
                   paletteStats[key] = {
                     missing: 1,
-                    example: [ // use this tile as example
-                      tileCoordsRaw,
-                      [
-                        Math.floor(gx / this.drawMult),
-                        Math.floor(gy / this.drawMult)
-                      ]
-                    ]
+                    examples: [ example ]
                   }
                 } else {
+                  const exampleMax = 10;
                   // missing count >= 1
                   paletteStats[key]["missing"]++;
-                  if (Math.random() * paletteStats[key]["missing"] < 1) {
-                    // pick random sample, so the new entry share the same weight
-                    paletteStats[key]["example"] = [
-                      tileCoordsRaw,
-                      [
-                        Math.floor(gx / this.drawMult),
-                        Math.floor(gy / this.drawMult)
-                      ]
-                    ]
+                  if (paletteStats[key]["examples"].length < exampleMax) {
+                    paletteStats[key]["examples"].push(example);
+                  } else if (Math.random() * paletteStats[key]["missing"] < exampleMax) {
+                    // pick a random sample, so the new entry share the same weight
+                    const replaceIndex = Math.floor(Math.random() * exampleMax);
+                    paletteStats[key]["examples"][replaceIndex] = example;
                   }
                 }
               }
