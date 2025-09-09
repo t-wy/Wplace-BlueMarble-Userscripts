@@ -225,8 +225,10 @@ export default class ApiManager {
             Object.entries(stats.palette).forEach(([colorKey, content]) => {
               if (combinedPalette[colorKey] === undefined) {
                 combinedPalette[colorKey] = content;
+                combinedPalette[colorKey]["examples"] = content["examples"].slice();
               } else {
-                combinedPalette[colorKey].missing += content.missing;
+                combinedPalette[colorKey]["missing"] += content["missing"];
+                combinedPalette[colorKey]["examples"].push(...content["examples"]);
               }
             })
           }
