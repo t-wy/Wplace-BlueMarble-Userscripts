@@ -454,7 +454,7 @@ export default class TemplateManager {
                     examples: [ example ]
                   }
                 } else {
-                  const exampleMax = 10;
+                  const exampleMax = 100;
                   // missing count >= 1
                   paletteStats[key]["missing"]++;
                   if (paletteStats[key]["examples"].length < exampleMax) {
