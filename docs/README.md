@@ -1,8 +1,10 @@
-Preview Image of [Custom-Improve Branch](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve) of the This Fork:
+Preview Image of the [Custom-Improve Branch](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve) of the This Fork:
 
 ![Preview Image](assets/Preview.png)
 
-More Information [Here](#regarding-this-fork).
+More Information Regarding this Fork [Here](#regarding-this-fork).
+
+<strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/main/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Original Ver. with Userscripts Support</strong></a> / <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Custom Mod Ver.</strong></a>
 
 <table>
   <tr>
@@ -98,6 +100,8 @@ More Information [Here](#regarding-this-fork).
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
     <li>Show the number of remaining count of each color and the coordinates of one of the pixels to be filled in the Alliance Leaderboard.</li>
+    <li>Show also geographical coordinates besides tile coordinates.</li>
+    <li>Optimize the for-loop for faster response.</li>
   </ul>
 </p>
 
