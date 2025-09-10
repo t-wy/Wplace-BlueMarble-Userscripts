@@ -97,6 +97,18 @@ export default class Template {
     );
   }
 
+  customMaskPoints(shreadSize) {
+    const result = [];
+    for (let offsetY = 0; offsetY < shreadSize; offsetY++) {
+      for (let offsetX = 0; offsetX < shreadSize; offsetX++) {
+        if (this.customMask(offsetX, offsetY, shreadSize)) {
+          result.push([offsetX, offsetY]);
+        }
+      }
+    }
+    return result;
+  }
+
   testCanvasSize() {
     // Check if the browser support canvas size more than 4096 x 4096 for 5x to work
     let canvas = new OffscreenCanvas(5000,5000);
@@ -133,7 +145,7 @@ export default class Template {
     // Build a 1× scale canvas to inspect original pixels and count required vs deface
     try {
       let inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
-      const inspectCtx = inspectCanvas.getContext('2d', { willReadFrequently: true });
+      const inspectCtx = inspectCanvas.getContext('2d', { "willReadFrequently": true });
       inspectCtx.imageSmoothingEnabled = false;
       inspectCtx.clearRect(0, 0, imageWidth, imageHeight);
       inspectCtx.drawImage(bitmap, 0, 0);
@@ -180,7 +192,7 @@ export default class Template {
     const templateTilesBuffers = {}; // Holds the buffers of the template tiles
 
     let canvas = new OffscreenCanvas(this.tileSize, this.tileSize);
-    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const context = canvas.getContext('2d', { "willReadFrequently": true });
 
     // For every tile...
     for (let pixelY = this.coords[3]; pixelY < imageHeight + this.coords[3]; ) {
@@ -262,7 +274,7 @@ export default class Template {
               imageData.data[pixelIndex + 3] = 32; // Make it translucent
             } else if (!this.customMask(x, y, shreadSize)) { // Otherwise only draw the middle pixel
               imageData.data[pixelIndex + 3] = 0; // Make the pixel transparent on the alpha channel
-            } else {
+            /* } else {
               // Center pixel: keep only if in allowed site palette
               const r = imageData.data[pixelIndex];
               const g = imageData.data[pixelIndex + 1];
@@ -270,6 +282,7 @@ export default class Template {
               if (!this.allowedColorsSet.has(`${r},${g},${b}`)) {
                 //imageData.data[pixelIndex + 3] = 0; // hide non-palette colors
               }
+            */
             }
           }
         }

@@ -340,7 +340,7 @@ export default class TemplateManager {
           const tempWidth = template.bitmap.width;
           const tempHeight = template.bitmap.height;
           let tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
-          const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
+          const tempContext = tempCanvas.getContext('2d', { "willReadFrequently": true });
           tempContext.imageSmoothingEnabled = false;
           tempContext.clearRect(0, 0, tempWidth, tempHeight);
           tempContext.drawImage(template.bitmap, 0, 0);
@@ -496,7 +496,7 @@ export default class TemplateManager {
           const tempH = template.bitmap.height;
 
           let filterCanvas = new OffscreenCanvas(tempW, tempH);
-          const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
+          const filterCtx = filterCanvas.getContext('2d', { "willReadFrequently": true });
           filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
           filterCtx.clearRect(0, 0, tempW, tempH);
           filterCtx.drawImage(template.bitmap, 0, 0);
@@ -505,11 +505,16 @@ export default class TemplateManager {
           const data = img.data;
 
           // For every pixel...
-          for (let y = 0; y < tempH; y++) {
-            for (let x = 0; x < tempW; x++) {
+          // for (let y = 0; y < tempH; y++) {
+          //   for (let x = 0; x < tempW; x++) {
+
+          // Further reduce the number of iterations
+          for (const [offsetX, offsetY] of activeTemplate.customMaskPoints(this.drawMult)) {
+          for (let y = offsetY; y < tempH; y += this.drawMult) {
+            for (let x = offsetX; x < tempW; x += this.drawMult) {
 
               // If this pixel is NOT the center pixel, then skip the pixel
-              if (!activeTemplate.customMask(x, y, this.drawMult)) { continue; }
+              // if (!activeTemplate.customMask(x, y, this.drawMult)) { continue; }
 
               const idx = (y * tempW + x) * 4;
               const r = data[idx];
@@ -534,6 +539,8 @@ export default class TemplateManager {
                 data[idx + 3] = 0; // hide disabled color center pixel
               }
             }
+          }
+
           }
 
           // Draws the template with somes colors disabled
@@ -661,17 +668,20 @@ export default class TemplateManager {
                 const w = templateBitmap.width;
                 const h = templateBitmap.height;
                 let c = new OffscreenCanvas(w, h);
-                const cx = c.getContext('2d', { willReadFrequently: true });
+                const cx = c.getContext('2d', { "willReadFrequently": true });
                 cx.imageSmoothingEnabled = false;
                 cx.clearRect(0, 0, w, h);
                 cx.drawImage(templateBitmap, 0, 0);
                 const data = cx.getImageData(0, 0, w, h).data;
                 cleanUpCanvas(c);
                 c = null;
-                for (let y = 0; y < h; y++) {
-                  for (let x = 0; x < w; x++) {
+                // for (let y = 0; y < h; y++) {
+                //   for (let x = 0; x < w; x++) {
+                // Optimize for-loop
+                for (let y = this.drawMultCenter; y < h; y += this.drawMult) {
+                  for (let x = this.drawMultCenter; x < w; x += this.drawMult) {
                     // Only count center pixels of 3x blocks
-                    if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
+                    // if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
                     const idx = (y * w + x) * 4;
                     const r = data[idx];
                     const g = data[idx + 1];
