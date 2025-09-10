@@ -340,7 +340,7 @@ export default class TemplateManager {
           const tempWidth = template.bitmap.width;
           const tempHeight = template.bitmap.height;
           let tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
-          const tempContext = tempCanvas.getContext('2d', { "willReadFrequently": true });
+          const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
           tempContext.imageSmoothingEnabled = false;
           tempContext.clearRect(0, 0, tempWidth, tempHeight);
           tempContext.drawImage(template.bitmap, 0, 0);
@@ -496,7 +496,7 @@ export default class TemplateManager {
           const tempH = template.bitmap.height;
 
           let filterCanvas = new OffscreenCanvas(tempW, tempH);
-          const filterCtx = filterCanvas.getContext('2d', { "willReadFrequently": true });
+          const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
           filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
           filterCtx.clearRect(0, 0, tempW, tempH);
           filterCtx.drawImage(template.bitmap, 0, 0);
@@ -668,7 +668,7 @@ export default class TemplateManager {
                 const w = templateBitmap.width;
                 const h = templateBitmap.height;
                 let c = new OffscreenCanvas(w, h);
-                const cx = c.getContext('2d', { "willReadFrequently": true });
+                const cx = c.getContext('2d', { willReadFrequently: true });
                 cx.imageSmoothingEnabled = false;
                 cx.clearRect(0, 0, w, h);
                 cx.drawImage(templateBitmap, 0, 0);

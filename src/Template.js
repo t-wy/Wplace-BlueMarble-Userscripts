@@ -145,7 +145,7 @@ export default class Template {
     // Build a 1× scale canvas to inspect original pixels and count required vs deface
     try {
       let inspectCanvas = new OffscreenCanvas(imageWidth, imageHeight);
-      const inspectCtx = inspectCanvas.getContext('2d', { "willReadFrequently": true });
+      const inspectCtx = inspectCanvas.getContext('2d', { willReadFrequently: true });
       inspectCtx.imageSmoothingEnabled = false;
       inspectCtx.clearRect(0, 0, imageWidth, imageHeight);
       inspectCtx.drawImage(bitmap, 0, 0);
@@ -192,7 +192,7 @@ export default class Template {
     const templateTilesBuffers = {}; // Holds the buffers of the template tiles
 
     let canvas = new OffscreenCanvas(this.tileSize, this.tileSize);
-    const context = canvas.getContext('2d', { "willReadFrequently": true });
+    const context = canvas.getContext('2d', { willReadFrequently: true });
 
     // For every tile...
     for (let pixelY = this.coords[3]; pixelY < imageHeight + this.coords[3]; ) {
