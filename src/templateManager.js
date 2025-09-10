@@ -354,13 +354,17 @@ export default class TemplateManager {
 
           // Loops over all pixels in the template
           // Assigns each pixel a color (if center pixel)
-          for (let y = 0; y < tempHeight; y++) {
-            for (let x = 0; x < tempWidth; x++) {
+          // for (let y = 0; y < tempHeight; y++) {
+          //   for (let x = 0; x < tempWidth; x++) {
               // Purpose: Count which pixels are painted correctly???
 
               // Only evaluate the center pixel of each shread block
               // Skip if not the center pixel of the shread block
-              if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
+              // if ((x % this.drawMult) !== this.drawMultCenter || (y % this.drawMult) !== this.drawMultCenter) { continue; }
+          
+          // Optimize the above inefficient loop
+          for (let y = this.drawMultCenter; y < tempHeight; y += this.drawMult) {
+            for (let x = this.drawMultCenter; x < tempWidth; x += this.drawMult) {
 
               const gx = x + offsetX;
               const gy = y + offsetY;
