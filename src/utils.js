@@ -321,12 +321,32 @@ export function teleportToGeoCoords(lat, lng) {
         script.remove();
       }
     }
-  } else { // Fallback, without click feature
+  } else {
+    // Fallback, without click feature
+    // Used when the user is logged out or painting (all side buttons removed)
     const myLocationButton = document.querySelector(".right-3>button");
     if ( myLocationButton !== null ) {
-      const map = myLocationButton?.["__click"]?.[3]?.["v"];
-      if(map !== null && typeof map["version"] == "string") {// Sanity Check
-        teleportFunc = (lat, lng) => map["flyTo"]({'center': [lng, lat], 'zoom': 16});
+      if (myLocationButton["__click"] !== undefined) {
+        const map = myLocationButton["__click"][3]["v"];
+        if(map !== null && typeof map["version"] == "string") {// Sanity Check
+          teleportFunc = (lat, lng) => map["flyTo"]({'center': [lng, lat], 'zoom': 16});
+        }
+      } else {
+      // probably in some sandboxed environment like Userscripts
+        teleportFunc = (lat, lng) => {
+          const injectedFunc = () => {
+            const script = document.currentScript;
+            const lat = +script.getAttribute('bm-lat');
+            const lng = +script.getAttribute('bm-lng');
+            document.querySelector(".right-3>button")["__click"][3]["v"]["flyTo"]({'center': [lng, lat], 'zoom': 16});
+          };
+          const script = document.createElement('script');
+          script.setAttribute('bm-lat', lat);
+          script.setAttribute('bm-lng', lng);
+          script.textContent = `(${injectedFunc})();`;
+          document.documentElement?.appendChild(script);
+          script.remove();
+        }
       }
     }
   }
