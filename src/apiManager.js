@@ -49,15 +49,17 @@ export default class ApiManager {
   getFullRemainingTimeFormatted() {
     const remainingTimeMs = this.getFullRemainingTimeMs();
     if (remainingTimeMs === 0) {
-      return "FULL";
+      return "00:00";
     }
     const remainingTimeSeconds = Math.floor(remainingTimeMs / 1000);
     const hours = Math.floor(remainingTimeSeconds / 3600);
-    const minutes = Math.floor((remainingTimeSeconds % 3600) / 60);
-    const seconds = remainingTimeSeconds % 60;
-    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
-    if (minutes > 0) return `${minutes}m ${seconds}s`
-    return `${seconds}s`;
+    const minutes = (Math.floor((remainingTimeSeconds % 3600) / 60)).toString().padStart(2, '0');
+    const seconds = (remainingTimeSeconds % 60).toString().padStart(2, '0');
+    // if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
+    // if (minutes > 0) return `${minutes}m ${seconds}s`
+    // return `${seconds}s`;
+    if (hours > 0) return `${hours}:${minutes}:${seconds}`
+    return `${minutes}:${seconds}`
   }
 
   #updateCharges(overlay) {
