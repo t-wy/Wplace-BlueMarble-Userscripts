@@ -1,6 +1,8 @@
 Preview Image of the [Custom-Improve Branch](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve) of the This Fork:
 
-![Preview Image](assets/Preview.png)
+| Template | Overlay | Hinting |
+|-|-|-|
+| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Hinting](assets/Hinting.png) |
 
 More Information Regarding this Fork [Here](#regarding-this-fork).
 
