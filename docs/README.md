@@ -1,9 +1,8 @@
 Preview Image of This Fork:
 
-| Template | Overlay | Hinting |
-|-|-|-|
-| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Hinting](assets/Hinting.png) |
-
+| Template | Overlay |
+|-|-|
+| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) |
 More Information Regarding this Fork [Here](#regarding-this-fork).
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
@@ -101,7 +100,9 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
     <li>Testing semi-transparency for the Blue Marble Overlay.</li>
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
-    <li>Show the number of remaining count of each color and the coordinates of one of the pixels to be filled in the Alliance Leaderboard.</li>
+    <li>Show the filled count of each color.</li>
+    <li>Directly fly to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
+    <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
     <li>Show also geographical coordinates besides tile coordinates.</li>
     <li>Optimize the for-loop for faster response.</li>
   </ul>
