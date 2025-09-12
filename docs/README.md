@@ -1,8 +1,9 @@
 Preview Image of This Fork:
 
-| Template | Overlay |
-|-|-|
-| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) |
+| Template | Overlay | Pixel Info |
+|-|-|-|
+| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Pixel Info](assets/PixelInfo.png) |
+
 More Information Regarding this Fork [Here](#regarding-this-fork).
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
@@ -10,7 +11,7 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
 <table>
   <tr>
     <td><a href="#blue-marble">Blue Marble</a></td>
-    <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=banner4"></a></td>
+    <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=bann![alt text](image.png)er4"></a></td>
   </tr>
   <tr>
     <td>&emsp;<a href="#regarding-this-fork">Regarding this fork</a></td>
@@ -105,6 +106,7 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
     <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
     <li>Show also geographical coordinates besides tile coordinates.</li>
     <li>Optimize the for-loop for faster response.</li>
+    <li>Allow multiple templates to be used at the same time.</li>
   </ul>
 </p>
 
