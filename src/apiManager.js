@@ -132,7 +132,10 @@ export default class ApiManager {
 
         case 'me': // Request to retrieve user data
 
-          if (!(dataJSON['fallback'] ?? false)) clearInterval(this.fallbackMe);
+          if (this.fallbackMe !== null && !(dataJSON['fallback'] ?? false)) {
+            clearInterval(this.fallbackMe);
+            this.fallbackMe = null;
+          }
 
           // If the game can not retrieve the userdata...
           if (dataJSON['status'] && dataJSON['status']?.toString()[0] != '2') {
