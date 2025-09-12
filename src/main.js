@@ -382,7 +382,8 @@ function buildOverlayMain() {
               '#bm-input-file-template',           // Template file upload interface
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
-              '#bm-contain-colorfilter'            // Color filter UI
+              '#bm-contain-colorfilter',           // Color filter UI
+              '#bm-footer'                         // Footer credit text
             ];
             
             // Apply visibility changes to all toggleable elements
@@ -695,7 +696,7 @@ function buildOverlayMain() {
           }).buildElement()
         .buildElement()
       .buildElement()
-      .addDiv()
+      .addDiv({'id': 'bm-footer'})
         .addSmall({'textContent': `v${version} by SwingTheVine | Forked by TWY`, 'style': 'margin-top: auto;'}).buildElement()
       .buildElement()
     .buildElement()

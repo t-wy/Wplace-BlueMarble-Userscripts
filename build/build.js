@@ -111,7 +111,7 @@ let importedMapCSS = {}; // The imported CSS map
 
 // Only import a CSS map if we are NOT in production (GitHub Workflow)
 // Theoretically, if the previous map is always imported, the names would not scramble. However, the names would never decrease in number...
-if (!isGitHub) {
+if (true || !isGitHub) {
   try {
     importedMapCSS = JSON.parse(fs.readFileSync('dist/BlueMarble.user.css.map.json', 'utf8'));
   } catch {
