@@ -88,7 +88,7 @@ export default class ApiManager {
       const jsonData = logoutButton === null ? {
         "status": 401,
         "error": "Unauthorized"
-      } : logoutButton["__click"][2]["user"]["data"];
+      } : JSON.parse(JSON.stringify(logoutButton["__click"][2]["user"]["data"]));
       jsonData["fallback"] = true;
       window.postMessage({
         source: 'blue-marble',
