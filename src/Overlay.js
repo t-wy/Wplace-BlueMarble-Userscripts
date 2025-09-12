@@ -461,7 +461,7 @@ export default class Overlay {
 
     delete additionalProperties['textContent']; // Deletes the text content before applying the additional properties to the file input
 
-    const container = this.#createElement('div'); // Container for file input
+    const container = this.#createElement('span'); // Container for file input
     const input = this.#createElement('input', properties, additionalProperties); // Creates the file input
     this.buildElement(); // Signifies that we are done adding children to the file input
     const button = this.#createElement('button', {'textContent': text});

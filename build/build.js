@@ -22,6 +22,8 @@ const terser = require('terser');
 
 // const isGitHub = !!process.env?.GITHUB_ACTIONS; // Is this running in a GitHub Action Workflow?'
 const isGitHub = true;
+const isDebug = false;
+// const isDebug = true;
 
 console.log(`${consoleStyle.BLUE}Starting build...${consoleStyle.RESET}`);
 
@@ -102,7 +104,7 @@ let resultTerser = await terser.minify(resultEsbuildJS.text, {
   }
 });
 
-// resultTerser.code = resultEsbuildJS.text; // for debug
+if (isDebug) resultTerser.code = resultEsbuildJS.text; // no obfuscation
 
 // Writes the obfuscated/mangled JS code to a file
 fs.writeFileSync('dist/BlueMarble.user.js', resultTerser.code, 'utf8');
@@ -121,24 +123,29 @@ if (true || !isGitHub) {
 
 // Mangles the CSS selectors
 // If we are in production (GitHub Workflow), then generate the CSS mapping
-const mapCSS = mangleSelectors({
-  inputPrefix: 'bm-',
-  outputPrefix: 'bm-',
-  pathJS: 'dist/BlueMarble.user.js',
-  pathCSS: 'dist/BlueMarble.user.css',
-  importMap: importedMapCSS,
-  returnMap: isGitHub
-});
+if (!isDebug) {
+  const mapCSS = mangleSelectors({
+    inputPrefix: 'bm-',
+    outputPrefix: 'bm-',
+    pathJS: 'dist/BlueMarble.user.js',
+    pathCSS: 'dist/BlueMarble.user.css',
+    importMap: importedMapCSS,
+    returnMap: isGitHub
+  });
 
-// If a map was returned, write it to the file
-if (mapCSS) {
-  fs.writeFileSync('dist/BlueMarble.user.css.map.json', JSON.stringify(mapCSS, null, 2));
+  // If a map was returned, write it to the file
+  if (mapCSS) {
+    fs.writeFileSync('dist/BlueMarble.user.css.map.json', JSON.stringify(mapCSS, null, 2));
+  }
 }
 
 // Adds the banner
 fs.writeFileSync(
   'dist/BlueMarble.user.js', 
-  metaContent + fs.readFileSync('dist/BlueMarble.user.js', 'utf8'), 
+  metaContent + fs.readFileSync('dist/BlueMarble.user.js', 'utf8').replace(
+    '"<placeholder CSS>"',
+    JSON.stringify(fs.readFileSync('dist/BlueMarble.user.css', 'utf8'))
+  ), 
   'utf8'
 );
 

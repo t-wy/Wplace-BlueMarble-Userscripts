@@ -11,7 +11,7 @@ import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoord
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
 const consoleStyle = 'color: cornflowerblue;'; // The styling for the console logs
-const CSS_BM_File = "https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/refs/heads/custom-improve/dist/BlueMarble.user.css";
+// const CSS_BM_File = "https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/refs/heads/custom-improve/dist/BlueMarble.user.css";
 
 /** Injects code into the client
  * This code will execute outside of TamperMonkey's sandbox
@@ -188,18 +188,8 @@ inject(() => {
 });
 
 // Imports the CSS file from dist folder on github
-fetch(CSS_BM_File).then(cssOverlay => cssOverlay.text()).then(GM.addStyle);
-
-// Imports the Roboto Mono font family
-var stylesheetLink = document.createElement('link');
-stylesheetLink.href = 'https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap';
-stylesheetLink.rel = 'preload';
-stylesheetLink.as = 'style';
-stylesheetLink.onload = function () {
-  this.onload = null;
-  this.rel = 'stylesheet';
-};
-document.head?.appendChild(stylesheetLink);
+// fetch(CSS_BM_File).then(cssOverlay => cssOverlay.text()).then(GM.addStyle);
+GM.addStyle("<placeholder CSS>");
 
 // CONSTRUCTORS
 const observers = new Observers(); // Constructs a new Observers object
@@ -213,39 +203,39 @@ overlayMain.setApiManager(apiManager); // Sets the API manager
 GM.getValue('bmTemplates', '{}').then(storageTemplatesValue => {
   const storageTemplates = JSON.parse(storageTemplatesValue);
 
-console.log(storageTemplates);
-templateManager.importJSON(storageTemplates); // Loads the templates
+  console.log(storageTemplates);
+  templateManager.importJSON(storageTemplates); // Loads the templates
 
 }).then(() => { return (
 
-GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
-  const userSettings = JSON.parse(userSettingsValue);
+  GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
+    const userSettings = JSON.parse(userSettingsValue);
 
-console.log(userSettings);
-console.log(Object.keys(userSettings).length);
-if (Object.keys(userSettings).length == 0) {
-  const uuid = crypto.randomUUID(); // Generates a random UUID
-  console.log(uuid);
-  GM.setValue('bmUserSettings', JSON.stringify({
-    'uuid': uuid
-  }));
-}
-})
+    console.log(userSettings);
+    console.log(Object.keys(userSettings).length);
+    if (Object.keys(userSettings).length == 0) {
+      const uuid = crypto.randomUUID(); // Generates a random UUID
+      console.log(uuid);
+      GM.setValue('bmUserSettings', JSON.stringify({
+        'uuid': uuid
+      }));
+    }
+  })
 
 )}).then(() => 
 
-buildOverlayMain() // Builds the main overlay
+  buildOverlayMain() // Builds the main overlay
 
 ).then(() => {
 
-overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
+  overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
 
 
-apiManager.spontaneousResponseListener(overlayMain); // Reads spontaneous fetch responces
+  apiManager.spontaneousResponseListener(overlayMain); // Reads spontaneous fetch responces
 
-observeBlack(); // Observes the black palette color
+  observeBlack(); // Observes the black palette color
 
-consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
+  consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
 
 });
 
@@ -379,10 +369,10 @@ function buildOverlayMain() {
               '#bm-contain-userinfo',              // User information section (username, droplets, level)
               '#bm-overlay hr',                    // Visual separator lines
               '#bm-contain-automation > *:not(#bm-contain-coords)', // Automation section excluding coordinates
-              '#bm-input-file-template',           // Template file upload interface
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
               '#bm-contain-colorfilter',           // Color filter UI
+              '#bm-contain-templatefilter',        // Template filter UI
               '#bm-footer'                         // Footer credit text
             ];
             
@@ -603,7 +593,7 @@ function buildOverlayMain() {
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()
-        .addButton({'id': 'bm-button-teleport', 'className': 'bm-help', 'innerHTML': '✈️', 'title': 'Teleport'},
+        .addButton({'id': 'bm-button-teleport', 'className': 'bm-help', 'style': 'margin-top: 0;', 'innerHTML': '✈️', 'title': 'Teleport'},
           (instance, button) => {
             button.onclick = () => {
               teleportCoords();
@@ -611,7 +601,7 @@ function buildOverlayMain() {
           }
         ).buildElement()
       .buildElement()
-      // Color filter UI
+      // Color buttons
       .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-bottom: 6px;'})
         .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
           button.onclick = () => {
@@ -632,17 +622,13 @@ function buildOverlayMain() {
           };
         }).buildElement()
       .buildElement()
+      // Color filter UI
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
-      .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Upload Template', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}).buildElement()
+      // Template buttons
       .addDiv({'id': 'bm-contain-buttons-template'})
-        .addButton({'id': 'bm-button-enable', 'textContent': 'Enable'}, (instance, button) => {
-          button.onclick = () => {
-            instance.apiManager?.templateManager?.setTemplatesShouldBeDrawn(true);
-            instance.handleDisplayStatus(`Enabled templates!`);
-          }
-        }).buildElement()
+        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Upload Template', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
         .addButton({'id': 'bm-button-create', 'textContent': 'Create'}, (instance, button) => {
           button.onclick = () => {
             const input = document.querySelector('#bm-input-file-template');
@@ -669,13 +655,12 @@ function buildOverlayMain() {
             instance.handleDisplayStatus(`Drew to canvas!`);
           }
         }).buildElement()
-        .addButton({'id': 'bm-button-disable', 'textContent': 'Disable'}, (instance, button) => {
-          button.onclick = () => {
-            instance.apiManager?.templateManager?.setTemplatesShouldBeDrawn(false);
-            instance.handleDisplayStatus(`Disabled templates!`);
-          }
-        }).buildElement()
       .buildElement()
+      // Template filter UI
+      .addDiv({'id': 'bm-contain-templatefilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
+        .addDiv({'id': 'bm-templatefilter-list'}).buildElement()
+      .buildElement()
+      // Status
       .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}).buildElement()
       .addDiv({'id': 'bm-contain-buttons-action'})
         .addDiv()
@@ -715,14 +700,14 @@ function buildOverlayMain() {
     const entries = Object.entries(t.colorPalette)
       .sort((a,b) => b[1].count - a[1].count); // sort by frequency desc
 
-    const activeTemplate = templateManager.templatesArray?.[0]; // Get the first template
     const combinedPalette = {};
     for (const stats of templateManager.tileProgress.values()) {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
         if (combinedPalette[colorKey] === undefined) {
-          combinedPalette[colorKey] = content;
+          combinedPalette[colorKey] = Object.fromEntries(Object.entries(content));
           combinedPalette[colorKey]["examples"] = content["examples"].slice();
         } else {
+          combinedPalette[colorKey]["painted"] += content["painted"];
           combinedPalette[colorKey]["missing"] += content["missing"];
           combinedPalette[colorKey]["examples"].push(...content["examples"]);
         }
@@ -760,7 +745,7 @@ function buildOverlayMain() {
         const [r, g, b] = rgb.split(',').map(Number);
         swatch.style.background = `rgb(${r},${g},${b})`;
         try {
-          const tMeta = activeTemplate?.rgbToMeta?.get(rgb);
+          const tMeta = (templateManager.templatesArray ?? []).find(t => t.rgbToMeta?.has(rgb))?.rgbToMeta?.get(rgb);
           if (tMeta && typeof tMeta.id === 'number') {
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
             const starLeft = tMeta.premium ? '★ ' : '';
@@ -770,18 +755,18 @@ function buildOverlayMain() {
         } catch (ignored) {}
       }
       const paletteEntry = combinedPalette[colorKey];
-      const filledCount = meta.count - (paletteEntry?.missing ?? 0);
-      const filltedLabelText = `${filledCount.toLocaleString()}`;
-      label.textContent = `${colorName} • ${filltedLabelText} / ${labelText}`;
+      const filledCount = paletteEntry?.painted ?? 0;
+      const filledLabelText = `${filledCount.toLocaleString()}`;
+      label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
 
       swatch.addEventListener('click', () => {
-        if (paletteEntry?.examples) {
+        if ((paletteEntry?.examples?.length ?? 0) > 0) {
           const examples = paletteEntry["examples"];
           const exampleIndex = Math.floor(Math.random() * examples.length);
           teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
         }
       });
-      if (paletteEntry?.examples) {
+      if ((paletteEntry?.examples?.length ?? 0) > 0) {
         swatch.style["cursor"] = "pointer";
       };
 
@@ -809,10 +794,83 @@ function buildOverlayMain() {
     }
   };
 
+  window.buildTemplateFilterList = function buildTemplateFilterList() {
+    const listContainer = document.querySelector('#bm-templatefilter-list');
+    consoleLog(templateManager);
+    if (templateManager.templatesArray?.length === 0) {
+      if (listContainer) { listContainer.innerHTML = '<small>No templates to display.</small>'; }
+      return;
+    }
+
+    listContainer.innerHTML = '';
+    const entries = templateManager.templatesArray;
+
+    const combinedTemplate = {};
+    for (const stats of templateManager.tileProgress.values()) {
+      Object.entries(stats.template).forEach(([storageKey, content]) => {
+        if (combinedTemplate[storageKey] === undefined) {
+          combinedTemplate[storageKey] = Object.fromEntries(Object.entries(content));
+        } else {
+          combinedTemplate[storageKey]["painted"] += content["painted"];
+        }
+      })
+    };
+
+    for (const template of entries) {
+      let row = document.createElement('div');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '8px';
+      row.style.margin = '4px 0';
+
+      let removeButton = document.createElement('a');
+      removeButton.textContent = "🗑️";
+      removeButton.style.fontSize = '12px';
+      removeButton.onclick = () => {
+        if (confirm(`Delete template ${template?.displayName}?`)) {
+          templateManager.deleteTemplate(template?.storageKey);
+        }
+      }
+
+      let label = document.createElement('span');
+      label.style.fontSize = '12px';
+      const labelText = `${template.requiredPixelCount.toLocaleString()}`;
+
+      const templateName = template["displayName"];
+      const filledCount = combinedTemplate[template.storageKey]?.painted ?? 0;
+      const filledLabelText = `${filledCount.toLocaleString()}`;
+      label.textContent = `${templateName} • ${filledLabelText} / ${labelText}`;
+      // label.textContent = `${templateName} • ${labelText}`;
+
+      const toggle = document.createElement('input');
+      toggle.type = 'checkbox';
+      toggle.checked = template.enabled;
+      toggle.addEventListener('change', () => {
+        template.enabled = toggle.checked;
+        overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
+        try {
+          const key = template?.storageKey;
+          if (key && templateManager.templatesJSON?.templates?.[key]) {
+            templateManager.templatesJSON.templates[key].enabled = template.enabled;
+            // persist immediately
+            GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
+          }
+        } catch (_) {}
+      });
+
+      row.appendChild(toggle);
+      row.appendChild(removeButton);
+      row.appendChild(label);
+      listContainer.appendChild(row);
+    }
+  };
+
   // Listen for template creation/import completion to (re)build palette list
   window.addEventListener('message', (event) => {
     if (event?.data?.bmEvent === 'bm-rebuild-color-list') {
       try { buildColorFilterList(); } catch (_) {}
+    } else if (event?.data?.bmEvent === 'bm-rebuild-template-list') {
+      try { buildTemplateFilterList(); } catch (_) {}
     }
   });
 
@@ -823,6 +881,11 @@ function buildOverlayMain() {
         const colorUI = document.querySelector('#bm-contain-colorfilter');
         if (colorUI) { colorUI.style.display = ''; }
         buildColorFilterList();
+      }
+      if (templateManager.templatesArray?.length > 0) {
+        const templateUI = document.querySelector('#bm-contain-templatefilter');
+        if (templateUI) { templateUI.style.display = ''; }
+        buildTemplateFilterList();
       }
     } catch (_) {}
   }, 0);

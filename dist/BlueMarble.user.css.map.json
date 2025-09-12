@@ -39,5 +39,8 @@
   "bm-button-teleport": "bm-N",
   "bm-lat": "bm-1b",
   "bm-lng": "bm-1c",
-  "bm-footer": "bm-1e"
+  "bm-footer": "bm-1e",
+  "bm-contain-templatefilter": "bm-L",
+  "bm-rebuild-template-list": "bm-N",
+  "bm-templatefilter-list": "bm-Q"
 }

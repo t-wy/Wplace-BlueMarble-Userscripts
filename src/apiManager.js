@@ -134,17 +134,19 @@ export default class ApiManager {
 
         case 'me': // Request to retrieve user data
 
-          if (this.fallbackMe !== null && !(dataJSON['fallback'] ?? false)) {
-            clearInterval(this.fallbackMe);
-            this.fallbackMe = null;
-          }
-
           // If the game can not retrieve the userdata...
           if (dataJSON['status'] && dataJSON['status']?.toString()[0] != '2') {
             // The server is probably down (NOT a 2xx status)
             
-            overlay.handleDisplayError(`You are not logged in!\nCould not fetch userdata.`);
+            if (!(dataJSON['fallback'] ?? false)) {
+              overlay.handleDisplayError(`You are not logged in!\nCould not fetch userdata.`);
+            }
             return; // Kills itself before attempting to display null userdata
+          }
+
+          if (this.fallbackMe !== null && !(dataJSON['fallback'] ?? false)) {
+            clearInterval(this.fallbackMe);
+            this.fallbackMe = null;
           }
 
           const nextLevelPixels = Math.ceil(Math.pow(Math.floor(dataJSON['level']) * Math.pow(30, 0.65), (1/0.65)) - dataJSON['pixelsPainted']); // Calculates pixels to the next level
@@ -227,20 +229,22 @@ export default class ApiManager {
           const blobData = data['blobData'];
           const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
           const lastModified = data["lastModified"];
-          const activeTemplate = this.templateManager.templatesArray?.[0]; // Get the first template
-          const palette = activeTemplate?.colorPalette || {}; // Obtain the color palette of the template
-          const paletteKey = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join('|');
-          const templateKey = Object.keys(activeTemplate?.chunked || {}).sort().join('|');
+          const fullKey = (this.templateManager.templatesArray?? []).map(template => {
+            const enabled = template.enabled ?? true;
+            const palette = template.colorPalette || {}; // Obtain the color palette of the template
+            const paletteStatus = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join(';');
+            const templateIdentifier = Object.keys(template.chunked || {}).sort().join(';');
+            return `${+enabled}|${paletteStatus}|${templateIdentifier}`
+          }).join("||");
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {
             if (
-              this.tileCache[tileKey][0] === lastModified &&
-              this.tileCache[tileKey][1] === paletteKey &&
-              this.tileCache[tileKey][2] === templateKey
+              this.tileCache[tileKey]["lastModified"] === lastModified &&
+              this.tileCache[tileKey]["fullKey"] === fullKey
             ) {
               console.log(`Unchanged tile: "${tileKey}"`);
-              templateBlob = this.tileCache[tileKey][3];
+              templateBlob = this.tileCache[tileKey]["templateBlob"];
             }
           }
           
@@ -258,7 +262,7 @@ export default class ApiManager {
                 return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
               })
             ) {
-              this.tileCache[tileKey] = [ lastModified, paletteKey, templateKey, templateBlob ];
+              this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
             }
           }
 
@@ -269,54 +273,6 @@ export default class ApiManager {
             blink: data['blink']
           });
           break;
-
-        // case 'today': // Request to retrieve alliance information
-        //   const blobUUID_ = data['blobID'];
-
-        //   const activeTemplate_ = this.templateManager.templatesArray?.[0]; // Get the first template
-        //   const palette_ = activeTemplate_?.colorPalette || {}; // Obtain the color palette of the template
-        //   const combinedPalette = {};
-        //   for (const stats of this.templateManager.tileProgress.values()) {
-        //     Object.entries(stats.palette).forEach(([colorKey, content]) => {
-        //       if (combinedPalette[colorKey] === undefined) {
-        //         combinedPalette[colorKey] = content;
-        //         combinedPalette[colorKey]["examples"] = content["examples"].slice();
-        //       } else {
-        //         combinedPalette[colorKey]["missing"] += content["missing"];
-        //         combinedPalette[colorKey]["examples"].push(...content["examples"]);
-        //       }
-        //     })
-        //   }
-
-        //   const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
-        //     const [r, g, b] = color.rgb;
-        //     return [`${r},${g},${b}`, color];
-        //   }))
-
-        //   const jsonData = Object.keys(palette_).filter(
-        //     colorKey => combinedPalette[colorKey] !== undefined
-        //   ).map(colorKey => {
-        //     const entry = combinedPalette[colorKey];
-        //     const exampleIndex = Math.floor(Math.random() * entry["examples"].length);
-        //     const geoCoords = coordsTileToGeoCoords(entry["examples"][exampleIndex][0], entry["examples"][exampleIndex][1]);
-        //     return {
-        //       "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
-        //       "name": colorpaletteRev[colorKey]?.name ?? colorKey,
-        //       "equippedFlag": 0,
-        //       "pixelsPainted": -entry.missing,
-        //       "lastLatitude": geoCoords[0],
-        //       "lastLongitude": geoCoords[1],
-        //       // "discord": ""
-        //     };
-        //   }).sort((a, b) => a.pixelsPainted - b.pixelsPainted);
-
-        //   window.postMessage({
-        //     source: 'blue-marble',
-        //     blobID: blobUUID_,
-        //     blobData: JSON.stringify(jsonData),
-        //     blink: data['blink']
-        //   });
-        //   break;
 
         case 'robots': // Request to retrieve what script types are allowed
           this.disableAll = dataJSON['userscript']?.toString().toLowerCase() == 'false'; // Disables Blue Marble if site owner wants userscripts disabled

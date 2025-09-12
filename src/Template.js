@@ -38,6 +38,7 @@ export default class Template {
     this.coords = coords;
     this.chunked = chunked;
     this.tileSize = tileSize;
+    this.enabled = true;
     this.pixelCount = 0; // Total pixel count in template
     this.requiredPixelCount = 0; // Total number of non-transparent, non-#deface pixels
     this.defacePixelCount = 0; // Number of #deface pixels (represents Transparent color in-game)
@@ -308,8 +309,6 @@ export default class Template {
         const canvasBuffer = await canvasBlob.arrayBuffer();
         const canvasBufferBytes = Array.from(new Uint8Array(canvasBuffer));
         templateTilesBuffers[templateTileName] = uint8ToBase64(canvasBufferBytes); // Stores the buffer
-        cleanUpCanvas(canvas);
-        canvas = null;
 
         console.log(templateTiles);
 
@@ -318,6 +317,8 @@ export default class Template {
 
       pixelY += drawSizeY;
     }
+    cleanUpCanvas(canvas);
+    canvas = null;
 
     console.log('Template Tiles: ', templateTiles);
     console.log('Template Tiles Buffers: ', templateTilesBuffers);
