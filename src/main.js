@@ -88,34 +88,34 @@ inject(() => {
       // Since this code does not run in the userscript, we can't use consoleLog().
       console.log(`%c${name}%c: Sending JSON message about endpoint "${endpointName}"`, consoleStyle, '');
       // Sends a message about the endpoint it spied on
-      if (endpointName.endsWith("/alliance/leaderboard/today")) {
-        // modify the response to show remaining tile count
-        const blink = Date.now(); // Current time
+      // if (endpointName.endsWith("/alliance/leaderboard/today")) {
+      //   // modify the response to show remaining tile count
+      //   const blink = Date.now(); // Current time
 
-        return new Promise((resolve) => {
-          const blobUUID = crypto.randomUUID(); // Generates a random UUID
-          fetchedBlobQueue.set(blobUUID, (blobProcessed) => {
-            // The response that triggers when the blob is finished processing
+      //   return new Promise((resolve) => {
+      //     const blobUUID = crypto.randomUUID(); // Generates a random UUID
+      //     fetchedBlobQueue.set(blobUUID, (blobProcessed) => {
+      //       // The response that triggers when the blob is finished processing
 
-            // Creates a new response
-            resolve(new Response(blobProcessed, {
-              headers: cloned.headers,
-              status: cloned.status,
-              statusText: cloned.statusText
-            }));
+      //       // Creates a new response
+      //       resolve(new Response(blobProcessed, {
+      //         headers: cloned.headers,
+      //         status: cloned.status,
+      //         statusText: cloned.statusText
+      //       }));
 
-            // Since this code does not run in the userscript, we can't use consoleLog().
-            console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
-          });
+      //       // Since this code does not run in the userscript, we can't use consoleLog().
+      //       console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
+      //     });
 
-          window.postMessage({
-            source: 'blue-marble',
-            endpoint: endpointName,
-            blobID: blobUUID,
-            blink: blink,
-          });
-        });
-      } else {
+      //     window.postMessage({
+      //       source: 'blue-marble',
+      //       endpoint: endpointName,
+      //       blobID: blobUUID,
+      //       blink: blink,
+      //     });
+      //   });
+      // } else {
         cloned.json()
           .then(jsonData => {
             window.postMessage({
@@ -127,7 +127,7 @@ inject(() => {
           .catch(err => {
             console.error(`%c${name}%c: Failed to parse JSON: `, consoleStyle, '', err);
           });
-      }
+      // }
     } else if (contentType.includes('image/') && (!endpointName.includes('openfreemap') && !endpointName.includes('maps'))) {
       // Fetch custom for all images but opensourcemap
 
