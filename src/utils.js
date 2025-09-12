@@ -282,6 +282,7 @@ function findGadget(condition) {
       if (searchResult !== null) return searchResult;
     }
   }
+  return null;
 }
 
 /** Teleport user to coordinate
@@ -297,12 +298,40 @@ export function teleportToGeoCoords(lat, lng) {
   //       'center': [lng, lat],
   //       'zoom': 16,
   //   })
-  const allianceButton = document.querySelector(".btn.btn-square.relative.shadow-md");
-  const lastPixelFunc = allianceButton === null ? null : allianceButton["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"];
-  if (lastPixelFunc != null) {
-    lastPixelFunc(
-      {"lat": lat, "lng": lng}
-    );
+  const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+  let teleportFunc = null;
+  if ( allianceButton !== null ) {
+    if (allianceButton["__click"] !== undefined) {
+      const lastPixelFunc = allianceButton === null ? null : allianceButton["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"];
+      teleportFunc = (lat, lng) => lastPixelFunc({"lat": lat, "lng": lng});
+    } else {
+      // probably in some sandboxed environment like Userscripts
+      teleportFunc = (lat, lng) => {
+        const injectedFunc = () => {
+          const script = document.currentScript;
+          const lat = +script.getAttribute('bm-lat');
+          const lng = +script.getAttribute('bm-lng');
+          document.querySelector(".flex>.btn.btn-square.relative.shadow-md")["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"]({"lat": lat, "lng": lng});
+        };
+        const script = document.createElement('script');
+        script.setAttribute('bm-lat', lat);
+        script.setAttribute('bm-lng', lng);
+        script.textContent = `(${injectedFunc})();`;
+        document.documentElement?.appendChild(script);
+        script.remove();
+      }
+    }
+  } else { // Fallback, without click feature
+    const myLocationButton = document.querySelector(".right-3>button");
+    if ( myLocationButton !== null ) {
+      const map = myLocationButton?.["__click"]?.[3]?.["v"];
+      if(map !== null && typeof map["version"] == "string") {// Sanity Check
+        teleportFunc = (lat, lng) => map["flyTo"]({'center': [lng, lat], 'zoom': 16});
+      }
+    }
+  }
+  if (teleportFunc !== null) {
+    teleportFunc(lat, lng);
   } else { // fallback
     const url = `https://wplace.live/?lat=${lat}&lng=${lng}&zoom=14`;
     window.location.href = url;

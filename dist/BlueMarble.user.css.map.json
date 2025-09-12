@@ -36,5 +36,7 @@
   "bm-cStyle": "bm-y",
   "bm-canvas": "bm-z",
   "bm-help": "bm-A",
-  "bm-name": "bm-B"
+  "bm-name": "bm-B",
+  "bm-lat": "bm-C",
+  "bm-lng": "bm-D"
 }

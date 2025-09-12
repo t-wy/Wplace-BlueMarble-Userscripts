@@ -85,7 +85,7 @@ export default class ApiManager {
   #setFallbackMe() {
     this.fallbackMe = setInterval(() => {
       const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-      const jsonData = logoutButton === null ? {
+      const jsonData = (logoutButton === null || logoutButton["__click"] === undefined) ? {
         "status": 401,
         "error": "Unauthorized"
       } : JSON.parse(JSON.stringify(logoutButton["__click"][2]["user"]["data"]));
