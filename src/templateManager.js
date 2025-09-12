@@ -602,6 +602,7 @@ export default class TemplateManager {
 
     cleanUpCanvas(canvas);
     canvas = null;
+    window.buildColorFilterList();
 
     return resultBlob;
   }

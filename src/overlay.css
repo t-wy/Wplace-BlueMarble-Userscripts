@@ -191,7 +191,7 @@ div:has(> #bm-button-teleport) {
 }
 
 /* Automation button container */
-#bm-contain-buttons-template {
+#bm-contain-buttons-template, #bm-button-colors-container {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -250,6 +250,7 @@ input[type="file"][id*="template"] {
 #bm-contain-automation,
 #bm-contain-coords,
 #bm-contain-buttons-template,
+#bm-button-colors-container,
 div:has(> #bm-input-file-template),
 #bm-output-status {
   margin-top: 0.5em;

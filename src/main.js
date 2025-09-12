@@ -611,27 +611,27 @@ function buildOverlayMain() {
         ).buildElement()
       .buildElement()
       // Color filter UI
+      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-bottom: 6px;'})
+        .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
+          button.onclick = () => {
+            const t = templateManager.templatesArray[0];
+            if (!t?.colorPalette) { return; }
+            Object.values(t.colorPalette).forEach(v => v.enabled = true);
+            buildColorFilterList();
+            instance.handleDisplayStatus('Enabled all colors');
+          };
+        }).buildElement()
+        .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
+          button.onclick = () => {
+            const t = templateManager.templatesArray[0];
+            if (!t?.colorPalette) { return; }
+            Object.values(t.colorPalette).forEach(v => v.enabled = false);
+            buildColorFilterList();
+            instance.handleDisplayStatus('Disabled all colors');
+          };
+        }).buildElement()
+      .buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
-        .addDiv({'style': 'display: flex; gap: 6px; margin-bottom: 6px;'})
-          .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
-            button.onclick = () => {
-              const t = templateManager.templatesArray[0];
-              if (!t?.colorPalette) { return; }
-              Object.values(t.colorPalette).forEach(v => v.enabled = true);
-              buildColorFilterList();
-              instance.handleDisplayStatus('Enabled all colors');
-            };
-          }).buildElement()
-          .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
-            button.onclick = () => {
-              const t = templateManager.templatesArray[0];
-              if (!t?.colorPalette) { return; }
-              Object.values(t.colorPalette).forEach(v => v.enabled = false);
-              buildColorFilterList();
-              instance.handleDisplayStatus('Disabled all colors');
-            };
-          }).buildElement()
-        .buildElement()
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
       .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Upload Template', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}).buildElement()
@@ -714,6 +714,20 @@ function buildOverlayMain() {
     const entries = Object.entries(t.colorPalette)
       .sort((a,b) => b[1].count - a[1].count); // sort by frequency desc
 
+    const activeTemplate = templateManager.templatesArray?.[0]; // Get the first template
+    const combinedPalette = {};
+    for (const stats of templateManager.tileProgress.values()) {
+      Object.entries(stats.palette).forEach(([colorKey, content]) => {
+        if (combinedPalette[colorKey] === undefined) {
+          combinedPalette[colorKey] = content;
+          combinedPalette[colorKey]["examples"] = content["examples"].slice();
+        } else {
+          combinedPalette[colorKey]["missing"] += content["missing"];
+          combinedPalette[colorKey]["examples"].push(...content["examples"]);
+        }
+      })
+    };
+
     for (const [rgb, meta] of entries) {
       let row = document.createElement('div');
       row.style.display = 'flex';
@@ -728,28 +742,47 @@ function buildOverlayMain() {
 
       let label = document.createElement('span');
       label.style.fontSize = '12px';
-      let labelText = `${meta.count.toLocaleString()}`;
+      const labelText = `${meta.count.toLocaleString()}`;
 
+      let colorName = '';
+      let colorKey = '';
       // Special handling for "other" and "transparent"
       if (rgb === 'other') {
         swatch.style.background = '#888'; // Neutral color for "Other"
-        labelText = `Other • ${labelText}`;
+        colorName = "Other";
+        colorKey = "other";
       } else if (rgb === '#deface') {
         swatch.style.background = '#deface';
-        labelText = `Transparent • ${labelText}`;
+        colorName = "Transparent";
+        colorKey = "transparent";
       } else {
         const [r, g, b] = rgb.split(',').map(Number);
         swatch.style.background = `rgb(${r},${g},${b})`;
         try {
-          const tMeta = templateManager.templatesArray?.[0]?.rgbToMeta?.get(rgb);
+          const tMeta = activeTemplate?.rgbToMeta?.get(rgb);
           if (tMeta && typeof tMeta.id === 'number') {
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
             const starLeft = tMeta.premium ? '★ ' : '';
-            labelText = `#${tMeta.id} ${starLeft}${displayName} • ${labelText}`;
+            colorName = `#${tMeta.id} ${starLeft}${displayName}`;
+            colorKey = `${r},${g},${b}`;
           }
         } catch (ignored) {}
       }
-      label.textContent = labelText;
+      const paletteEntry = combinedPalette[colorKey];
+      const filledCount = meta.count - (paletteEntry?.missing ?? 0);
+      const filltedLabelText = `${filledCount.toLocaleString()}`;
+      label.textContent = `${colorName} • ${filltedLabelText} / ${labelText}`;
+
+      swatch.addEventListener('click', () => {
+        if (paletteEntry?.examples) {
+          const examples = paletteEntry["examples"];
+          const exampleIndex = Math.floor(Math.random() * examples.length);
+          teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
+        }
+      });
+      if (paletteEntry?.examples) {
+        swatch.style["cursor"] = "pointer";
+      };
 
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';

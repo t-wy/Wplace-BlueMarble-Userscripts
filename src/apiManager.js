@@ -265,53 +265,53 @@ export default class ApiManager {
           });
           break;
 
-        case 'today': // Request to retrieve alliance information
-          const blobUUID_ = data['blobID'];
+        // case 'today': // Request to retrieve alliance information
+        //   const blobUUID_ = data['blobID'];
 
-          const activeTemplate_ = this.templateManager.templatesArray?.[0]; // Get the first template
-          const palette_ = activeTemplate_?.colorPalette || {}; // Obtain the color palette of the template
-          const combinedPalette = {};
-          for (const stats of this.templateManager.tileProgress.values()) {
-            Object.entries(stats.palette).forEach(([colorKey, content]) => {
-              if (combinedPalette[colorKey] === undefined) {
-                combinedPalette[colorKey] = content;
-                combinedPalette[colorKey]["examples"] = content["examples"].slice();
-              } else {
-                combinedPalette[colorKey]["missing"] += content["missing"];
-                combinedPalette[colorKey]["examples"].push(...content["examples"]);
-              }
-            })
-          }
+        //   const activeTemplate_ = this.templateManager.templatesArray?.[0]; // Get the first template
+        //   const palette_ = activeTemplate_?.colorPalette || {}; // Obtain the color palette of the template
+        //   const combinedPalette = {};
+        //   for (const stats of this.templateManager.tileProgress.values()) {
+        //     Object.entries(stats.palette).forEach(([colorKey, content]) => {
+        //       if (combinedPalette[colorKey] === undefined) {
+        //         combinedPalette[colorKey] = content;
+        //         combinedPalette[colorKey]["examples"] = content["examples"].slice();
+        //       } else {
+        //         combinedPalette[colorKey]["missing"] += content["missing"];
+        //         combinedPalette[colorKey]["examples"].push(...content["examples"]);
+        //       }
+        //     })
+        //   }
 
-          const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
-            const [r, g, b] = color.rgb;
-            return [`${r},${g},${b}`, color];
-          }))
+        //   const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
+        //     const [r, g, b] = color.rgb;
+        //     return [`${r},${g},${b}`, color];
+        //   }))
 
-          const jsonData = Object.keys(palette_).filter(
-            colorKey => combinedPalette[colorKey] !== undefined
-          ).map(colorKey => {
-            const entry = combinedPalette[colorKey];
-            const exampleIndex = Math.floor(Math.random() * entry["examples"].length);
-            const geoCoords = coordsTileToGeoCoords(entry["examples"][exampleIndex][0], entry["examples"][exampleIndex][1]);
-            return {
-              "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
-              "name": colorpaletteRev[colorKey]?.name ?? colorKey,
-              "equippedFlag": 0,
-              "pixelsPainted": -entry.missing,
-              "lastLatitude": geoCoords[0],
-              "lastLongitude": geoCoords[1],
-              // "discord": ""
-            };
-          }).sort((a, b) => a.pixelsPainted - b.pixelsPainted);
+        //   const jsonData = Object.keys(palette_).filter(
+        //     colorKey => combinedPalette[colorKey] !== undefined
+        //   ).map(colorKey => {
+        //     const entry = combinedPalette[colorKey];
+        //     const exampleIndex = Math.floor(Math.random() * entry["examples"].length);
+        //     const geoCoords = coordsTileToGeoCoords(entry["examples"][exampleIndex][0], entry["examples"][exampleIndex][1]);
+        //     return {
+        //       "userId": -(colorpaletteRev[colorKey]?.id ?? 999),
+        //       "name": colorpaletteRev[colorKey]?.name ?? colorKey,
+        //       "equippedFlag": 0,
+        //       "pixelsPainted": -entry.missing,
+        //       "lastLatitude": geoCoords[0],
+        //       "lastLongitude": geoCoords[1],
+        //       // "discord": ""
+        //     };
+        //   }).sort((a, b) => a.pixelsPainted - b.pixelsPainted);
 
-          window.postMessage({
-            source: 'blue-marble',
-            blobID: blobUUID_,
-            blobData: JSON.stringify(jsonData),
-            blink: data['blink']
-          });
-          break;
+        //   window.postMessage({
+        //     source: 'blue-marble',
+        //     blobID: blobUUID_,
+        //     blobData: JSON.stringify(jsonData),
+        //     blink: data['blink']
+        //   });
+        //   break;
 
         case 'robots': // Request to retrieve what script types are allowed
           this.disableAll = dataJSON['userscript']?.toString().toLowerCase() == 'false'; // Disables Blue Marble if site owner wants userscripts disabled
