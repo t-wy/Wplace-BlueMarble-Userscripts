@@ -22,6 +22,8 @@ export default class ApiManager {
     this.chargesUpdated = null;
     this.chargeInterval = null;
     this.tileCache = {};
+    this.fallbackMe = null; // Interval for updating from the fallback "me"
+    this.#setFallbackMe();
   }
 
   getCurrentCharges() {
@@ -36,8 +38,38 @@ export default class ApiManager {
     return currentCharges;
   }
 
+  getFullRemainingTimeMs() {
+    const currentCharges = this.getCurrentCharges();
+    if (currentCharges >= this.charges["max"]) {
+      return 0;
+    }
+    return (this.charges["max"] - currentCharges) * this.charges["cooldownMs"];
+  }
+
+  getFullRemainingTimeFormatted() {
+    const remainingTimeMs = this.getFullRemainingTimeMs();
+    if (remainingTimeMs === 0) {
+      return "FULL";
+    }
+    const remainingTimeSeconds = Math.floor(remainingTimeMs / 1000);
+    const hours = Math.floor(remainingTimeSeconds / 3600);
+    const minutes = Math.floor((remainingTimeSeconds % 3600) / 60);
+    const seconds = remainingTimeSeconds % 60;
+    if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`
+    if (minutes > 0) return `${minutes}m ${seconds}s`
+    return `${seconds}s`;
+  }
+
   #updateCharges(overlay) {
-    overlay.updateInnerHTML('bm-user-charges', `Charges: <b>${new Intl.NumberFormat().format(Math.floor(this.getCurrentCharges()))} / ${new Intl.NumberFormat().format(this.charges["max"])}</b>`); // Updates the text content of the charges field
+    const currentCharges = Math.floor(this.getCurrentCharges());
+    const maxCharges = this.charges["max"];
+    const currentChargesStr = new Intl.NumberFormat().format(currentCharges);
+    const maxChargesStr = new Intl.NumberFormat().format(maxCharges);
+    const chargeText = `<span style="color: lightgray; font-size: 0.8em;">(${currentChargesStr} / ${maxChargesStr})</span>`;
+    const countDown = `<b style="color: orange">${this.getFullRemainingTimeFormatted()}</b>`;
+    overlay.updateInnerHTML(
+      'bm-user-charges', `Full Charges in ${countDown} ${chargeText}`
+    ); // Updates the text content of the charges field
   }
 
   #setUpTimeout(overlay) {
@@ -47,6 +79,22 @@ export default class ApiManager {
     }
     this.chargeInterval = setInterval(() => {
       this.#updateCharges(overlay);
+    }, 1000);
+  }
+
+  #setFallbackMe() {
+    this.fallbackMe = setInterval(() => {
+      const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
+      const jsonData = logoutButton === null ? {
+        "status": 401,
+        "error": "Unauthorized"
+      } : logoutButton["__click"][2]["user"]["data"];
+      jsonData["fallback"] = true;
+      window.postMessage({
+        source: 'blue-marble',
+        endpoint: "https://backend.wplace.live/me",
+        jsonData: jsonData
+      }, '*');
     }, 1000);
   }
 
@@ -84,6 +132,8 @@ export default class ApiManager {
 
         case 'me': // Request to retrieve user data
 
+          if (!(dataJSON['fallback'] ?? false)) clearInterval(this.fallbackMe);
+
           // If the game can not retrieve the userdata...
           if (dataJSON['status'] && dataJSON['status']?.toString()[0] != '2') {
             // The server is probably down (NOT a 2xx status)
@@ -108,7 +158,7 @@ export default class ApiManager {
           overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
           this.#setUpTimeout(overlay);
           overlay.updateInnerHTML('bm-user-droplets', `Droplets: <b>${new Intl.NumberFormat().format(dataJSON['droplets'])}</b>`); // Updates the text content of the droplets field
-          overlay.updateInnerHTML('bm-user-nextlevel', `Next level in <b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> pixel${nextLevelPixels == 1 ? '' : 's'}`); // Updates the text content of the next level field
+          overlay.updateInnerHTML('bm-user-nextlevel', `<b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> pixel${nextLevelPixels == 1 ? '' : 's'} to Lv. ${Math.floor(dataJSON['level']) + 1}`); // Updates the text content of the next level field
           break;
 
         case 'pixel': // Request to retrieve pixel data

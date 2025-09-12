@@ -242,3 +242,79 @@ export function cleanUpCanvas(canvas) {
   if (canvas.constructor === HTMLCanvasElement) canvas.remove(); // not for OffscreenCanvas
   canvas = null;
 }
+
+/**
+ * A browser helper function to find the gadget exposed in the DOM tree
+ * @since 0.85.9
+ */
+function findGadget(condition) {
+  const seen = new Set();
+  const allElements = [...document.querySelectorAll("*")];
+  function search(parent, path, element, maxDepth) {
+    if (condition(element)) {
+      return [parent, path, element];
+    }
+    if (maxDepth === 0) {
+      return null;
+    }
+    if (typeof element === "object") {
+      if (Array.isArray(element)) {
+        for (const [index, value] of Object.entries(element)) {
+          if (seen.has(value)) continue;
+          seen.add(value);
+          const searchResult = search(parent, path + "[" + index + "]", value, maxDepth - 1);
+          if (searchResult !== null) return searchResult;
+        }
+      } else {
+        for (const [key, value] of Object.entries(element)) {
+          if (seen.has(value)) continue;
+          seen.add(value);
+          const searchResult = search(parent, path + "." + key, value, maxDepth - 1);
+          if (searchResult !== null) return searchResult;
+        }
+      }
+    }
+    return null;
+  }
+  for (const element of allElements) {
+    if (element.__click) {
+      const searchResult = search(element, ".__click", element.__click, 5);
+      if (searchResult !== null) return searchResult;
+    }
+  }
+}
+
+/** Teleport user to coordinate
+ * @param {*} lat - latitude
+ * @param {*} lng - longitude
+ * @since 0.85.9
+ */
+export function teleportToGeoCoords(lat, lng) {
+  // const myLocationButton = document.getElementsByClassName("right-3")[0]?.childNodes?.[0];
+  // const map = myLocationButton?.["__click"]?.[3]?.["v"];
+  // if(map !== null && typeof map["version"] == "string") { // Sanity Check
+  //   map["flyTo"]({
+  //       'center': [lng, lat],
+  //       'zoom': 16,
+  //   })
+  const allianceButton = document.querySelector(".btn.btn-square.relative.shadow-md");
+  const lastPixelFunc = allianceButton === null ? null : allianceButton["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"];
+  if (lastPixelFunc != null) {
+    lastPixelFunc(
+      {"lat": lat, "lng": lng}
+    );
+  } else { // fallback
+    const url = `https://wplace.live/?lat=${lat}&lng=${lng}&zoom=14`;
+    window.location.href = url;
+  }
+}
+
+/** Teleport user to coordinate
+ * @param {number[]} coordsTile
+ * @param {number[]} coordsPixel
+ * @since 0.85.9
+ */
+export function teleportToTileCoords(coordsTile, coordsPixel) {
+  const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
+  teleportToGeoCoords(geoCoords[0], geoCoords[1]);
+}

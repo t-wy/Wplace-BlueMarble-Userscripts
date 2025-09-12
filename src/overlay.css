@@ -3,7 +3,7 @@
 /* The entire overlay */
 #bm-overlay {
   position: fixed;
-  background-color: rgba(21, 48, 99, 0.5);
+  background-color: rgba(21, 48, 99, 0.8);
   color: white;
   padding: 10px;
   border-radius: 8px;
@@ -36,7 +36,8 @@ div#bm-overlay {
    * Linux fallback (DejaVu Sans Mono)
    * Any possible monospace font (monospace)
    * Last resort (Arial) */
-  font-family: 'Roboto Mono', 'Courier New', 'Monaco', 'DejaVu Sans Mono', monospace, 'Arial';
+  /* font-family: 'Roboto Mono', 'Courier New', 'Monaco', 'DejaVu Sans Mono', monospace, 'Arial'; */
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Monaco', 'DejaVu Sans', sans-serif;
   letter-spacing: 0.05em;
 }
 

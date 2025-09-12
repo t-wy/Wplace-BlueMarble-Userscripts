@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords } from './utils.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -317,6 +317,16 @@ function buildOverlayMain() {
       GM.setValue('bmCoords', JSON.stringify(data));
     } catch (_) {}
   };
+
+  const teleportCoords = () => {
+    try {
+      const tx = Number(document.querySelector('#bm-input-tx')?.value || '');
+      const ty = Number(document.querySelector('#bm-input-ty')?.value || '');
+      const px = Number(document.querySelector('#bm-input-px')?.value || '');
+      const py = Number(document.querySelector('#bm-input-py')?.value || '');
+      teleportToTileCoords([tx, ty], [px, py]);
+    } catch (_) {}
+  };
   
   overlayMain.addDiv({'id': 'bm-overlay', 'style': 'top: 10px; right: 75px;'})
     .addDiv({'id': 'bm-contain-header'})
@@ -525,7 +535,7 @@ function buildOverlayMain() {
 
     .addDiv({'id': 'bm-contain-userinfo'})
       .addP({'id': 'bm-user-name', 'textContent': 'Username:'}).buildElement()
-      .addP({'id': 'bm-user-charges', 'textContent': 'Charges:'}).buildElement()
+      .addP({'id': 'bm-user-charges', 'textContent': 'Full Charge in N/A'}).buildElement()
       .addP({'id': 'bm-user-droplets', 'textContent': 'Droplets:'}).buildElement()
       .addP({'id': 'bm-user-nextlevel', 'textContent': 'Next level in...'}).buildElement()
     .buildElement()
@@ -592,6 +602,13 @@ function buildOverlayMain() {
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()
+        .addButton({'id': 'bm-button-teleport', 'className': 'bm-help', 'innerHTML': '✈️', 'title': 'Teleport'},
+          (instance, button) => {
+            button.onclick = () => {
+              teleportCoords();
+            }
+          }
+        ).buildElement()
       .buildElement()
       // Color filter UI
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
@@ -677,7 +694,9 @@ function buildOverlayMain() {
             });
           }).buildElement()
         .buildElement()
-        .addSmall({'textContent': `v${version} by SwingTheVine`, 'style': 'margin-top: auto;'}).buildElement()
+      .buildElement()
+      .addDiv()
+        .addSmall({'textContent': `v${version} by SwingTheVine | Forked by TWY`, 'style': 'margin-top: auto;'}).buildElement()
       .buildElement()
     .buildElement()
   .buildOverlay(document.body);
