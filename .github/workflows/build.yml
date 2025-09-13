@@ -27,7 +27,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git checkout auto || git checkout -b auto
-          git reset --hard origin/${{GITHUB_REF#refs/heads/}}
+          git reset --hard origin/${GITHUB_REF_NAME}
           git push --force origin auto
 
   # Builds the code
@@ -182,20 +182,19 @@ jobs:
       - name: Merge Auto -> Main
         run: |
           git fetch origin
-          git checkout origin/${{GITHUB_REF#refs/heads/}} -B ${{GITHUB_REF#refs/heads/}}
+          git checkout origin/${GITHUB_REF_NAME} -B ${GITHUB_REF_NAME}
           git merge --squash origin/auto
           git commit -m "v${{ needs.build.outputs.CURRENT_VERSION }}; ${{ needs.build.outputs.TITLE }}" -m "${{ needs.build.outputs.BODY }}" || echo "No changes to commit"
-          git push origin ${{GITHUB_REF#refs/heads/}}
+          git push origin ${GITHUB_REF_NAME}
 
   update-wiki:
+
+    if: github.ref == 'refs/heads/main'
     
     permissions:
       contents: write
 
     runs-on: ubuntu-latest
-
-    branches:
-      - main
 
     needs: [update-auto, build, update-requirements] # Needs the update-auto, build, and update-requirements jobs to finish first
 
@@ -208,7 +207,7 @@ jobs:
       - name: Force update wiki branch
         run: |
           git fetch origin
-          git branch -f wiki origin/${{GITHUB_REF#refs/heads/}}
+          git branch -f wiki origin/${GITHUB_REF_NAME}
           git push origin wiki --force
 
       - name: Checkout wiki branch
