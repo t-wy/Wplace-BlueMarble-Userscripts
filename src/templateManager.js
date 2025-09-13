@@ -478,11 +478,16 @@ export default class TemplateManager {
                 if (paletteStats[colorKey] === undefined) {
                   paletteStats[colorKey] = {
                     painted: 1,
+                    paintedAndEnabled: +(templateTile.template.enabled ?? true),
                     missing: 0,
-                    examples: [ ]
+                    examples: [ ],
+                    examplesEnabled: [ ],
                   }
                 } else {
                   paletteStats[colorKey]["painted"]++;
+                  if (templateTile.template.enabled ?? true) {
+                    paletteStats[colorKey]["paintedAndEnabled"]++;
+                  }
                 }
                 if (templateStats[templateKey] === undefined) {
                   templateStats[templateKey] = {
@@ -509,8 +514,13 @@ export default class TemplateManager {
                    // save at most 10 examples for random
                   paletteStats[key] = {
                     painted: 0,
+                    paintedAndEnabled: 0,
                     missing: 1,
-                    examples: [ example ]
+                    examples: [ example ],
+                    examplesEnabled: [ ],
+                  }
+                  if (templateTile.template.enabled ?? true) {
+                    paletteStats[key]["examplesEnabled"].push(example);
                   }
                 } else {
                   const exampleMax = 100;
@@ -518,10 +528,19 @@ export default class TemplateManager {
                   paletteStats[key]["missing"]++;
                   if (paletteStats[key]["examples"].length < exampleMax) {
                     paletteStats[key]["examples"].push(example);
-                  } else if (Math.random() * paletteStats[key]["missing"] < exampleMax) {
+                  } else if (Math.random() * paletteStats[key]["examples"].length < exampleMax) {
                     // pick a random sample, so the new entry share the same weight
                     const replaceIndex = Math.floor(Math.random() * exampleMax);
                     paletteStats[key]["examples"][replaceIndex] = example;
+                  }
+                  if (templateTile.template.enabled ?? true) {
+                    if (paletteStats[key]["examplesEnabled"].length < exampleMax) {
+                      paletteStats[key]["examplesEnabled"].push(example);
+                    } else if (Math.random() * paletteStats[key]["examplesEnabled"].length < exampleMax) {
+                      // pick a random sample, so the new entry share the same weight
+                      const replaceIndex = Math.floor(Math.random() * exampleMax);
+                      paletteStats[key]["examplesEnabled"][replaceIndex] = example;
+                    }
                   }
                 }
               }

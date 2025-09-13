@@ -714,6 +714,7 @@ function buildOverlayMain() {
     let hasColorPalette = false;
     const paletteSum = {};
     (templateManager.templatesArray ?? []).forEach(t => {
+      if (!t.enabled) return; // only count enabled templates
       if (!t?.colorPalette) return;
       hasColorPalette = true;
       for (const [rgb, meta] of Object.entries(t.colorPalette)) {
@@ -736,8 +737,10 @@ function buildOverlayMain() {
           combinedProgress[colorKey]["examples"] = content["examples"].slice();
         } else {
           combinedProgress[colorKey]["painted"] += content["painted"];
+          combinedProgress[colorKey]["paintedAndEnabled"] += content["paintedAndEnabled"];
           combinedProgress[colorKey]["missing"] += content["missing"];
           combinedProgress[colorKey]["examples"].push(...content["examples"]);
+          combinedProgress[colorKey]["examplesEnabled"].push(...content["examplesEnabled"]);
         }
       })
     };
@@ -783,18 +786,22 @@ function buildOverlayMain() {
         } catch (ignored) {}
       }
       const paletteEntry = combinedProgress[colorKey];
-      const filledCount = paletteEntry?.painted ?? 0;
+      // const filledCount = paletteEntry?.painted ?? 0;
+      const filledCount = paletteEntry?.paintedAndEnabled ?? 0;
       const filledLabelText = `${filledCount.toLocaleString()}`;
       label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
 
       swatch.addEventListener('click', () => {
-        if ((paletteEntry?.examples?.length ?? 0) > 0) {
-          const examples = paletteEntry["examples"];
+        // if ((paletteEntry?.examples?.length ?? 0) > 0) {
+        if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
+          // const examples = paletteEntry["examples"];
+          const examples = paletteEntry["examplesEnabled"];
           const exampleIndex = Math.floor(Math.random() * examples.length);
           teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
         }
       });
-      if ((paletteEntry?.examples?.length ?? 0) > 0) {
+      // if ((paletteEntry?.examples?.length ?? 0) > 0) {
+      if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
         swatch.style["cursor"] = "pointer";
       };
 

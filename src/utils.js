@@ -247,7 +247,7 @@ export function cleanUpCanvas(canvas) {
  * A browser helper function to find the gadget exposed in the DOM tree
  * @since 0.85.9
  */
-function findGadget(condition) {
+function findGadget(condition, depth=10) {
   const seen = new Set();
   const allElements = [...document.querySelectorAll("*")];
   function search(parent, path, element, maxDepth) {
@@ -257,7 +257,7 @@ function findGadget(condition) {
     if (maxDepth === 0) {
       return null;
     }
-    if (typeof element === "object") {
+    if (element && typeof element === "object") {
       if (Array.isArray(element)) {
         for (const [index, value] of Object.entries(element)) {
           if (seen.has(value)) continue;
@@ -277,10 +277,8 @@ function findGadget(condition) {
     return null;
   }
   for (const element of allElements) {
-    if (element.__click) {
-      const searchResult = search(element, ".__click", element.__click, 5);
-      if (searchResult !== null) return searchResult;
-    }
+    const searchResult = search(element, "$0", element.__click, depth);
+    if (searchResult !== null) return searchResult;
   }
   return null;
 }
