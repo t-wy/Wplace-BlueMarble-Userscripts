@@ -11,7 +11,7 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
 <table>
   <tr>
     <td><a href="#blue-marble">Blue Marble</a></td>
-    <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=bann![alt text](image.png)er4"></a></td>
+    <td valign="top" rowspan="99"><a href="https://discord.gg/tpeBPy46hf"><img alt="Discord Banner" src="https://discord.com/api/guilds/796124137042608188/widget.png?style=banner4"></a></td>
   </tr>
   <tr>
     <td>&emsp;<a href="#regarding-this-fork">Regarding this fork</a></td>
@@ -101,6 +101,7 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
     <li>Testing semi-transparency for the Blue Marble Overlay.</li>
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
+    <li>Fixed the bug that the "Enable All" and "Disable All" buttons do not persist.</li>
     <li>Show the filled count of each color.</li>
     <li>Directly teleport to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
     <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
