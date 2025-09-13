@@ -1,8 +1,9 @@
 Preview Image of the [Custom-Improve Branch](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/tree/custom-improve) of the This Fork:
 
-| Template | Overlay |
-|-|-|
-| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) |
+| Template | Overlay | Pixel Info |
+|-|-|-|
+| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Pixel Info](assets/PixelInfo.png) |
+
 More Information Regarding this Fork [Here](#regarding-this-fork).
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/main/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Original Ver. with Userscripts Support</strong></a> / <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Custom Mod Ver.</strong></a>
@@ -100,6 +101,7 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
     <li>Testing semi-transparency for the Blue Marble Overlay.</li>
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
+    <li>Fixed the bug that the "Enable All" and "Disable All" buttons do not persist.</li>
     <li>Show the filled count of each color.</li>
     <li>Directly teleport to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
     <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
