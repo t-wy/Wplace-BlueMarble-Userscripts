@@ -605,18 +605,22 @@ function buildOverlayMain() {
       .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-bottom: 6px;'})
         .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
           button.onclick = () => {
-            const t = templateManager.templatesArray[0];
-            if (!t?.colorPalette) { return; }
-            Object.values(t.colorPalette).forEach(v => v.enabled = true);
+            templateManager.templatesArray.forEach(t => {
+              if (!t?.colorPalette) { return; }
+              Object.values(t.colorPalette).forEach(v => v.enabled = true);
+            })
+            syncToggleList();
             buildColorFilterList();
             instance.handleDisplayStatus('Enabled all colors');
           };
         }).buildElement()
         .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
           button.onclick = () => {
-            const t = templateManager.templatesArray[0];
-            if (!t?.colorPalette) { return; }
-            Object.values(t.colorPalette).forEach(v => v.enabled = false);
+            templateManager.templatesArray.forEach(t => {
+              if (!t?.colorPalette) { return; }
+              Object.values(t.colorPalette).forEach(v => v.enabled = false);
+            })
+            syncToggleList();
             buildColorFilterList();
             instance.handleDisplayStatus('Disabled all colors');
           };
@@ -688,6 +692,21 @@ function buildOverlayMain() {
   .buildOverlay(document.body);
 
   // ------- Helper: Build the color filter list -------
+  window.syncToggleList = function syncToggleList() {
+    try {
+      (templateManager.templatesArray ?? []).forEach(t => {
+        const key = t.storageKey;
+        if (key && templateManager.templatesJSON?.templates?.[key]) {
+          const templateJSON = templateManager.templatesJSON.templates[key]
+          templateJSON.enabled = t.enabled;
+          templateJSON.palette = t.colorPalette;
+        }
+      })
+      // persist immediately
+      GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
+    } catch (_) {};
+  }
+
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
     const toggleStatus = templateManager.getPaletteToggledStatus();
@@ -790,16 +809,7 @@ function buildOverlayMain() {
           }
         })
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
-        try {
-          (templateManager.templatesArray ?? []).forEach(t => {
-            const key = t.storageKey;
-            if (key && templateManager.templatesJSON?.templates?.[key]) {
-              templateManager.templatesJSON.templates[key].palette = t.colorPalette;
-            }
-          })
-          // persist immediately
-          GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
-        } catch (_) {}
+        syncToggleList();
       });
 
       row.appendChild(toggle);
@@ -870,14 +880,7 @@ function buildOverlayMain() {
       toggle.addEventListener('change', () => {
         template.enabled = toggle.checked;
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
-        try {
-          const key = template?.storageKey;
-          if (key && templateManager.templatesJSON?.templates?.[key]) {
-            templateManager.templatesJSON.templates[key].enabled = template.enabled;
-            // persist immediately
-            GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
-          }
-        } catch (_) {}
+        syncToggleList();
       });
 
       row.appendChild(toggle);
