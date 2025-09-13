@@ -55,10 +55,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Update userscript version
-        run: |
-          npm version minor --no-git-tag-version
-          node build/update-version.js
+      # - name: Update userscript version
+      #   run: |
+      #     npm version minor --no-git-tag-version
+      #     node build/update-version.js
+      # nope, this branch follows upstream version, don't mess it up
 
       - name: Build userscript
         run: npm run build
