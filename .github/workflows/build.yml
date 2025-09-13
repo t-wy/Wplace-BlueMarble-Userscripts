@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+      - custom-improve
+
 
 jobs:
 
@@ -25,7 +27,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git checkout auto || git checkout -b auto
-          git reset --hard origin/main
+          git reset --hard origin/${{GITHUB_REF#refs/heads/}}
           git push --force origin auto
 
   # Builds the code
@@ -55,10 +57,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Update userscript version
-        run: |
-          npm version minor --no-git-tag-version
-          node build/update-version.js
+      # - name: Update userscript version
+      #   run: |
+      #     npm version minor --no-git-tag-version
+      #     node build/update-version.js
+      # nope, this branch follows upstream version, don't mess it up
 
       - name: Build userscript
         run: npm run build
@@ -162,7 +165,7 @@ jobs:
           sed -i "/@resource/ s#/[a-f0-9]\{40\}/#/${AUTO_SHA}/#g" dist/BlueMarble.user.js src/BlueMarble.meta.js
           echo "Updated resourceLinkSHA:"
           grep "@icon" dist/BlueMarble.user.js src/BlueMarble.meta.js
-          grep "@resource" dist/BlueMarble.user.js src/BlueMarble.meta.js
+          # grep "@resource" dist/BlueMarble.user.js src/BlueMarble.meta.js
         env:
           AUTO_SHA: ${{ env.AUTO_SHA }}
 
@@ -179,10 +182,10 @@ jobs:
       - name: Merge Auto -> Main
         run: |
           git fetch origin
-          git checkout origin/main -B main
+          git checkout origin/${{GITHUB_REF#refs/heads/}} -B ${{GITHUB_REF#refs/heads/}}
           git merge --squash origin/auto
           git commit -m "v${{ needs.build.outputs.CURRENT_VERSION }}; ${{ needs.build.outputs.TITLE }}" -m "${{ needs.build.outputs.BODY }}" || echo "No changes to commit"
-          git push origin main
+          git push origin ${{GITHUB_REF#refs/heads/}}
 
   update-wiki:
     
@@ -190,6 +193,9 @@ jobs:
       contents: write
 
     runs-on: ubuntu-latest
+
+    branches:
+      - main
 
     needs: [update-auto, build, update-requirements] # Needs the update-auto, build, and update-requirements jobs to finish first
 
@@ -202,7 +208,7 @@ jobs:
       - name: Force update wiki branch
         run: |
           git fetch origin
-          git branch -f wiki origin/main
+          git branch -f wiki origin/${{GITHUB_REF#refs/heads/}}
           git push origin wiki --force
 
       - name: Checkout wiki branch

@@ -1,4 +1,4 @@
-Preview Image of This Fork:
+Preview Images of This Fork:
 
 | Template | Overlay | Pixel Info |
 |-|-|-|
