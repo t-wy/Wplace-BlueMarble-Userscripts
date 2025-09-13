@@ -102,11 +102,12 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
     <li>Fixed the non-persistent palette toggle bug.</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
     <li>Show the filled count of each color.</li>
-    <li>Directly fly to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
+    <li>Directly teleport to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
     <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
     <li>Show also geographical coordinates besides tile coordinates.</li>
     <li>Optimize the for-loop for faster response.</li>
     <li>Allow multiple templates to be used at the same time.</li>
+    <li>A button to teleport to the top-left corner of the selected template.</li>
   </ul>
 </p>
 
