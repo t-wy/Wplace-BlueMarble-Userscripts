@@ -112,7 +112,7 @@ export default class Template {
 
   testCanvasSize() {
     // Check if the browser support canvas size more than 4096 x 4096 for 5x to work
-    let canvas = new OffscreenCanvas(5000,5000);
+    let canvas = new OffscreenCanvas(5000, 5000);
     const context = canvas.getContext('2d');
     context.fillRect(4999, 4999, 1, 1);
     const result = context.getImageData(4999, 4999, 1, 1).data[3] !== 0;

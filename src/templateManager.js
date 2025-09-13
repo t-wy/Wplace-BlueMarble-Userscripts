@@ -177,6 +177,8 @@ export default class TemplateManager {
     // this.templatesArray = []; // Remove this to enable multiple templates (2/2)
     this.templatesArray.push(template); // Pushes the Template object instance to the Template Array
 
+    this.tileProgress = new Map(); // reset tileProgress
+
     // ==================== PIXEL COUNT DISPLAY SYSTEM ====================
     // Display pixel count statistics with internationalized number formatting
     // This provides immediate feedback to users about template complexity and size
@@ -237,6 +239,8 @@ export default class TemplateManager {
     if (templates && templates?.[storageKey]) {
       delete templates[storageKey];
     }
+
+    this.tileProgress = new Map(); // reset tileProgress
 
     this.overlay.handleDisplayStatus(`Template ${targetTemplate.displayName} is deleted!`);
   
