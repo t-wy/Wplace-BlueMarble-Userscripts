@@ -528,7 +528,7 @@ function buildOverlayMain() {
       .addP({'id': 'bm-user-name', 'textContent': 'Username:'}).buildElement()
       .addP({'id': 'bm-user-charges', 'textContent': 'Full Charge in N/A'}).buildElement()
       .addP({'id': 'bm-user-droplets', 'textContent': 'Droplets:'}).buildElement()
-      .addP({'id': 'bm-user-nextlevel', 'textContent': 'Next level in...'}).buildElement()
+      .addP({'id': 'bm-user-nextlevel', 'textContent': 'N/A more pixels to Lv. N/A'}).buildElement()
     .buildElement()
 
     .addHr().buildElement()
@@ -690,31 +690,40 @@ function buildOverlayMain() {
   // ------- Helper: Build the color filter list -------
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
-    const t = templateManager.templatesArray?.[0];
-    if (!listContainer || !t?.colorPalette) {
+    const toggleStatus = templateManager.getPaletteToggledStatus();
+    listContainer.innerHTML = '';
+    let hasColorPalette = false;
+    const paletteSum = {};
+    (templateManager.templatesArray ?? []).forEach(t => {
+      if (!t?.colorPalette) return;
+      hasColorPalette = true;
+      for (const [rgb, meta] of Object.entries(t.colorPalette)) {
+        paletteSum[rgb] = (paletteSum[rgb] ?? 0) + meta.count;
+      }
+    })
+    if (!listContainer || !hasColorPalette) {
       if (listContainer) { listContainer.innerHTML = '<small>No template colors to display.</small>'; }
       return;
     }
 
-    listContainer.innerHTML = '';
-    const entries = Object.entries(t.colorPalette)
-      .sort((a,b) => b[1].count - a[1].count); // sort by frequency desc
+    const paletteSumSorted = Object.entries(paletteSum)
+      .sort((a,b) => b[1] - a[1]); // sort by frequency desc
 
-    const combinedPalette = {};
+    const combinedProgress = {};
     for (const stats of templateManager.tileProgress.values()) {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
-        if (combinedPalette[colorKey] === undefined) {
-          combinedPalette[colorKey] = Object.fromEntries(Object.entries(content));
-          combinedPalette[colorKey]["examples"] = content["examples"].slice();
+        if (combinedProgress[colorKey] === undefined) {
+          combinedProgress[colorKey] = Object.fromEntries(Object.entries(content));
+          combinedProgress[colorKey]["examples"] = content["examples"].slice();
         } else {
-          combinedPalette[colorKey]["painted"] += content["painted"];
-          combinedPalette[colorKey]["missing"] += content["missing"];
-          combinedPalette[colorKey]["examples"].push(...content["examples"]);
+          combinedProgress[colorKey]["painted"] += content["painted"];
+          combinedProgress[colorKey]["missing"] += content["missing"];
+          combinedProgress[colorKey]["examples"].push(...content["examples"]);
         }
       })
     };
 
-    for (const [rgb, meta] of entries) {
+    for (const [rgb, totalCount] of paletteSumSorted) {
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
@@ -728,7 +737,7 @@ function buildOverlayMain() {
 
       let label = document.createElement('span');
       label.style.fontSize = '12px';
-      const labelText = `${meta.count.toLocaleString()}`;
+      const labelText = `${totalCount.toLocaleString()}`;
 
       let colorName = '';
       let colorKey = '';
@@ -754,7 +763,7 @@ function buildOverlayMain() {
           }
         } catch (ignored) {}
       }
-      const paletteEntry = combinedPalette[colorKey];
+      const paletteEntry = combinedProgress[colorKey];
       const filledCount = paletteEntry?.painted ?? 0;
       const filledLabelText = `${filledCount.toLocaleString()}`;
       label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
@@ -772,18 +781,24 @@ function buildOverlayMain() {
 
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';
-      toggle.checked = !!meta.enabled;
+      toggle.checked = toggleStatus[rgb] ?? true;
       toggle.addEventListener('change', () => {
-        meta.enabled = toggle.checked;
+        (templateManager.templatesArray ?? []).forEach(t => {
+          if (!t?.colorPalette) return;
+          if (t.colorPalette[rgb] !== undefined) {
+            t.colorPalette[rgb].enabled = toggle.checked;
+          }
+        })
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
         try {
-          const t = templateManager.templatesArray?.[0];
-          const key = t?.storageKey;
-          if (t && key && templateManager.templatesJSON?.templates?.[key]) {
-            templateManager.templatesJSON.templates[key].palette = t.colorPalette;
-            // persist immediately
-            GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
-          }
+          (templateManager.templatesArray ?? []).forEach(t => {
+            const key = t.storageKey;
+            if (key && templateManager.templatesJSON?.templates?.[key]) {
+              templateManager.templatesJSON.templates[key].palette = t.colorPalette;
+            }
+          })
+          // persist immediately
+          GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
         } catch (_) {}
       });
 

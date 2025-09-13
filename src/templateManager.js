@@ -153,6 +153,13 @@ export default class TemplateManager {
     });
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
     const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
+    // Modify palette enabled status using the honored one
+    const toggleStatus = this.getPaletteToggledStatus();
+    for (const key of Object.keys(template.colorPalette)) {
+      if (toggleStatus[key] !== undefined) {
+        template.colorPalette[key].enabled = toggleStatus[key];
+      }
+    }
     template.chunked = templateTiles; // Stores the chunked tile bitmaps
 
     // Appends a child into the templates object
@@ -357,6 +364,11 @@ export default class TemplateManager {
       return [`${r},${g},${b}`, color];
     }))
 
+    // honor the same toggle Status for all templates
+    const toggleStatus = this.getPaletteToggledStatus(); // Obtain the color palette of the template
+    const hasDisabled = Object.values(toggleStatus).some(v => v === false);
+    const allDisabled = Object.values(toggleStatus).every(v => v === false); // Check if every color is disabled
+
     // For each template in this tile, draw them.
     for (const templateTile of templatesTilesToDraw) {
       const templateKey = templateTile.storageKey;
@@ -524,8 +536,6 @@ export default class TemplateManager {
       if (templateTile.template.enabled ?? true) {
         try {
 
-          const palette = templateTile.template.colorPalette || {}; // Obtain the color palette of the template
-          const hasDisabled = Object.values(palette).some(v => v?.enabled === false); // Check if any color is disabled
           const offsetX = Number(templateTile.pixelCoords[0]) * this.drawMult;
           const offsetY = Number(templateTile.pixelCoords[1]) * this.drawMult;
 
@@ -534,7 +544,6 @@ export default class TemplateManager {
             context.drawImage(templateTile.bitmap, offsetX, offsetY);
           } else {
             // ELSE we need to apply the color filter
-            const allDisabled = Object.values(palette).every(v => v?.enabled === false); // Check if every color is disabled
             if (!allDisabled) {
 
               console.log('Applying color filter...');
@@ -574,7 +583,7 @@ export default class TemplateManager {
                     //   console.log('Added color to other');
                     // }
 
-                    const isPaletteColorEnabled = palette?.[key]?.enabled !== false;
+                    const isPaletteColorEnabled = toggleStatus?.[key] !== false;
                     if (!inWplacePalette || !isPaletteColorEnabled) {
                       data[idx + 3] = 0; // hide disabled color center pixel
                     }
@@ -804,5 +813,19 @@ export default class TemplateManager {
    */
   setTemplatesShouldBeDrawn(value) {
     this.templatesShouldBeDrawn = value;
+  }
+
+  /** Gets the palette toggled status from the first appearance of the color as a temporary measure
+   * @since 0.85.11
+   */
+  getPaletteToggledStatus() {
+    const status = {};
+    for (const template of this.templatesArray) {
+      for (const [rgb, meta] of Object.entries(template.colorPalette)) {
+        if (status[rgb]) { continue; }; // take the first appearance
+        status[rgb] = meta.enabled;
+      }
+    }
+    return status;
   }
 }
