@@ -20,10 +20,10 @@ const require = createRequire(import.meta.url);
 // CommonJS imports (require)
 const terser = require('terser');
 
-// const isGitHub = !!process.env?.GITHUB_ACTIONS; // Is this running in a GitHub Action Workflow?'
-const isGitHub = true;
-const isDebug = false;
-// const isDebug = true;
+const isGitHub = !!process.env?.GITHUB_ACTIONS; // Is this running in a GitHub Action Workflow?'
+// const isGitHub = true;
+const isDebug = !isGitHub;
+// const isDebug = false;
 
 console.log(`${consoleStyle.BLUE}Starting build...${consoleStyle.RESET}`);
 
@@ -113,17 +113,17 @@ let importedMapCSS = {}; // The imported CSS map
 
 // Only import a CSS map if we are NOT in production (GitHub Workflow)
 // Theoretically, if the previous map is always imported, the names would not scramble. However, the names would never decrease in number...
-if (true || !isGitHub) {
-  try {
-    importedMapCSS = JSON.parse(fs.readFileSync('dist/BlueMarble.user.css.map.json', 'utf8'));
-  } catch {
-    console.log(`${consoleStyle.YELLOW}Warning! Could not find a CSS map to import. A 100% new CSS map will be generated...${consoleStyle.RESET}`);
-  }
-}
-
-// Mangles the CSS selectors
-// If we are in production (GitHub Workflow), then generate the CSS mapping
 if (!isDebug) {
+  if (!isGitHub) {
+    try {
+      importedMapCSS = JSON.parse(fs.readFileSync('dist/BlueMarble.user.css.map.json', 'utf8'));
+    } catch {
+      console.log(`${consoleStyle.YELLOW}Warning! Could not find a CSS map to import. A 100% new CSS map will be generated...${consoleStyle.RESET}`);
+    }
+  }
+
+  // Mangles the CSS selectors
+  // If we are in production (GitHub Workflow), then generate the CSS mapping
   const mapCSS = mangleSelectors({
     inputPrefix: 'bm-',
     outputPrefix: 'bm-',
