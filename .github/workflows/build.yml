@@ -162,7 +162,7 @@ jobs:
           sed -i "/@resource/ s#/[a-f0-9]\{40\}/#/${AUTO_SHA}/#g" dist/BlueMarble.user.js src/BlueMarble.meta.js
           echo "Updated resourceLinkSHA:"
           grep "@icon" dist/BlueMarble.user.js src/BlueMarble.meta.js
-          grep "@resource" dist/BlueMarble.user.js src/BlueMarble.meta.js
+          # grep "@resource" dist/BlueMarble.user.js src/BlueMarble.meta.js
         env:
           AUTO_SHA: ${{ env.AUTO_SHA }}
 
