@@ -693,6 +693,7 @@ export default class TemplateManager {
         const templateKey = template;
         const templateValue = templates[template];
         console.log(templateKey);
+        const templateCoords = templateValue.coords.split(',').map(Number);
 
         if (templates.hasOwnProperty(template)) {
 
@@ -755,7 +756,7 @@ export default class TemplateManager {
             displayName: displayName,
             sortID: sortID || this.templatesArray?.length || 0,
             authorID: authorID || '',
-            //coords: coords
+            coords: templateCoords,
           });
           template.chunked = templateTiles;
           template.requiredPixelCount = requiredPixelCount;

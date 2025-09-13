@@ -847,6 +847,13 @@ function buildOverlayMain() {
         }
       }
 
+      let teleportButton = document.createElement('a');
+      teleportButton.textContent = "✈️";
+      teleportButton.style.fontSize = '12px';
+      teleportButton.onclick = () => {
+        teleportToTileCoords(template.coords.slice(0, 2), template.coords.slice(2, 4));
+      }
+
       let label = document.createElement('span');
       label.style.fontSize = '12px';
       const labelText = `${template.requiredPixelCount.toLocaleString()}`;
@@ -876,6 +883,7 @@ function buildOverlayMain() {
       row.appendChild(toggle);
       row.appendChild(removeButton);
       row.appendChild(label);
+      row.appendChild(teleportButton);
       listContainer.appendChild(row);
     }
   };
