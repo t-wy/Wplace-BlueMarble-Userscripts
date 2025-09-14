@@ -151,6 +151,7 @@ export default class TemplateManager {
       file: blob,
       coords: coords
     });
+    template.shreadSize = this.drawMult; // Copy to template's shread Size
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
     const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
     // Modify palette enabled status using the honored one
@@ -781,6 +782,7 @@ export default class TemplateManager {
             authorID: authorID || '',
             coords: templateCoords,
           });
+          template.shreadSize = this.drawMult; // Copy to template's shread Size
           template.chunked = templateTiles;
           template.requiredPixelCount = requiredPixelCount;
           template.enabled = templateValue.enabled ?? true;

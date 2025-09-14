@@ -83,6 +83,8 @@ export default class Template {
     } catch (ignored) {}
 
     console.log('Allowed colors for template:', this.allowedColorsSet);
+
+    this.shreadSize = null; // Scale image factor, same as TemplateManager's drawMult
   }
 
   customMask(x, y, shreadSize) {
@@ -129,8 +131,12 @@ export default class Template {
   async createTemplateTiles() {
     console.log('Template coordinates:', this.coords);
 
-    const shreadSize = this.testCanvasSize() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
-    const bitmap = await createImageBitmap(this.file); // Create efficient bitmap from uploaded file
+    if (this.shreadSize === null) {
+      // initialize shreadSize (usually already assigned by the template manager)
+      this.shreadSize = this.testCanvasSize() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
+    }
+    const shreadSize = this.shreadSize;
+    const bitmap = await createImageBitmap(this.file, { "colorSpaceConversion": "none" }); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
     
