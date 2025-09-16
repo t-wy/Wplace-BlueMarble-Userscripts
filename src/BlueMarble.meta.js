@@ -11,6 +11,7 @@
 // @updateURL    https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js
 // @downloadURL  https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js
 // @match        https://wplace.live/*
+// @run-at       document-start
 // @grant        GM.addStyle
 // @grant        GM.setValue
 // @grant        GM.getValue

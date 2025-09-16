@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta } from './utils.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -37,6 +37,14 @@ inject(() => {
   const name = script?.getAttribute('bm-name') || 'Blue Marble'; // Gets the name value that was passed in. Defaults to "Blue Marble" if nothing was found
   const consoleStyle = script?.getAttribute('bm-cStyle') || ''; // Gets the console style value that was passed in. Defaults to no styling if nothing was found
   const fetchedBlobQueue = new Map(); // Blobs being processed
+
+  // intercept 
+  // const originalBroadcastChannel_onmessage = window.BroadcastChannel.prototype.onmessage;
+  // function wrapped(...args) {
+  //   console.log("BroadcastChannel onmessage", args);
+  //   return originalBroadcastChannel_onmessage.apply(this, args);
+  // }
+  // window.BroadcastChannel.prototype.onmessage = wrapped;
 
   window.addEventListener('message', (event) => {
     const { source, endpoint, blobID, blobData, blink } = event.data;
@@ -182,6 +190,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
     templateManager.setUserSettings({
       'uuid': uuid,
       'hideLockedColors': false,
+      'smartPlace': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -234,6 +243,70 @@ function observeBlack() {
       const paintPixel = black.parentNode.parentNode.parentNode.parentNode.querySelector('h2');
 
       paintPixel.parentNode?.appendChild(move); // Adds the move button
+    }
+
+    // should not be enabled on its own as it would break the wplace rules
+    // just here for a proof-of-work, there's no way to enable it directly via the UI
+    if (templateManager.userSettings?.smartPlace ?? false) {
+      let paint = document.querySelector('#bm-button-paint'); // Tries to find the paint button
+
+      // If the move button does not exist, we make a new one
+      if (!paint) {
+        paint = document.createElement('button');
+        paint.id = 'bm-button-paint';
+        paint.textContent = 'Paint';
+        paint.className = 'btn btn-soft';
+        paint.onclick = function() {
+          const currentCharges = Math.floor(apiManager.getCurrentCharges());
+          const examples = [];
+          const toggleStatus = templateManager.getPaletteToggledStatus();
+          for (const stats of templateManager.tileProgress.values()) {
+            Object.entries(stats.palette).forEach(([colorKey, content]) => {
+              if (!rgbToMeta.has(colorKey)) return;
+              if (!toggleStatus?.[colorKey]) return;
+              const colorId = rgbToMeta.get(colorKey).id;
+              if (!templateManager.isColorUnlocked(colorId)) return; // color not owned
+              
+              examples.push(...content["examplesEnabled"].map(example => [colorId, example]));
+            })
+          };
+          if (examples.length === 0) return;
+          const example = examples[Math.floor(Math.random() * examples.length)][1];
+          const exampleCoord = [
+            example[0][0] * templateManager.tileSize + example[1][0],
+            example[0][1] * templateManager.tileSize + example[1][1],
+          ];
+          examples.sort(([color1, coord1], [color2, coord2]) => {
+            const _coord1 = [
+              coord1[0][0] * templateManager.tileSize + coord1[1][0],
+              coord1[0][1] * templateManager.tileSize + coord1[1][1],
+            ];
+            const _coord2 = [
+              coord2[0][0] * templateManager.tileSize + coord2[1][0],
+              coord2[0][1] * templateManager.tileSize + coord2[1][1],
+            ];
+            const dist1 = Math.abs(_coord1[0] - exampleCoord[0]) + Math.abs(_coord1[1] - exampleCoord[1]);
+            const dist2 = Math.abs(_coord2[0] - exampleCoord[0]) + Math.abs(_coord2[1] - exampleCoord[1]);
+            return dist1 - dist2;
+          })
+          const tilesToPaint = Math.min(currentCharges, examples.length);
+          const canvas = document.querySelector("canvas.maplibregl-canvas");
+          for (let i = 0; i < tilesToPaint; i++) {
+            const [colorId, example] = examples[i];
+            document.getElementById("color-" + colorId).click();
+            teleportToTileCoords(example[0], example[1], false);
+            const ev = new MouseEvent("click", {
+              "bubbles": true, "cancelable": true, "clientX": canvas.offsetWidth / 2, "clientY": canvas.offsetHeight / 2, "button": 0
+            });
+            canvas.dispatchEvent(ev);
+          }
+        }
+
+        // Attempts to find the "Paint Pixel" element for anchoring
+        const paintPixel = black.parentNode.parentNode.parentNode.parentNode.querySelector('h2');
+
+        paintPixel.parentNode?.appendChild(paint); // Adds the paint button
+      }
     }
   });
 

@@ -284,7 +284,7 @@ function findGadget(condition, depth=10) {
   const allElements = [...document.querySelectorAll("*")];
   function search(parent, path, element, maxDepth) {
     if (condition(element)) {
-      return [parent, path, element];
+      return [element, parent, path];
     }
     if (maxDepth === 0) {
       return null;
@@ -318,9 +318,10 @@ function findGadget(condition, depth=10) {
 /** Teleport user to coordinate
  * @param {*} lat - latitude
  * @param {*} lng - longitude
+ * @param {boolean} smooth - smooth transition
  * @since 0.85.9
  */
-export function teleportToGeoCoords(lat, lng) {
+export function teleportToGeoCoords(lat, lng, smooth = true) {
   // const myLocationButton = document.getElementsByClassName("right-3")[0]?.childNodes?.[0];
   // const map = myLocationButton?.["__click"]?.[3]?.["v"];
   // if(map !== null && typeof map["version"] == "string") { // Sanity Check
@@ -330,7 +331,7 @@ export function teleportToGeoCoords(lat, lng) {
   //   })
   const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
   let teleportFunc = null;
-  if ( allianceButton !== null ) {
+  if ( allianceButton !== null && smooth ) {
     if (allianceButton["__click"] !== undefined) {
       const lastPixelFunc = allianceButton === null ? null : allianceButton["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"];
       teleportFunc = (lat, lng) => lastPixelFunc({"lat": lat, "lng": lng});
@@ -355,11 +356,12 @@ export function teleportToGeoCoords(lat, lng) {
     // Fallback, without click feature
     // Used when the user is logged out or painting (all side buttons removed)
     const myLocationButton = document.querySelector(".right-3>button");
+    const funcName = smooth ? "flyTo" : "jumpTo";
     if ( myLocationButton !== null ) {
       if (myLocationButton["__click"] !== undefined) {
         const map = myLocationButton["__click"][3]["v"];
         if(map !== null && typeof map["version"] == "string") {// Sanity Check
-          teleportFunc = (lat, lng) => map["flyTo"]({'center': [lng, lat], 'zoom': 16});
+          teleportFunc = (lat, lng) => map[funcName]({'center': [lng, lat], 'zoom': 16});
         }
       } else {
       // probably in some sandboxed environment like Userscripts
@@ -368,11 +370,13 @@ export function teleportToGeoCoords(lat, lng) {
             const script = document.currentScript;
             const lat = +script.getAttribute('bm-lat');
             const lng = +script.getAttribute('bm-lng');
-            document.querySelector(".right-3>button")["__click"][3]["v"]["flyTo"]({'center': [lng, lat], 'zoom': 16});
+            const funcName = script.getAttribute('bm-funcName');
+            document.querySelector(".right-3>button")["__click"][3]["v"][funcName]({'center': [lng, lat], 'zoom': 16});
           };
           const script = document.createElement('script');
           script.setAttribute('bm-lat', lat);
           script.setAttribute('bm-lng', lng);
+          script.setAttribute('bm-funcName', funcName);
           script.textContent = `(${injectedFunc})();`;
           document.documentElement?.appendChild(script);
           script.remove();
@@ -391,9 +395,10 @@ export function teleportToGeoCoords(lat, lng) {
 /** Teleport user to coordinate
  * @param {number[]} coordsTile
  * @param {number[]} coordsPixel
+ * @param {boolean} smooth - smooth transition
  * @since 0.85.9
  */
-export function teleportToTileCoords(coordsTile, coordsPixel) {
+export function teleportToTileCoords(coordsTile, coordsPixel, smooth = true) {
   const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
-  teleportToGeoCoords(geoCoords[0], geoCoords[1]);
+  teleportToGeoCoords(geoCoords[0], geoCoords[1], smooth);
 }

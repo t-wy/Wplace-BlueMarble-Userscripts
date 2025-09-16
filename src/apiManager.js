@@ -22,11 +22,13 @@ export default class ApiManager {
     this.chargesUpdated = null;
     this.chargeInterval = null;
     this.tileCache = {};
-    this.fallbackMe = null; // Interval for updating from the fallback "me"
-    this.#setFallbackMe();
   }
 
   getCurrentCharges() {
+    if (this.charges === null) {
+      this.#requestMe();
+      return 0;
+    }
     const currentTime = Date.now();
     const timeDiff = currentTime - this.chargesUpdated;
     const chargesDelta = timeDiff / this.charges["cooldownMs"];
@@ -62,7 +64,18 @@ export default class ApiManager {
     return `${minutes}:${seconds}`
   }
 
+  #setUpTimeout(overlay) {
+    this.#updateCharges(overlay);
+    this.chargeInterval = setInterval(() => {
+      this.#updateCharges(overlay);
+    }, 1000);
+  }
+
   #updateCharges(overlay) {
+    if (this.charges === null) {
+      this.#requestMe();
+      return;
+    }
     const currentCharges = Math.floor(this.getCurrentCharges());
     const maxCharges = this.charges["max"];
     const currentChargesStr = new Intl.NumberFormat().format(currentCharges);
@@ -74,30 +87,21 @@ export default class ApiManager {
     ); // Updates the text content of the charges field
   }
 
-  #setUpTimeout(overlay) {
-    this.#updateCharges(overlay);
-    if (this.chargeInterval) {
-      clearInterval(this.chargeInterval);
-    }
-    this.chargeInterval = setInterval(() => {
-      this.#updateCharges(overlay);
-    }, 1000);
-  }
-
-  #setFallbackMe() {
-    this.fallbackMe = setInterval(() => {
-      const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-      const jsonData = (logoutButton === null || logoutButton["__click"] === undefined) ? {
-        "status": 401,
-        "error": "Unauthorized"
-      } : JSON.parse(JSON.stringify(logoutButton["__click"][2]["user"]["data"]));
-      jsonData["fallback"] = true;
-      window.postMessage({
-        source: 'blue-marble',
-        endpoint: "https://backend.wplace.live/me",
-        jsonData: jsonData
-      }, '*');
-    }, 1000);
+  #requestMe() {
+    const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
+    if (logoutButton === null) return;
+    if (logoutButton["__click"] !== undefined) {
+      logoutButton["__click"][2]["user"]["refresh"]();
+    } else {
+      const injectedFunc = () => {
+        const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
+        logoutButton["__click"][2]["user"]["refresh"]();
+      };
+      const script = document.createElement('script');
+      script.textContent = `(${injectedFunc})();`;
+      document.documentElement?.appendChild(script);
+      script.remove();
+    };
   }
 
   /** Determines if the spontaneously received response is something we want.
@@ -108,6 +112,8 @@ export default class ApiManager {
    * @since 0.11.1
   */
   spontaneousResponseListener(overlay) {
+
+    this.#setUpTimeout(overlay);
 
     // Triggers whenever a message is sent
     window.addEventListener('message', async (event) => {
@@ -144,11 +150,6 @@ export default class ApiManager {
             return; // Kills itself before attempting to display null userdata
           }
 
-          if (this.fallbackMe !== null && !(dataJSON['fallback'] ?? false)) {
-            clearInterval(this.fallbackMe);
-            this.fallbackMe = null;
-          }
-
           const nextLevelPixels = Math.ceil(Math.pow(Math.floor(dataJSON['level']) * Math.pow(30, 0.65), (1/0.65)) - dataJSON['pixelsPainted']); // Calculates pixels to the next level
 
           console.log(dataJSON['id']);
@@ -164,7 +165,6 @@ export default class ApiManager {
           this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
           
           overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
-          this.#setUpTimeout(overlay);
           overlay.updateInnerHTML('bm-user-droplets', `Droplets: <b>${new Intl.NumberFormat().format(dataJSON['droplets'])}</b>`); // Updates the text content of the droplets field
           overlay.updateInnerHTML('bm-user-nextlevel', `<b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> more pixel${nextLevelPixels == 1 ? '' : 's'} to Lv. ${Math.floor(dataJSON['level']) + 1}`); // Updates the text content of the next level field
           break;

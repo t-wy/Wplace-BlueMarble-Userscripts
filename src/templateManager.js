@@ -527,7 +527,6 @@ export default class TemplateManager {
                   ]
                 ];
                 if (paletteStats[key] === undefined) {
-                   // save at most 10 examples for random
                   paletteStats[key] = {
                     painted: 0,
                     paintedAndEnabled: 0,
@@ -539,7 +538,7 @@ export default class TemplateManager {
                     paletteStats[key]["examplesEnabled"].push(example);
                   }
                 } else {
-                  const exampleMax = 100;
+                  const exampleMax = (this.userSettings?.smartPlace ?? false) ? 1 << 20 : 100;
                   // missing count >= 1
                   paletteStats[key]["missing"]++;
                   if (paletteStats[key]["examples"].length < exampleMax) {
