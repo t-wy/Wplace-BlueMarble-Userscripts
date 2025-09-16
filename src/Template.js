@@ -1,4 +1,4 @@
-import { uint8ToBase64, colorpalette, cleanUpCanvas } from "./utils";
+import { uint8ToBase64, colorpalette, cleanUpCanvas, allowedColorsSet, rgbToMeta } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -49,38 +49,10 @@ export default class Template {
     // Build allowed color set from site palette (exclude special Transparent entry by name)
     // Creates a Set of Wplace palette colors excluding "transparent"
     const allowed = Array.isArray(colorpalette) ? colorpalette : [];
-    this.allowedColorsSet = new Set(
-      allowed
-        .filter(color => (color?.name || '').toLowerCase() !== 'transparent' && Array.isArray(color?.rgb))
-        .map(color => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
-    );
-
-    // Ensure template #deface marker is treated as allowed (maps to Transparent color)
-    const defaceKey = '222,250,206';
-    this.allowedColorsSet.add(defaceKey);
-
-    const keyOther = 'other';
-    this.allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
+    this.allowedColorsSet = allowedColorsSet;
 
     // Map rgb-> {id, premium}
-    this.rgbToMeta = new Map(
-      allowed
-        .filter(color => Array.isArray(color?.rgb))
-        .map(color => [ `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`, { id: color.id, premium: !!color.premium, name: color.name } ])
-    );
-
-    // Map #deface to Transparent meta for UI naming and ID continuity
-    try {
-      const transparent = allowed.find(color => (color?.name || '').toLowerCase() === 'transparent');
-      if (transparent && Array.isArray(transparent.rgb)) {
-        this.rgbToMeta.set(defaceKey, { id: transparent.id, premium: !!transparent.premium, name: transparent.name });
-      }
-    } catch (ignored) {}
-
-    // Map other key to Other meta for UI naming and ID continuity
-    try {
-      this.rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
-    } catch (ignored) {}
+    this.rgbToMeta = rgbToMeta;
 
     console.log('Allowed colors for template:', this.allowedColorsSet);
 

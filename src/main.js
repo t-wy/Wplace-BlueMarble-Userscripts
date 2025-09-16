@@ -83,51 +83,22 @@ inject(() => {
     // Check Content-Type to only process JSON
     const contentType = cloned.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
-
+      const blink = Date.now(); // Current time
 
       // Since this code does not run in the userscript, we can't use consoleLog().
       console.log(`%c${name}%c: Sending JSON message about endpoint "${endpointName}"`, consoleStyle, '');
-      // Sends a message about the endpoint it spied on
-      // if (endpointName.endsWith("/alliance/leaderboard/today")) {
-      //   // modify the response to show remaining tile count
-      //   const blink = Date.now(); // Current time
-
-      //   return new Promise((resolve) => {
-      //     const blobUUID = crypto.randomUUID(); // Generates a random UUID
-      //     fetchedBlobQueue.set(blobUUID, (blobProcessed) => {
-      //       // The response that triggers when the blob is finished processing
-
-      //       // Creates a new response
-      //       resolve(new Response(blobProcessed, {
-      //         headers: cloned.headers,
-      //         status: cloned.status,
-      //         statusText: cloned.statusText
-      //       }));
-
-      //       // Since this code does not run in the userscript, we can't use consoleLog().
-      //       console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
-      //     });
-
-      //     window.postMessage({
-      //       source: 'blue-marble',
-      //       endpoint: endpointName,
-      //       blobID: blobUUID,
-      //       blink: blink,
-      //     });
-      //   });
-      // } else {
-        cloned.json()
-          .then(jsonData => {
-            window.postMessage({
-              source: 'blue-marble',
-              endpoint: endpointName,
-              jsonData: jsonData
-            }, '*');
-          })
-          .catch(err => {
-            console.error(`%c${name}%c: Failed to parse JSON: `, consoleStyle, '', err);
-          });
-      // }
+      cloned.json()
+        .then(jsonData => {
+          window.postMessage({
+            source: 'blue-marble',
+            endpoint: endpointName,
+            jsonData: jsonData,
+            blink: blink
+          }, '*');
+        })
+        .catch(err => {
+          console.error(`%c${name}%c: Failed to parse JSON: `, consoleStyle, '', err);
+        });
     } else if (contentType.includes('image/') && (!endpointName.includes('openfreemap') && !endpointName.includes('maps'))) {
       // Fetch custom for all images but opensourcemap
 
@@ -173,14 +144,6 @@ inject(() => {
         console.error(`Exception stack:`, exception);
         console.groupEnd();
       });
-
-      // cloned.blob().then(blob => {
-      //   window.postMessage({
-      //     source: 'blue-marble',
-      //     endpoint: endpointName,
-      //     blobData: blob
-      //   }, '*');
-      // });
     }
 
     return response; // Returns the original response
@@ -192,41 +155,40 @@ inject(() => {
 GM.addStyle("<placeholder CSS>");
 
 // CONSTRUCTORS
-const observers = new Observers(); // Constructs a new Observers object
 const overlayMain = new Overlay(name, version); // Constructs a new Overlay object for the main overlay
-const overlayTabTemplate = new Overlay(name, version); // Constructs a Overlay object for the template tab
 const templateManager = new TemplateManager(name, version, overlayMain); // Constructs a new TemplateManager object
 const apiManager = new ApiManager(templateManager); // Constructs a new ApiManager object
 
 overlayMain.setApiManager(apiManager); // Sets the API manager
 
-GM.getValue('bmTemplates', '{}').then(storageTemplatesValue => {
+GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   const storageTemplates = JSON.parse(storageTemplatesValue);
 
   console.log(storageTemplates);
   templateManager.importJSON(storageTemplates); // Loads the templates
 
-}).then(() => { return (
+  const userSettingsValue = await GM.getValue('bmUserSettings', '{}');
+  let userSettings;
+  try {
+    userSettings = JSON.parse(userSettingsValue);
+  } catch {
+    userSettings = {};
+  }
+  console.log(userSettings);
+  console.log(Object.keys(userSettings).length);
+  if (Object.keys(userSettings).length == 0) {
+    const uuid = crypto.randomUUID(); // Generates a random UUID
+    console.log(uuid);
+    templateManager.setUserSettings({
+      'uuid': uuid,
+      'hideLockedColors': false,
+    });
+    templateManager.storeUserSettings();
+  } else {
+    templateManager.setUserSettings(userSettings);
+  }
 
-  GM.getValue('bmUserSettings', '{}').then(userSettingsValue => {
-    const userSettings = JSON.parse(userSettingsValue);
-
-    console.log(userSettings);
-    console.log(Object.keys(userSettings).length);
-    if (Object.keys(userSettings).length == 0) {
-      const uuid = crypto.randomUUID(); // Generates a random UUID
-      console.log(uuid);
-      GM.setValue('bmUserSettings', JSON.stringify({
-        'uuid': uuid
-      }));
-    }
-  })
-
-)}).then(() => 
-
-  buildOverlayMain() // Builds the main overlay
-
-).then(() => {
+  await buildOverlayMain(); // Builds the main overlay
 
   overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
 
@@ -283,19 +245,18 @@ function observeBlack() {
  * 
  * Parent/child relationships in the DOM structure below are indicated by indentation.
  * @since 0.58.3
+ * Changed to async since 0.85.17
  */
-function buildOverlayMain() {
+async function buildOverlayMain() {
   let isMinimized = false; // Overlay state tracker (false = maximized, true = minimized)
   // Load last saved coordinates (if any)
   let savedCoords = {};
-
-  return (
-
-  GM.getValue('bmCoords', '{}').then( savedCoordsValue => {
+  const savedCoordsValue = await GM.getValue('bmCoords', '{}');
+  try {
     savedCoords = JSON.parse(savedCoordsValue) || {};
-  }).catch(() => {
+  } catch {
     savedCoords = {};
-  }).finally(() => {
+  }
 
   const persistCoords = () => {
     try {
@@ -371,6 +332,7 @@ function buildOverlayMain() {
               '#bm-contain-automation > *:not(#bm-contain-coords)', // Automation section excluding coordinates
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
+              '#bm-checkbox-colors-unlocked',      // Hide locked Colors checkbox
               '#bm-contain-colorfilter',           // Color filter UI
               '#bm-contain-templatefilter',        // Template filter UI
               '#bm-footer'                         // Footer credit text
@@ -602,7 +564,7 @@ function buildOverlayMain() {
         ).buildElement()
       .buildElement()
       // Color buttons
-      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-bottom: 6px;'})
+      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px;'}) // removed margin-bottom: 6px;
         .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
           button.onclick = () => {
             templateManager.templatesArray.forEach(t => {
@@ -627,6 +589,19 @@ function buildOverlayMain() {
         }).buildElement()
       .buildElement()
       // Color filter UI
+      .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
+        label.style.fontSize = '12px';
+        label.style.marginLeft = '5px'; // 4px padding + 1px border of the filter container below
+        checkbox.addEventListener('change', () => {
+          templateManager.setHideLockedColors(checkbox.checked);
+          buildColorFilterList();
+          if (checkbox.checked) {
+            instance.handleDisplayStatus("Hidden all locked colors.");
+          } else {
+            instance.handleDisplayStatus("Restored all colors.");
+          }
+        });
+      }).buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
@@ -746,6 +721,9 @@ function buildOverlayMain() {
     };
 
     for (const [rgb, totalCount] of paletteSumSorted) {
+      if (templateManager.areLockedColorsHidden()) {
+        if (rgb === 'other') continue;
+      }
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
@@ -778,6 +756,9 @@ function buildOverlayMain() {
         try {
           const tMeta = (templateManager.templatesArray ?? []).find(t => t.rgbToMeta?.has(rgb))?.rgbToMeta?.get(rgb);
           if (tMeta && typeof tMeta.id === 'number') {
+            if (templateManager.areLockedColorsHidden()) {
+              if (!templateManager.isColorUnlocked(tMeta.id)) continue;
+            }
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
             const starLeft = tMeta.premium ? '★ ' : '';
             colorName = `#${tMeta.id} ${starLeft}${displayName}`;
@@ -856,15 +837,17 @@ function buildOverlayMain() {
       row.style.margin = '4px 0';
 
       let removeButton = document.createElement('a');
+      removeButton.title = "Remove template";
       removeButton.textContent = "🗑️";
       removeButton.style.fontSize = '12px';
       removeButton.onclick = () => {
-        if (confirm(`Delete template ${template?.displayName}?`)) {
+        if (confirm(`Remove template ${template?.displayName}?`)) {
           templateManager.deleteTemplate(template?.storageKey);
         }
       }
 
       let teleportButton = document.createElement('a');
+      teleportButton.title = "Teleport to template";
       teleportButton.textContent = "✈️";
       teleportButton.style.fontSize = '12px';
       teleportButton.onclick = () => {
@@ -922,7 +905,5 @@ function buildOverlayMain() {
       }
     } catch (_) {}
   }, 0);
-
-  }));
 
 }

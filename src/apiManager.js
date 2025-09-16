@@ -161,6 +161,7 @@ export default class ApiManager {
           this.templateManager.userID = dataJSON['id'];
           this.charges = dataJSON['charges'];
           this.chargesUpdated = Date.now();
+          this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
           
           overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
           this.#setUpTimeout(overlay);
@@ -229,13 +230,14 @@ export default class ApiManager {
           const blobData = data['blobData'];
           const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
           const lastModified = data["lastModified"];
+          const lockedKey = this.templateManager.areLockedColorsHidden() ? '1': '0';
           const fullKey = (this.templateManager.templatesArray?? []).map(template => {
             const enabled = template.enabled ?? true;
             const palette = template.colorPalette || {}; // Obtain the color palette of the template
             const paletteStatus = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join(';');
             const templateIdentifier = Object.keys(template.chunked || {}).sort().join(';');
             return `${+enabled}|${paletteStatus}|${templateIdentifier}`
-          }).join("||");
+          }).join("||") + "||" + lockedKey;
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {

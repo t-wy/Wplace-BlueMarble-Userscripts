@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -75,6 +75,9 @@ export default class TemplateManager {
     this.templatesJSON = null; // All templates currently loaded (JSON)
     this.templatesShouldBeDrawn = true; // Should ALL templates be drawn to the canvas?
     this.tileProgress = new Map(); // Tracks per-tile progress stats {painted, required, wrong}
+    this.extraColorsBitmap = 0; // List of unlocked colors, set by apiManager
+    this.userSettings = {}; // User settings
+    this.hideLockedColors = false; 
   }
 
   /** Retrieves the pixel art canvas.
@@ -178,7 +181,10 @@ export default class TemplateManager {
     // this.templatesArray = []; // Remove this to enable multiple templates (2/2)
     this.templatesArray.push(template); // Pushes the Template object instance to the Template Array
 
-    this.tileProgress = new Map(); // reset tileProgress
+    // this.tileProgress.clear(); // reset tileProgress
+    template.tilePrefixes.forEach(prefix => {
+      this.tileProgress.delete(prefix);
+    })
 
     // ==================== PIXEL COUNT DISPLAY SYSTEM ====================
     // Display pixel count statistics with internationalized number formatting
@@ -222,7 +228,7 @@ export default class TemplateManager {
    * @since 0.72.7
    */
   async #storeTemplates() {
-    GM.setValue('bmTemplates', JSON.stringify(this.templatesJSON));
+    await GM.setValue('bmTemplates', JSON.stringify(this.templatesJSON));
   }
 
   /** Deletes a template from the JSON object.
@@ -241,7 +247,11 @@ export default class TemplateManager {
       delete templates[storageKey];
     }
 
-    this.tileProgress = new Map(); // reset tileProgress
+    // this.tileProgress.clear(); // reset tileProgress
+    // reset related tiles
+    targetTemplate.tilePrefixes.forEach(prefix => {
+      this.tileProgress.delete(prefix);
+    })
 
     this.overlay.handleDisplayStatus(`Template ${targetTemplate.displayName} is deleted!`);
   
@@ -371,7 +381,8 @@ export default class TemplateManager {
 
     // honor the same toggle Status for all templates
     const toggleStatus = this.getPaletteToggledStatus(); // Obtain the color palette of the template
-    const hasDisabled = Object.values(toggleStatus).some(v => v === false);
+    const hideLocked = this.areLockedColorsHidden();
+    const hasDisabled = Object.values(toggleStatus).some(v => v === false) || hideLocked;
     const allDisabled = Object.values(toggleStatus).every(v => v === false); // Check if every color is disabled
 
     // For each template in this tile, draw them.
@@ -434,9 +445,9 @@ export default class TemplateManager {
                   const pb = tilePixels[tileIdx + 2];
                   const pa = tilePixels[tileIdx + 3];
 
-                  const key = activeTemplate.allowedColorsSet.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
+                  const key = allowedColorsSet.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
 
-                  const isSiteColor = activeTemplate?.allowedColorsSet ? activeTemplate.allowedColorsSet.has(key) : false;
+                  const isSiteColor = allowedColorsSet.has(key);
                   
                   // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
                   if (pa >= 64 && isSiteColor) {
@@ -454,7 +465,7 @@ export default class TemplateManager {
               //   const activeTemplate = this.templatesArray?.[0]; // Get the first template
 
               //   // IF the stored palette data exists, AND the pixel is not in the allowed palette
-              //   if (activeTemplate?.allowedColorsSet && !activeTemplate.allowedColorsSet.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
+              //   if (allowedColorsSet && !allowedColorsSet.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
 
               //     continue; // Skip this pixel if it is not in the allowed palette
               //   }
@@ -597,10 +608,10 @@ export default class TemplateManager {
 
                     if (a < 1) { continue; }
 
-                    let key = templateTile.template.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
+                    let key = allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
 
                     // Hide if color is not in allowed palette or explicitly disabled
-                    const inWplacePalette = templateTile.template?.allowedColorsSet ? templateTile.template.allowedColorsSet.has(key) : true;
+                    const inWplacePalette = allowedColorsSet.has(key);
 
                     // if (inWplacePalette) {
                     //   key = 'other'; // Map all non-palette colors to "other"
@@ -608,7 +619,13 @@ export default class TemplateManager {
                     // }
 
                     const isPaletteColorEnabled = toggleStatus?.[key] !== false;
-                    if (!inWplacePalette || !isPaletteColorEnabled) {
+                    const isForceHidden = hideLocked && (
+                      key === 'other' || (
+                        rgbToMeta.has(key) &&
+                        !this.isColorUnlocked(rgbToMeta.get(key).id)
+                      )
+                    );
+                    if (!inWplacePalette || !isPaletteColorEnabled || isForceHidden) {
                       data[idx + 3] = 0; // hide disabled color center pixel
                     }
                   }
@@ -853,5 +870,56 @@ export default class TemplateManager {
       }
     }
     return status;
+  }
+
+  /** Stores the JSON object of the user settings into TamperMonkey (GreaseMonkey) storage.
+   * @since 0.85.17
+   */
+  async #storeUserSettings() {
+    await GM.setValue('bmUserSettings', JSON.stringify(this.userSettings));
+  }
+
+  /** Sets the `userSettings` object to a value.
+   * @param {object} value - The value to set the object to
+   * @since 0.85.17
+   */
+  setUserSettings(value) {
+    this.userSettings = value;
+  }
+
+  /** A utility to check if hidden colors are set to be hidden.
+   * @since 0.85.17
+   */
+  areLockedColorsHidden() {
+    return this.userSettings?.hideLockedColors ?? false;
+  }
+
+  /** Sets the `hideLockedColors` boolean in the `userSettings` to a value.
+   * @param {boolean} value - The value to set the boolean to
+   * @since 0.85.17
+   */
+  async setHideLockedColors(value) {
+    this.userSettings.hideLockedColors = value;
+    await this.#storeUserSettings();
+  }
+
+  /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
+   * @param {number} value - The value to set the mask to
+   * @since 0.85.17
+   */
+  updateExtraColorsBitmap(value) {
+    if (this.extraColorsBitmap === value) return;
+    this.extraColorsBitmap = value;
+    window.buildColorFilterList();
+  }
+
+  /** A utility to check if a color is unlocked.
+   * @param {number} color - The id of the color
+   * @since 0.85.17
+   */
+  isColorUnlocked(color) {
+    if (color < 32) return true;
+    const mask = 1 << (color - 32);
+    return (this.extraColorsBitmap & mask) !== 0;
   }
 }

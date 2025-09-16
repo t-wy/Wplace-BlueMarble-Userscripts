@@ -217,6 +217,38 @@ export const colorpalette = [
 ];
 // All entries include fixed id (index-based) and premium flag by design.
 
+export const allowedColorsSet = new Set(
+  colorpalette
+    .filter(color => (color?.name || '').toLowerCase() !== 'transparent' && Array.isArray(color?.rgb))
+    .map(color => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
+);
+
+// Ensure template #deface marker is treated as allowed (maps to Transparent color)
+const defaceKey = '222,250,206';
+allowedColorsSet.add(defaceKey);
+
+const keyOther = 'other';
+allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
+
+export const rgbToMeta = new Map(
+  colorpalette
+    .filter(color => Array.isArray(color?.rgb))
+    .map(color => [ `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`, { id: color.id, premium: !!color.premium, name: color.name } ])
+);
+
+// Map #deface to Transparent meta for UI naming and ID continuity
+try {
+  const transparent = colorpalette.find(color => (color?.name || '').toLowerCase() === 'transparent');
+  if (transparent && Array.isArray(transparent.rgb)) {
+    rgbToMeta.set(defaceKey, { id: transparent.id, premium: !!transparent.premium, name: transparent.name });
+  }
+} catch (ignored) {}
+
+// Map other key to Other meta for UI naming and ID continuity
+try {
+  rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
+} catch (ignored) {}
+
 
 /** Returns the real World coordinates
  * @param {number[]} coordsTile
