@@ -170,7 +170,12 @@ const apiManager = new ApiManager(templateManager); // Constructs a new ApiManag
 overlayMain.setApiManager(apiManager); // Sets the API manager
 
 GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
-  const storageTemplates = JSON.parse(storageTemplatesValue);
+  let storageTemplates;
+  try {
+    storageTemplates = JSON.parse(storageTemplatesValue);
+  } catch {
+    storageTemplates = {};
+  }
 
   console.log(storageTemplates);
   templateManager.importJSON(storageTemplates); // Loads the templates
@@ -751,7 +756,7 @@ async function buildOverlayMain() {
         }
       })
       // persist immediately
-      GM.setValue('bmTemplates', JSON.stringify(templateManager.templatesJSON));
+      templateManager.storeTemplates();
     } catch (_) {};
   }
 

@@ -200,7 +200,7 @@ export default class TemplateManager {
     console.log(this.templatesArray);
     console.log(JSON.stringify(this.templatesJSON));
 
-    await this.#storeTemplates();
+    await this.storeTemplates();
   }
 
   requestListRebuild() {
@@ -227,7 +227,7 @@ export default class TemplateManager {
   /** Stores the JSON object of the loaded templates into TamperMonkey (GreaseMonkey) storage.
    * @since 0.72.7
    */
-  async #storeTemplates() {
+  async storeTemplates() {
     await GM.setValue('bmTemplates', JSON.stringify(this.templatesJSON));
   }
 
@@ -255,7 +255,7 @@ export default class TemplateManager {
 
     this.overlay.handleDisplayStatus(`Template ${targetTemplate.displayName} is deleted!`);
   
-    await this.#storeTemplates();
+    await this.storeTemplates();
     this.requestListRebuild();
   }
 
@@ -874,7 +874,7 @@ export default class TemplateManager {
   /** Stores the JSON object of the user settings into TamperMonkey (GreaseMonkey) storage.
    * @since 0.85.17
    */
-  async #storeUserSettings() {
+  async storeUserSettings() {
     await GM.setValue('bmUserSettings', JSON.stringify(this.userSettings));
   }
 
@@ -899,7 +899,7 @@ export default class TemplateManager {
    */
   async setHideLockedColors(value) {
     this.userSettings.hideLockedColors = value;
-    await this.#storeUserSettings();
+    await this.storeUserSettings();
   }
 
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
