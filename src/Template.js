@@ -180,7 +180,10 @@ export default class Template {
       // This calculates the size based on which is smaller:
       // A. The top left corner of the current tile to the bottom right corner of the current tile
       // B. The top left corner of the current tile to the bottom right corner of the image
-      const drawSizeY = Math.min(this.tileSize - (pixelY % this.tileSize), imageHeight - (pixelY - this.coords[3]));
+      const drawSizeY = Math.min(
+        this.tileSize - (pixelY % this.tileSize), // remaining y in this tile
+        imageHeight + this.coords[3] - pixelY // bottom y
+      );
 
       console.log(`Math.min(${this.tileSize} - (${pixelY} % ${this.tileSize}), ${imageHeight} - (${pixelY - this.coords[3]}))`);
 
@@ -192,7 +195,10 @@ export default class Template {
         // This calculates the size based on which is smaller:
         // A. The top left corner of the current tile to the bottom right corner of the current tile
         // B. The top left corner of the current tile to the bottom right corner of the image
-        const drawSizeX = Math.min(this.tileSize - (pixelX % this.tileSize), imageWidth - (pixelX - this.coords[2]));
+        const drawSizeX = Math.min(
+          this.tileSize - (pixelX % this.tileSize), // remaining x in this tile
+          imageWidth + this.coords[2] - pixelX　// right x
+        );
 
         console.log(`Math.min(${this.tileSize} - (${pixelX} % ${this.tileSize}), ${imageWidth} - (${pixelX - this.coords[2]}))`);
 

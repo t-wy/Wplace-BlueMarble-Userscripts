@@ -272,7 +272,7 @@ function observeBlack() {
               const colorId = rgbToMeta.get(colorKey).id;
               if (!templateManager.isColorUnlocked(colorId)) return; // color not owned
               
-              examples.push(...content["examplesEnabled"].map(example => [colorId, example]));
+              examples.push(...content.examplesEnabled.map(example => [colorId, example]));
             })
           };
           if (examples.length === 0) return;
@@ -305,6 +305,8 @@ function observeBlack() {
             });
             canvas.dispatchEvent(ev);
           }
+          // Get back to the first point to show where the painted pixels are based on
+          teleportToTileCoords(examples[0][1][0], examples[0][1][1], false);
         }
 
         // Attempts to find the "Paint Pixel" element for anchoring
@@ -787,13 +789,14 @@ async function buildOverlayMain() {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
         if (combinedProgress[colorKey] === undefined) {
           combinedProgress[colorKey] = Object.fromEntries(Object.entries(content));
-          combinedProgress[colorKey]["examples"] = content["examples"].slice();
+          combinedProgress[colorKey].examples = content.examples.slice();
+          combinedProgress[colorKey].examplesEnabled = content.examplesEnabled.slice();
         } else {
-          combinedProgress[colorKey]["painted"] += content["painted"];
-          combinedProgress[colorKey]["paintedAndEnabled"] += content["paintedAndEnabled"];
-          combinedProgress[colorKey]["missing"] += content["missing"];
-          combinedProgress[colorKey]["examples"].push(...content["examples"]);
-          combinedProgress[colorKey]["examplesEnabled"].push(...content["examplesEnabled"]);
+          combinedProgress[colorKey].painted += content.painted;
+          combinedProgress[colorKey].paintedAndEnabled += content.paintedAndEnabled;
+          combinedProgress[colorKey].missing += content.missing;
+          combinedProgress[colorKey].examples.push(...content.examples);
+          combinedProgress[colorKey].examplesEnabled.push(...content.examplesEnabled);
         }
       })
     };
@@ -853,8 +856,8 @@ async function buildOverlayMain() {
       swatch.addEventListener('click', () => {
         // if ((paletteEntry?.examples?.length ?? 0) > 0) {
         if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
-          // const examples = paletteEntry["examples"];
-          const examples = paletteEntry["examplesEnabled"];
+          // const examples = paletteEntry.examples;
+          const examples = paletteEntry.examplesEnabled;
           const exampleIndex = Math.floor(Math.random() * examples.length);
           teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
         }
@@ -902,7 +905,7 @@ async function buildOverlayMain() {
         if (combinedTemplate[storageKey] === undefined) {
           combinedTemplate[storageKey] = Object.fromEntries(Object.entries(content));
         } else {
-          combinedTemplate[storageKey]["painted"] += content["painted"];
+          combinedTemplate[storageKey].painted += content.painted;
         }
       })
     };
@@ -948,6 +951,10 @@ async function buildOverlayMain() {
       toggle.addEventListener('change', () => {
         template.enabled = toggle.checked;
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
+        if (!toggle.checked) {
+          // reset related tiles if it is being toggled off
+          templateManager.clearTileProgress(template);
+        }
         syncToggleList();
       });
 

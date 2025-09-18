@@ -181,10 +181,8 @@ export default class TemplateManager {
     // this.templatesArray = []; // Remove this to enable multiple templates (2/2)
     this.templatesArray.push(template); // Pushes the Template object instance to the Template Array
 
-    // this.tileProgress.clear(); // reset tileProgress
-    template.tilePrefixes.forEach(prefix => {
-      this.tileProgress.delete(prefix);
-    })
+    // reset related tiles
+    this.clearTileProgress(template);
 
     // ==================== PIXEL COUNT DISPLAY SYSTEM ====================
     // Display pixel count statistics with internationalized number formatting
@@ -247,11 +245,8 @@ export default class TemplateManager {
       delete templates[storageKey];
     }
 
-    // this.tileProgress.clear(); // reset tileProgress
     // reset related tiles
-    targetTemplate.tilePrefixes.forEach(prefix => {
-      this.tileProgress.delete(prefix);
-    })
+    this.clearTileProgress(targetTemplate);
 
     this.overlay.handleDisplayStatus(`Template ${targetTemplate.displayName} is deleted!`);
   
@@ -500,9 +495,9 @@ export default class TemplateManager {
                     examplesEnabled: [ ],
                   }
                 } else {
-                  paletteStats[colorKey]["painted"]++;
+                  paletteStats[colorKey].painted++;
                   if (templateTile.template.enabled ?? true) {
-                    paletteStats[colorKey]["paintedAndEnabled"]++;
+                    paletteStats[colorKey].paintedAndEnabled++;
                   }
                 }
                 if (templateStats[templateKey] === undefined) {
@@ -510,7 +505,7 @@ export default class TemplateManager {
                     painted: 1,
                   }
                 } else {
-                  templateStats[templateKey]["painted"]++;
+                  templateStats[templateKey].painted++;
                 }
               } else {
                 wrongCount++; // ...the pixel is NOT painted correctly
@@ -535,26 +530,26 @@ export default class TemplateManager {
                     examplesEnabled: [ ],
                   }
                   if (templateTile.template.enabled ?? true) {
-                    paletteStats[key]["examplesEnabled"].push(example);
+                    paletteStats[key].examplesEnabled.push(example);
                   }
                 } else {
                   const exampleMax = (this.userSettings?.smartPlace ?? false) ? 1 << 20 : 100;
                   // missing count >= 1
-                  paletteStats[key]["missing"]++;
-                  if (paletteStats[key]["examples"].length < exampleMax) {
-                    paletteStats[key]["examples"].push(example);
-                  } else if (Math.random() * paletteStats[key]["examples"].length < exampleMax) {
+                  paletteStats[key].missing++;
+                  if (paletteStats[key].examples.length < exampleMax) {
+                    paletteStats[key].examples.push(example);
+                  } else if (Math.random() * paletteStats[key].examples.length < exampleMax) {
                     // pick a random sample, so the new entry share the same weight
                     const replaceIndex = Math.floor(Math.random() * exampleMax);
-                    paletteStats[key]["examples"][replaceIndex] = example;
+                    paletteStats[key].examples[replaceIndex] = example;
                   }
                   if (templateTile.template.enabled ?? true) {
-                    if (paletteStats[key]["examplesEnabled"].length < exampleMax) {
-                      paletteStats[key]["examplesEnabled"].push(example);
-                    } else if (Math.random() * paletteStats[key]["examplesEnabled"].length < exampleMax) {
+                    if (paletteStats[key].examplesEnabled.length < exampleMax) {
+                      paletteStats[key].examplesEnabled.push(example);
+                    } else if (Math.random() * paletteStats[key].examplesEnabled.length < exampleMax) {
                       // pick a random sample, so the new entry share the same weight
                       const replaceIndex = Math.floor(Math.random() * exampleMax);
-                      paletteStats[key]["examplesEnabled"][replaceIndex] = example;
+                      paletteStats[key].examplesEnabled[replaceIndex] = example;
                     }
                   }
                 }
@@ -920,5 +915,15 @@ export default class TemplateManager {
     if (color < 32) return true;
     const mask = 1 << (color - 32);
     return (this.extraColorsBitmap & mask) !== 0;
+  }
+
+  /** A utility clear all the tiles related to a template
+   * @param {Template} template
+   * @since 0.85.19
+   */
+  clearTileProgress(template) {
+    template.tilePrefixes.forEach(prefix => {
+      this.tileProgress.delete(prefix);
+    })
   }
 }
