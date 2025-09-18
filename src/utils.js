@@ -402,3 +402,14 @@ export function teleportToTileCoords(coordsTile, coordsPixel, smooth = true) {
   const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
   teleportToGeoCoords(geoCoords[0], geoCoords[1], smooth);
 }
+
+/** Get coordinates from the BM overlay
+ * @since 0.85.20
+ */
+export function getCoords() {
+  const tx = Number(document.querySelector('#bm-input-tx')?.value || '');
+  const ty = Number(document.querySelector('#bm-input-ty')?.value || '');
+  const px = Number(document.querySelector('#bm-input-px')?.value || '');
+  const py = Number(document.querySelector('#bm-input-py')?.value || '');
+  return [[tx, ty], [px, py]];
+}
