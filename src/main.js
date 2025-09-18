@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getCoords } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, getCenterGeoCoords, coordsGeoToTileCoords } from './utils.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -283,17 +283,26 @@ function observeBlack() {
           //   "bm-input-px",
           //   "bm-input-py",
           // ].every(elementId => document.getElementById(elementId)?.value !== "")) {
-          //   const [[tx, ty], [px, py]] = getCoords();
+          //   const [[tx, ty], [px, py]] = getOverlayCoords();
           //   exampleCoord = [
           //     tx * templateManager.tileSize + px,
           //     ty * templateManager.tileSize + py,
           //   ];
           // } else {
+          try {
+            const geoCoords = getCenterGeoCoords();
+            const tileCoords = coordsGeoToTileCoords(geoCoords[0], geoCoords[1]);
+            exampleCoord = [
+              tileCoords[0][0] * templateManager.tileSize + tileCoords[1][0],
+              tileCoords[0][1] * templateManager.tileSize + tileCoords[1][1],
+            ];
+          } catch {
             const example = examples[Math.floor(Math.random() * examples.length)][1];
             exampleCoord = [
               example[0][0] * templateManager.tileSize + example[1][0],
               example[0][1] * templateManager.tileSize + example[1][1],
             ];
+          };
           // }
           examples.sort(([color1, coord1], [color2, coord2]) => {
             const _coord1 = [
@@ -304,8 +313,8 @@ function observeBlack() {
               coord2[0][0] * templateManager.tileSize + coord2[1][0],
               coord2[0][1] * templateManager.tileSize + coord2[1][1],
             ];
-            const dist1 = Math.abs(_coord1[0] - exampleCoord[0]) + Math.abs(_coord1[1] - exampleCoord[1]);
-            const dist2 = Math.abs(_coord2[0] - exampleCoord[0]) + Math.abs(_coord2[1] - exampleCoord[1]);
+            const dist1 = Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2);
+            const dist2 = Math.pow(_coord2[0] - exampleCoord[0], 2) + Math.pow(_coord2[1] - exampleCoord[1], 2);
             return dist1 - dist2;
           })
           const tilesToPaint = Math.min(currentCharges, examples.length);
@@ -336,7 +345,7 @@ function observeBlack() {
 
 const persistCoords = () => {
   try {
-    const [[tx, ty], [px, py]] = getCoords();
+    const [[tx, ty], [px, py]] = getOverlayCoords();
     const data = { tx, ty, px, py };
     GM.setValue('bmCoords', JSON.stringify(data));
   } catch (_) {}
@@ -344,7 +353,7 @@ const persistCoords = () => {
 
 const teleportCoords = () => {
   try {
-    const [[tx, ty], [px, py]] = getCoords();
+    const [[tx, ty], [px, py]] = getOverlayCoords();
     teleportToTileCoords([tx, ty], [px, py]);
   } catch (_) {}
 };

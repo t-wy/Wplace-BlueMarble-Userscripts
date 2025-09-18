@@ -265,6 +265,29 @@ export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
   ];
 }
 
+/** Returns the tile World coordinates
+ * @param {number} latitude
+ * @param {number} longitude
+ * @returns {number[][]} [coordsTile, coordsPixel]
+ * @since 0.85.4
+ */
+export function coordsGeoToTileCoords(latitude, longitude) {
+  const relX = (longitude + 180) / 360;
+  const relY = (Math.log(Math.tan((90 + latitude) * Math.PI / 360)) / Math.PI + 1) / 2;
+  const tileX = Math.floor(relX * 2048 * 1000);
+  const tileY = Math.floor((1 - relY) * 2048 * 1000);
+  return [
+    [
+      Math.floor(tileX / 1000),
+      Math.floor(tileY / 1000)
+    ],
+    [
+      tileX % 1000,
+      tileY % 1000
+    ]
+  ];
+}
+
 /** Releases the canvas content to free up memory.
  * @since 0.85.5
  */
@@ -309,7 +332,7 @@ function findGadget(condition, depth=10) {
     return null;
   }
   for (const element of allElements) {
-    const searchResult = search(element, "$0", element.__click, depth);
+    const searchResult = search(element, "$0.__click", element.__click, depth);
     if (searchResult !== null) return searchResult;
   }
   return null;
@@ -406,10 +429,39 @@ export function teleportToTileCoords(coordsTile, coordsPixel, smooth = true) {
 /** Get coordinates from the BM overlay
  * @since 0.85.20
  */
-export function getCoords() {
+export function getOverlayCoords() {
   const tx = Number(document.querySelector('#bm-input-tx')?.value || '');
   const ty = Number(document.querySelector('#bm-input-ty')?.value || '');
   const px = Number(document.querySelector('#bm-input-px')?.value || '');
   const py = Number(document.querySelector('#bm-input-py')?.value || '');
   return [[tx, ty], [px, py]];
+}
+
+/** Get coordinates from the BM overlay
+ * @returns {number[]} [latitude, longitude]
+ * @since 0.85.20
+ */
+export function getCenterGeoCoords() {
+  const myLocationButton = document.querySelector(".right-3>button");
+  if ( myLocationButton !== null ) {
+    if (myLocationButton["__click"] !== undefined) {
+      const center = myLocationButton["__click"][3]["v"]["transform"]["center"];
+      return [center['lat'], center['lng']];
+    } else {
+      const injectedFunc = () => {
+          const script = document.currentScript;
+          const center = document.querySelector(".right-3>button")["__click"][3]["v"]["transform"]["center"];
+          script.setAttribute('bm-lat', center['lat']);
+          script.setAttribute('bm-lng', center['lng']);
+      };
+      const script = document.createElement('script');
+      script.textContent = `(${injectedFunc})();`;
+      document.documentElement?.appendChild(script);
+      const result = [+script.getAttribute('bm-lat'), +script.getAttribute('bm-lng')];
+      script.remove();
+      return result;
+    }
+  } else {
+    throw Error("Could not find the \"My location\" button.");
+  }
 }
