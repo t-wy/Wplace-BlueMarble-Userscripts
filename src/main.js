@@ -313,8 +313,8 @@ function observeBlack() {
               coord2[0][0] * templateManager.tileSize + coord2[1][0],
               coord2[0][1] * templateManager.tileSize + coord2[1][1],
             ];
-            const dist1 = Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2);
-            const dist2 = Math.pow(_coord2[0] - exampleCoord[0], 2) + Math.pow(_coord2[1] - exampleCoord[1], 2);
+            const dist1 = Math.sqrt(Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
+            const dist2 = Math.sqrt(Math.pow(_coord2[0] - exampleCoord[0], 2) + Math.pow(_coord2[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
             return dist1 - dist2;
           })
           const tilesToPaint = Math.min(currentCharges, examples.length);
@@ -432,7 +432,7 @@ async function buildOverlayMain() {
               '#bm-checkbox-colors-unlocked',      // Hide locked Colors checkbox
               '#bm-contain-colorfilter',           // Color filter UI
               '#bm-contain-templatefilter',        // Template filter UI
-              '#bm-footer'                         // Footer credit text
+              // '#bm-footer'                         // Footer credit text
             ];
             
             // Apply visibility changes to all toggleable elements
@@ -578,7 +578,9 @@ async function buildOverlayMain() {
           });
         }
       ).buildElement()
-      .addHeader(1, {'textContent': name}).buildElement()
+      .addHeader(1, {'textContent': name})
+        .addSmall({'textContent': ` v${version}`}).buildElement()
+      .buildElement()
     .buildElement()
 
     .addHr().buildElement()
@@ -699,7 +701,7 @@ async function buildOverlayMain() {
           }
         });
       }).buildElement()
-      .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
+      .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
       // Template buttons
@@ -733,7 +735,7 @@ async function buildOverlayMain() {
         }).buildElement()
       .buildElement()
       // Template filter UI
-      .addDiv({'id': 'bm-contain-templatefilter', 'style': 'max-height: 140px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
+      .addDiv({'id': 'bm-contain-templatefilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-templatefilter-list'}).buildElement()
       .buildElement()
       // Status
@@ -756,9 +758,9 @@ async function buildOverlayMain() {
             });
           }).buildElement()
         .buildElement()
-      .buildElement()
-      .addDiv({'id': 'bm-footer'})
-        .addSmall({'textContent': `v${version} by SwingTheVine | Forked by TWY`, 'style': 'margin-top: auto;'}).buildElement()
+        .addDiv({'id': 'bm-footer'})
+          .addSmall({'textContent': `by SwingTheVine | Forked by TWY`, 'style': 'margin-top: auto;'}).buildElement()
+        .buildElement()
       .buildElement()
     .buildElement()
   .buildOverlay(document.body);

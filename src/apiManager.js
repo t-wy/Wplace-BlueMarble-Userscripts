@@ -166,7 +166,7 @@ export default class ApiManager {
           
           overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
           overlay.updateInnerHTML('bm-user-droplets', `Droplets: <b>${new Intl.NumberFormat().format(dataJSON['droplets'])}</b>`); // Updates the text content of the droplets field
-          overlay.updateInnerHTML('bm-user-nextlevel', `<b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> more pixel${nextLevelPixels == 1 ? '' : 's'} to Lv. ${Math.floor(dataJSON['level']) + 1}`); // Updates the text content of the next level field
+          overlay.updateInnerHTML('bm-user-nextlevel', `<b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> more pixel${nextLevelPixels == 1 ? '' : 's'} to Lv. <b>${Math.floor(dataJSON['level']) + 1}</b>`); // Updates the text content of the next level field
           break;
 
         case 'pixel': // Request to retrieve pixel data
