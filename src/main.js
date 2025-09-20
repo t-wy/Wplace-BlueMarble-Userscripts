@@ -263,7 +263,7 @@ function observeBlack() {
         paint.className = 'btn btn-soft';
         paint.onclick = function() {
           const currentCharges = Math.floor(apiManager.getCurrentCharges());
-          const examples = [];
+          let examples = [];
           const toggleStatus = templateManager.getPaletteToggledStatus();
           for (const stats of templateManager.tileProgress.values()) {
             Object.entries(stats.palette).forEach(([colorKey, content]) => {
@@ -304,22 +304,52 @@ function observeBlack() {
             ];
           };
           // }
-          examples.sort(([color1, coord1], [color2, coord2]) => {
-            const _coord1 = [
-              coord1[0][0] * templateManager.tileSize + coord1[1][0],
-              coord1[0][1] * templateManager.tileSize + coord1[1][1],
-            ];
-            const _coord2 = [
-              coord2[0][0] * templateManager.tileSize + coord2[1][0],
-              coord2[0][1] * templateManager.tileSize + coord2[1][1],
-            ];
-            const dist1 = Math.sqrt(Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
-            const dist2 = Math.sqrt(Math.pow(_coord2[0] - exampleCoord[0], 2) + Math.pow(_coord2[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
-            return dist1 - dist2;
-          })
-          const tilesToPaint = Math.min(currentCharges, examples.length);
+          let tilesToPaint;
+          if (examples.length <= currentCharges) {
+            // do nothing as all are going to be painted anyway
+          } else if (examples.length < 50000) {
+             examples = examples.sort(([color1, coord1], [color2, coord2]) => {
+              const _coord1 = [
+                coord1[0][0] * templateManager.tileSize + coord1[1][0],
+                coord1[0][1] * templateManager.tileSize + coord1[1][1],
+              ];
+              const _coord2 = [
+                coord2[0][0] * templateManager.tileSize + coord2[1][0],
+                coord2[0][1] * templateManager.tileSize + coord2[1][1],
+              ];
+              const dist1 = Math.sqrt(Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
+              const dist2 = Math.sqrt(Math.pow(_coord2[0] - exampleCoord[0], 2) + Math.pow(_coord2[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2);
+              return dist1 - dist2;
+            }).slice(0, currentCharges);
+          } else {
+            // we don't want to fully sort the array
+            const buckets = {};
+            const resultExamples = [];
+            examples.forEach(([color1, coord1]) => {
+              const _coord1 = [
+                coord1[0][0] * templateManager.tileSize + coord1[1][0],
+                coord1[0][1] * templateManager.tileSize + coord1[1][1],
+              ];
+              const dist1 = Math.floor(Math.sqrt(Math.pow(_coord1[0] - exampleCoord[0], 2) + Math.pow(_coord1[1] - exampleCoord[1], 2)) * (1 + Math.random() * 0.2));
+              if (buckets[dist1] === undefined) {
+                buckets[dist1] = [
+                  [color1, coord1]
+                ];
+              } else {
+                buckets[dist1].push(
+                  [color1, coord1]
+                );
+              }
+            });
+            const sortedDist = Object.keys(buckets).sort((a, b) => a - b);
+            for (const dist of sortedDist) {
+              resultExamples.push(...buckets[dist]);
+              if (resultExamples.length >= currentCharges) break;
+            }
+            examples = resultExamples.slice(0, currentCharges);
+          }
           const canvas = document.querySelector("canvas.maplibregl-canvas");
-          for (let i = 0; i < tilesToPaint; i++) {
+          for (let i = 0; i < examples.length; i++) {
             const [colorId, example] = examples[i];
             document.getElementById("color-" + colorId).click();
             teleportToTileCoords(example[0], example[1], false);
@@ -872,13 +902,16 @@ async function buildOverlayMain() {
       const filledLabelText = `${filledCount.toLocaleString()}`;
       label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
 
+      let currentIndex = 0;
       swatch.addEventListener('click', () => {
         // if ((paletteEntry?.examples?.length ?? 0) > 0) {
         if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
           // const examples = paletteEntry.examples;
           const examples = paletteEntry.examplesEnabled;
-          const exampleIndex = Math.floor(Math.random() * examples.length);
+          // const exampleIndex = Math.floor(Math.random() * examples.length);
+          const exampleIndex = currentIndex % examples.length;
           teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
+          ++currentIndex;
         }
       });
       // if ((paletteEntry?.examples?.length ?? 0) > 0) {
