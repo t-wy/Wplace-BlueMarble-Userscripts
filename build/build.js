@@ -177,4 +177,4 @@ let resultBookmarklet = await terser.minify(bookmarkletContent, {
 });
 
 // Writes the obfuscated/mangled bookmarklet code to a file
-fs.writeFileSync('dist/BlueMarble.bookmarklet.min.js', "javascript:" + resultBookmarklet.code, 'utf8');
+fs.writeFileSync('dist/BlueMarble.bookmarklet.min.js', "javascript:" + resultBookmarklet.code.replaceAll(' ', '%20'), 'utf8');
