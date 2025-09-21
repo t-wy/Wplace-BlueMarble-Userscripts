@@ -4,9 +4,12 @@ Preview Images of This Fork:
 |-|-|-|
 | ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Pixel Info](assets/PixelInfo.png) |
 
-More Information Regarding this Fork [Here](#regarding-this-fork).
+More Information Regarding this Fork **[Here](#regarding-this-fork)**.
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Install Blue Marble</strong></a>
+
+**[Bookmarklet version](/dist/BlueMarble.bookmarklet.min.js)** is also available.
+To use it, copy the content and paste it in the URL field when creating a bookmark.
 
 <table>
   <tr>
