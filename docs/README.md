@@ -8,6 +8,9 @@ More Information Regarding this Fork [Here](#regarding-this-fork).
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/main/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Original Ver. with Userscripts Support</strong></a> / <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Custom Mod Ver.</strong></a>
 
+**[Bookmarklet version](/dist/BlueMarble.bookmarklet.min.js)** (and [Custom Mod Ver.](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/custom-improve/dist/BlueMarble.bookmarklet.min.js)) is also available. 
+To use it, copy the content and paste it in the URL field when creating a bookmark.
+
 <table>
   <tr>
     <td><a href="#blue-marble">Blue Marble</a></td>

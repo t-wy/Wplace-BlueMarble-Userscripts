@@ -141,3 +141,31 @@ fs.writeFileSync(
 );
 
 console.log(`${consoleStyle.GREEN + consoleStyle.BOLD + consoleStyle.UNDERLINE}Building complete!${consoleStyle.RESET}`);
+
+// Fetches the userscript bookmarklet 
+const bookmarkletContent = fs.readFileSync('src/bookmarklet.js', 'utf8');
+
+// Obfuscates the Bookmarklet file
+let resultBookmarklet = await terser.minify(bookmarkletContent, {
+  mangle: {
+    keep_classnames: false,
+    keep_fnames: false,
+    reserved: [],
+    properties: {
+      keep_quoted: true,
+      reserved: []
+    },
+  },
+  format: {
+    comments: 'some'
+  },
+  compress: {
+    dead_code: true,
+    drop_console: true,
+    drop_debugger: true,
+    passes: 2
+  }
+});
+
+// Writes the obfuscated/mangled bookmarklet code to a file
+fs.writeFileSync('dist/BlueMarble.bookmarklet.min.js', "javascript:" + resultBookmarklet.code.replaceAll(' ', '%20'), 'utf8');
