@@ -307,7 +307,7 @@ function observeBlack() {
           let tilesToPaint;
           if (examples.length <= currentCharges) {
             // do nothing as all are going to be painted anyway
-          } else if (examples.length < 50000) {
+          } else if (examples.length < 5000) { // performance is close at about 5000 ~ 10000
              examples = examples.sort(([color1, coord1], [color2, coord2]) => {
               const _coord1 = [
                 coord1[0][0] * templateManager.tileSize + coord1[1][0],

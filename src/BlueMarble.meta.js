@@ -15,7 +15,6 @@
 // @grant        GM.addStyle
 // @grant        GM.setValue
 // @grant        GM.getValue
-// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 // Wplace  --> https://wplace.live
