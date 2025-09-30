@@ -254,6 +254,27 @@ input[type="file"][id*="template"] {
   margin-top: 0.5em;
 }
 
+/* Keep the charges line stable to prevent layout jumps */
+#bm-user-charges {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5ch;
+  white-space: nowrap;
+  min-height: 1.4em;
+}
+
+#bm-user-charges .bm-charge-countdown {
+  color: orange;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+#bm-user-charges .bm-charge-count {
+  color: lightgray;
+  font-size: 0.8em;
+}
+
 /* All overlay buttons */
 #bm-overlay button {
   background-color: #144eb9;

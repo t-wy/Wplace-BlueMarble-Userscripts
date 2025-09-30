@@ -80,11 +80,15 @@ export default class ApiManager {
     const maxCharges = this.charges["max"];
     const currentChargesStr = new Intl.NumberFormat().format(currentCharges);
     const maxChargesStr = new Intl.NumberFormat().format(maxCharges);
-    const chargeText = `<span style="color: lightgray; font-size: 0.8em;">(${currentChargesStr} / ${maxChargesStr})</span>`;
-    const countDown = `<b style="color: orange">${this.getFullRemainingTimeFormatted()}</b>`;
-    overlay.updateInnerHTML(
-      'bm-user-charges', `Full Charges in ${countDown} ${chargeText}`
-    ); // Updates the text content of the charges field
+
+    const container = document.getElementById('bm-user-charges');
+    const countdownEl = container?.querySelector('[data-role="countdown"]');
+    const countEl = container?.querySelector('[data-role="charge-count"]');
+
+    if (!container || !countdownEl || !countEl) {return;}
+
+    countdownEl.textContent = this.getFullRemainingTimeFormatted();
+    countEl.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
   }
 
   #requestMe() {
