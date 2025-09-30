@@ -195,6 +195,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
     templateManager.setUserSettings({
       'uuid': uuid,
       'hideLockedColors': false,
+      'hideCompletedColors': false,
       'smartPlace': false,
     });
     templateManager.storeUserSettings();
@@ -731,6 +732,19 @@ async function buildOverlayMain() {
           }
         });
       }).buildElement()
+      .addCheckbox({'id': 'bm-checkbox-colors-completed', 'textContent': 'Hide Completed Colors', 'checked': templateManager.areCompletedColorsHidden()}, (instance, label, checkbox) => {
+        label.style.fontSize = '12px';
+        label.style.marginLeft = '5px';
+        checkbox.addEventListener('change', () => {
+          templateManager.setHideCompletedColors(checkbox.checked);
+          buildColorFilterList();
+          if (checkbox.checked) {
+            instance.handleDisplayStatus("Hidden all completed colors.");
+          } else {
+            instance.handleDisplayStatus("Restored all colors.");
+          }
+        });
+      }).buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
@@ -830,9 +844,6 @@ async function buildOverlayMain() {
       return;
     }
 
-    const paletteSumSorted = Object.entries(paletteSum)
-      .sort((a,b) => b[1] - a[1]); // sort by frequency desc
-
     const combinedProgress = {};
     for (const stats of templateManager.tileProgress.values()) {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
@@ -850,7 +861,27 @@ async function buildOverlayMain() {
       })
     };
 
-    for (const [rgb, totalCount] of paletteSumSorted) {
+    const hideCompleted = templateManager.areCompletedColorsHidden();
+
+    let paletteList = Object.entries(paletteSum);
+
+    if (hideCompleted) {
+      paletteList = paletteList.map(([rgb, totalCount]) => {
+        const paletteEntry = combinedProgress[rgb];
+        const filledCount = paletteEntry?.paintedAndEnabled ?? 0;
+        const remaining = totalCount - filledCount;
+        return [rgb, totalCount, remaining];
+      }).filter(([, , remaining]) => remaining > 0)
+        .sort((a, b) => b[2] - a[2]);
+    } else {
+      paletteList.sort((a,b) => b[1] - a[1]); // sort by frequency desc
+    }
+
+    for (const item of paletteList) {
+      const rgb = item[0];
+      const totalCount = hideCompleted ? item[1] : item[1];
+      const remainingCount = hideCompleted ? item[2] : 0;
+
       if (templateManager.areLockedColorsHidden()) {
         if (rgb === 'other') continue;
       }
@@ -897,24 +928,24 @@ async function buildOverlayMain() {
         } catch (ignored) {}
       }
       const paletteEntry = combinedProgress[colorKey];
-      // const filledCount = paletteEntry?.painted ?? 0;
       const filledCount = paletteEntry?.paintedAndEnabled ?? 0;
-      const filledLabelText = `${filledCount.toLocaleString()}`;
-      label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
+
+      if (hideCompleted) {
+        label.textContent = `${colorName} • ${remainingCount.toLocaleString()}`;
+      } else {
+        const filledLabelText = `${filledCount.toLocaleString()}`;
+        label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
+      }
 
       let currentIndex = 0;
       swatch.addEventListener('click', () => {
-        // if ((paletteEntry?.examples?.length ?? 0) > 0) {
         if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
-          // const examples = paletteEntry.examples;
           const examples = paletteEntry.examplesEnabled;
-          // const exampleIndex = Math.floor(Math.random() * examples.length);
           const exampleIndex = currentIndex % examples.length;
           teleportToTileCoords(examples[exampleIndex][0], examples[exampleIndex][1]);
           ++currentIndex;
         }
       });
-      // if ((paletteEntry?.examples?.length ?? 0) > 0) {
       if ((paletteEntry?.examplesEnabled?.length ?? 0) > 0) {
         swatch.style["cursor"] = "pointer";
       };
