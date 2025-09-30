@@ -617,7 +617,10 @@ async function buildOverlayMain() {
 
     .addDiv({'id': 'bm-contain-userinfo'})
       .addP({'id': 'bm-user-name', 'textContent': 'Username:'}).buildElement()
-      .addP({'id': 'bm-user-charges', 'textContent': 'Full Charge in N/A'}).buildElement()
+      .addP({'id': 'bm-user-charges'}, (_, element) => {
+        element.setAttribute('aria-live', 'polite');
+        element.innerHTML = 'Full Charges in <span class="bm-charge-countdown" data-role="countdown">--:--</span> <span class="bm-charge-count" data-role="charge-count">(0 / 0)</span>';
+      }).buildElement()
       .addP({'id': 'bm-user-droplets', 'textContent': 'Droplets:'}).buildElement()
       .addP({'id': 'bm-user-nextlevel', 'textContent': 'N/A more pixels to Lv. N/A'}).buildElement()
     .buildElement()
