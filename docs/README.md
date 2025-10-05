@@ -4,7 +4,7 @@ Preview Images of the [Custom-Improve Branch](https://github.com/t-wy/Wplace-Blu
 |-|-|-|
 | ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Pixel Info](assets/PixelInfo.png) |
 
-More Information Regarding this Fork [Here](#regarding-this-fork).
+More Information Regarding this Fork **[Here](#regarding-this-fork)**.
 
 <strong>One-click install:</strong> Click this link to Install Blue Marble directly: <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/main/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Original Ver. with Userscripts Support</strong></a> / <a href="https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js" target="_blank" rel="noopener noreferrer"><strong>Custom Mod Ver.</strong></a>
 
@@ -112,7 +112,9 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Optimize the for-loop for faster response.</li>
     <li>Allow multiple templates to be used at the same time.</li>
     <li>A button to teleport to the top-left corner of the selected template.</li>
+    <li>Allow locked colors (colors that are not unlocked) to be hidden from the color list</li>
     <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance.</li>
+    <li>Progress bar behind each color in the list that shows the relative progress</li>
   </ul>
 </p>
 
