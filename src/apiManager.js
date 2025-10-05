@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords, cleanUpCanvas } from "./utils.js";
 
 export default class ApiManager {
 
@@ -251,7 +251,6 @@ export default class ApiManager {
           }
           
           if (templateBlob === null) {
-            templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
             if (
               this.templateManager.templatesShouldBeDrawn &&
               this.templateManager.templatesArray.some(t => {
@@ -264,7 +263,33 @@ export default class ApiManager {
                 return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
               })
             ) {
-              this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+              templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
+              // if (
+              //   typeof ImageBitmap !== "undefined" &&
+              //   this.tileCache[tileKey] &&
+              //   this.tileCache[tileKey]["templateBlob"] instanceof ImageBitmap
+              // ) {
+              //   this.tileCache[tileKey]["templateBlob"].close();
+              // };
+              if (
+                (templateBlob instanceof HTMLCanvasElement || templateBlob instanceof OffscreenCanvas) &&
+                templateBlob.convertToBlob !== undefined
+              ) {
+                const templateCanvas = templateBlob;
+              //   if (typeof ImageBitmap !== 'undefined') {
+              //     templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
+              //     templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
+              //       this.tileCache[tileKey] = { lastModified, fullKey, blob };
+              //       cleanUpCanvas(templateCanvas);
+              //     })
+              //   } else {
+                  templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
+                  this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+                  // cleanUpCanvas(templateCanvas);
+              //   }
+              }
+            } else {
+              templateBlob = blobData;
             }
           }
 

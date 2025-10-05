@@ -126,11 +126,21 @@ inject(() => {
           // The response that triggers when the blob is finished processing
 
           // Creates a new response
-          resolve(new Response(blobProcessed, {
+          const newResponse = new Response(blobProcessed, {
             headers: cloned.headers,
             status: cloned.status,
             statusText: cloned.statusText
-          }));
+          });
+          // if (blobProcessed instanceof ImageBitmap) {
+          //   // https://wplace.live/_app/immutable/nodes/4.DJNG-JQm.js
+          //   // It somehow supports the usage of ImageBitmap
+          //   // ae.data instanceof HTMLImageElement || s.b(ae.data) ? D(ae) : ae.data && ...
+          //   // s.b: return typeof ImageBitmap < "u" && n instanceof ImageBitmap
+          //   newResponse.arrayBuffer = () => {
+          //     return blobProcessed;
+          //   };
+          // }
+          resolve(newResponse);
 
           // Since this code does not run in the userscript, we can't use consoleLog().
           console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
