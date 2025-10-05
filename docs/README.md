@@ -112,7 +112,9 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Optimize the for-loop for faster response.</li>
     <li>Allow multiple templates to be used at the same time.</li>
     <li>A button to teleport to the top-left corner of the selected template.</li>
+    <li>Allow locked colors (colors that are not unlocked) to be hidden from the color list</li>
     <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance.</li>
+    <li>Progress bar behind each color in the list that shows the relative progress</li>
   </ul>
 </p>
 
