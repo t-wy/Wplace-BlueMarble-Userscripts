@@ -475,6 +475,7 @@ export const sortByOptions = {
   "total": ([rgb, paintedCount, totalCount]) => totalCount,
   "painted": ([rgb, paintedCount, totalCount]) => paintedCount,
   "remaining": ([rgb, paintedCount, totalCount]) => totalCount - paintedCount,
+  "painted%": ([rgb, paintedCount, totalCount]) => paintedCount / (totalCount === 0 ? 1 : totalCount),
   "hue": ([rgb, paintedCount, totalCount]) => {
     if (rgb === "other") return 361; // Force After All Colors
     if (rgb === "#deface") return -1; // Force Before All Colors

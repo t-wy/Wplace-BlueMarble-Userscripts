@@ -937,12 +937,18 @@ async function buildOverlayMain() {
 
       let label = document.createElement('span');
       label.style.fontSize = '12px';
-      const labelText = totalCount.toLocaleString();
-      const paintedLabelText = (
-        sortByParts[0] === "remaining" ? -(totalCount - paintedCount) : paintedCount
-      ).toLocaleString();
-  
-      label.textContent = `${colorName} • ${paintedLabelText} / ${labelText}`;
+
+      if (sortByParts[0] === "remaining") {
+        const remainingLabelText = (totalCount - paintedCount).toLocaleString();
+        label.textContent = `${colorName} • ${remainingLabelText} Left`;
+      } else {
+        const labelText = totalCount.toLocaleString();
+        const paintedLabelText = paintedCount.toLocaleString();
+        label.textContent = `${colorName} • ${paintedLabelText} / ${labelText}`;
+      }
+
+      const percentageProgress = paintedCount / (totalCount === 0 ? 1 : totalCount) * 100;
+      row.style.background = `linear-gradient(to right, rgb(0, 128, 0, 0.8) 0%, rgb(0, 128, 0, 0.8) ${percentageProgress}%, transparent ${percentageProgress}%, transparent 100%)`;
 
       const paletteEntry = combinedProgress[colorKey];
       let currentIndex = 0;
