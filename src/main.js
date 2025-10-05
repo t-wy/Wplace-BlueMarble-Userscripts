@@ -205,6 +205,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
     templateManager.setUserSettings({
       'uuid': uuid,
       'hideLockedColors': false,
+      'progressBarEnabled': true,
       'sortBy': 'total-desc',
       'smartPlace': false,
     });
@@ -471,6 +472,7 @@ async function buildOverlayMain() {
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
               '#bm-checkbox-colors-unlocked',      // Hide locked Colors checkbox
+              '#bm-progress-bar-enabled',      // Hide locked Colors checkbox
               '#bm-contain-colorfilter',           // Color filter UI
               '#bm-contain-templatefilter',        // Template filter UI
               // '#bm-footer'                         // Footer credit text
@@ -767,6 +769,19 @@ async function buildOverlayMain() {
           }
         });
       }).buildElement()
+      .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+        label.style.fontSize = '12px';
+        label.style.marginLeft = '5px'; // 4px padding + 1px border of the filter container below
+        checkbox.addEventListener('change', () => {
+          templateManager.setProgressBarEnabled(checkbox.checked);
+          buildColorFilterList();
+          if (checkbox.checked) {
+            instance.handleDisplayStatus("Progress Bar Enabled.");
+          } else {
+            instance.handleDisplayStatus("Progress Bar Disabled.");
+          }
+        });
+      }).buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
@@ -957,8 +972,10 @@ async function buildOverlayMain() {
         label.textContent = `${colorName} • ${paintedLabelText} / ${labelText}`;
       }
 
-      const percentageProgress = paintedCount / (totalCount === 0 ? 1 : totalCount) * 100;
-      row.style.background = `linear-gradient(to right, rgb(0, 128, 0, 0.8) 0%, rgb(0, 128, 0, 0.8) ${percentageProgress}%, transparent ${percentageProgress}%, transparent 100%)`;
+      if (templateManager.isProgressBarEnabled()) {
+        const percentageProgress = paintedCount / (totalCount === 0 ? 1 : totalCount) * 100;
+        row.style.background = `linear-gradient(to right, rgb(0, 128, 0, 0.8) 0%, rgb(0, 128, 0, 0.8) ${percentageProgress}%, transparent ${percentageProgress}%, transparent 100%)`;
+      }
 
       const paletteEntry = combinedProgress[colorKey];
       let currentIndex = 0;

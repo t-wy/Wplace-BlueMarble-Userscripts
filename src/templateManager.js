@@ -942,6 +942,22 @@ export default class TemplateManager {
     return true;
   }
 
+  /** A utility to check if hidden colors are set to be hidden.
+   * @since 0.85.26
+   */
+  isProgressBarEnabled() {
+    return this.userSettings?.progressBarEnabled ?? true;
+  }
+
+  /** Sets the sort criteria to a value.
+   * @param {boolean} value - The sort criteria
+   * @since 0.85.23
+   */
+  async setProgressBarEnabled(value) {
+    this.userSettings.progressBarEnabled = value;
+    await this.storeUserSettings();
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17

@@ -437,7 +437,7 @@ export function getOverlayCoords() {
   return [[tx, ty], [px, py]];
 }
 
-/** Get coordinates from the BM overlay
+/** Get coordinates from the map center
  * @returns {number[]} [latitude, longitude]
  * @since 0.85.20
  */
