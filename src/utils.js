@@ -465,3 +465,36 @@ export function getCenterGeoCoords() {
     throw Error("Could not find the \"My location\" button.");
   }
 }
+
+/** Available sorting options
+ * @since 0.85.23
+ * @examples
+ * The function parameter is (rgb, enabled count, painted enabled count)
+ */
+export const sortByOptions = {
+  "total": ([rgb, paintedCount, totalCount]) => totalCount,
+  "painted": ([rgb, paintedCount, totalCount]) => paintedCount,
+  "remaining": ([rgb, paintedCount, totalCount]) => totalCount - paintedCount,
+  "hue": ([rgb, paintedCount, totalCount]) => {
+    if (rgb === "other") return 361; // Force After All Colors
+    if (rgb === "#deface") return -1; // Force Before All Colors
+    const [r, g, b] = rgb.split(',').map(Number);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    if (delta === 0) return 361 + r; // Grayscale: Force After All Colors
+    if (max === r) {
+      return ((((g - b) / delta) + 6) % 6) * 60;
+    } else if (max === g) {
+      return (((b - r) / delta) + 2) * 60;
+    } else {
+      return (((r - g) / delta) + 4) * 60;
+    }
+  },
+  "luminance": ([rgb, paintedCount, totalCount]) => {
+    if (rgb === "other") return 2; // Force After All Colors
+    if (rgb === "#deface") return 0; // Force Before All Colors
+    const [r, g, b] = rgb.split(',').map(Number);
+    return (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255; // Range: 0-1
+  },
+}

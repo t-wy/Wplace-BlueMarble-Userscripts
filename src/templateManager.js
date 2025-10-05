@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta, sortByOptions } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -895,6 +895,39 @@ export default class TemplateManager {
   async setHideLockedColors(value) {
     this.userSettings.hideLockedColors = value;
     await this.storeUserSettings();
+  }
+
+  /** A utility to get the current sort criteria.
+   * @since 0.85.23
+   */
+  getSortBy() {
+    const temp = this.userSettings?.sortBy ?? 'total-desc';
+    if (this.isValidSortBy(temp)) return temp;
+    return 'total-desc';
+  }
+
+
+  /** A utility to check if the sort criteria is valid.
+   * @param {string} value - The sort criteria
+   * @since 0.85.23
+   */
+  isValidSortBy(value) {
+    const parts = value.toLowerCase().split("-");
+    if (parts.length !== 2) return false;
+    if (sortByOptions[parts[0]] === undefined) return false;
+    if (!['desc', 'asc'].includes(parts[1])) return false;
+    return true;
+  }
+
+  /** Sets the sort criteria to a value.
+   * @param {string} value - The sort criteria
+   * @since 0.85.23
+   */
+  async setSortBy(value) {
+    if (!this.isValidSortBy(value)) return false;
+    this.userSettings.sortBy = value.toLowerCase();
+    await this.storeUserSettings();
+    return true;
   }
 
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.

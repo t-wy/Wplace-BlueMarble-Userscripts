@@ -123,6 +123,9 @@ div#bm-overlay {
 /* Checkboxes in the automation container */
 #bm-contain-automation input[type="checkbox"] {
   vertical-align: middle;
+}
+
+#bm-contain-automation label > input[type="checkbox"] {
   margin-right: 0.5ch;
 }
 
@@ -259,6 +262,25 @@ input[type="file"][id*="template"] {
   background-color: #144eb9;
   border-radius: 1em;
   padding: 0 0.75ch;
+  font-size: small;
+}
+
+/* Select File Button wrapped by span */
+#bm-overlay span:has(> input[type="file"] + button) {
+  font-size: small;
+}
+
+/* All overlay selection boxes */
+#bm-overlay select {
+  border-width: 1px;
+  border-radius: 1em;
+  padding: 0 0.75ch;
+  font-size: small;
+}
+
+/* Prevent white on white background */
+#bm-overlay select option {
+  background-color: rgba(21, 48, 99, 0.8);
 }
 
 /* All overlay buttons when hovered/focused */

@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, getCenterGeoCoords, coordsGeoToTileCoords } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, getCenterGeoCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -195,6 +195,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
     templateManager.setUserSettings({
       'uuid': uuid,
       'hideLockedColors': false,
+      'sortBy': 'total-desc',
       'smartPlace': false,
     });
     templateManager.storeUserSettings();
@@ -692,8 +693,33 @@ async function buildOverlayMain() {
           }
         ).buildElement()
       .buildElement()
+      // Color sorting
+      .addP({'textContent': 'Sort Colors by ', 'style': 'font-size: small; margin-top: 3px; margin-left: 5px;'})
+        // Sorting UI
+        .addSelect({'id': 'bm-color-sort'}, (instance, select) => {
+          const order = [
+            "Asc", "Desc"
+          ]
+          const currentSortBy = templateManager.getSortBy();
+          Object.keys(sortByOptions).forEach(o => {
+            order.forEach(o2 => {
+              const option = document.createElement('option');
+              option.value = `${o.toLowerCase()}-${o2.toLowerCase()}`;
+              option.textContent = `${o[0].toUpperCase() + o.slice(1).toLowerCase()} (${o2}.)`;
+              if (option.value === currentSortBy) { option.selected = true; }
+              select.appendChild(option);
+            })
+          });
+          select.addEventListener('change', () => {
+            templateManager.setSortBy(select.value);
+            buildColorFilterList();
+            const parts = select.value.split('-');
+            instance.handleDisplayStatus(`Changed the sort criteria to "${parts[0][0].toUpperCase() + parts[0].slice(1).toLowerCase()}" in ${parts[1]}ending order.`);
+          })
+        }).buildElement()
+      .buildElement()
       // Color buttons
-      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px;'}) // removed margin-bottom: 6px;
+      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 0px;'})
         .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
           button.onclick = () => {
             templateManager.templatesArray.forEach(t => {
@@ -736,8 +762,8 @@ async function buildOverlayMain() {
       .buildElement()
       // Template buttons
       .addDiv({'id': 'bm-contain-buttons-template'})
-        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Upload Template', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
-        .addButton({'id': 'bm-button-create', 'textContent': 'Create'}, (instance, button) => {
+        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
+        .addButton({'id': 'bm-button-create', 'textContent': 'Create Template'}, (instance, button) => {
           button.onclick = () => {
             const input = document.querySelector('#bm-input-file-template');
 
@@ -830,9 +856,6 @@ async function buildOverlayMain() {
       return;
     }
 
-    const paletteSumSorted = Object.entries(paletteSum)
-      .sort((a,b) => b[1] - a[1]); // sort by frequency desc
-
     const combinedProgress = {};
     for (const stats of templateManager.tileProgress.values()) {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
@@ -850,24 +873,34 @@ async function buildOverlayMain() {
       })
     };
 
-    for (const [rgb, totalCount] of paletteSumSorted) {
+    const sortBy = templateManager.getSortBy();
+    const sortByParts = sortBy.split('-');
+    const keyFunction = sortByOptions[sortByParts[0]];
+
+    const compareFunction = (
+      sortByParts[1] === "asc" ?
+        (a,b) => keyFunction(a) - keyFunction(b) :
+        (a,b) => keyFunction(b) - keyFunction(a)
+    );
+
+    const paletteSumSorted = Object.entries(paletteSum)
+      .map(([rgb, count]) => [rgb, combinedProgress[rgb]?.paintedAndEnabled ?? 0, count])
+      .sort(compareFunction); // sort by frequency desc
+
+    for (const [rgb, paintedCount, totalCount] of paletteSumSorted) {
       if (templateManager.areLockedColorsHidden()) {
         if (rgb === 'other') continue;
       }
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
-      row.style.gap = '8px';
+      row.style.gap = '6px';
       row.style.margin = '4px 0';
 
       let swatch = document.createElement('div');
       swatch.style.width = '14px';
       swatch.style.height = '14px';
       swatch.style.border = '1px solid rgba(255,255,255,0.5)';
-
-      let label = document.createElement('span');
-      label.style.fontSize = '12px';
-      const labelText = `${totalCount.toLocaleString()}`;
 
       let colorName = '';
       let colorKey = '';
@@ -890,18 +923,28 @@ async function buildOverlayMain() {
               if (!templateManager.isColorUnlocked(tMeta.id)) continue;
             }
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
-            const starLeft = tMeta.premium ? '★ ' : '';
-            colorName = `#${tMeta.id} ${starLeft}${displayName}`;
+            // const starLeft = tMeta.premium ? '★ ' : '';
+            // colorName = `#${tMeta.id} ${starLeft}${displayName}`;
+            if (tMeta.premium) {
+              swatch.style.borderColor = "gold";
+              swatch.style.boxShadow = "0 0 2px yellow";
+            }
+            colorName = `#${tMeta.id} ${displayName}`;
             colorKey = `${r},${g},${b}`;
           }
         } catch (ignored) {}
       }
-      const paletteEntry = combinedProgress[colorKey];
-      // const filledCount = paletteEntry?.painted ?? 0;
-      const filledCount = paletteEntry?.paintedAndEnabled ?? 0;
-      const filledLabelText = `${filledCount.toLocaleString()}`;
-      label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
 
+      let label = document.createElement('span');
+      label.style.fontSize = '12px';
+      const labelText = totalCount.toLocaleString();
+      const paintedLabelText = (
+        sortByParts[0] === "remaining" ? -(totalCount - paintedCount) : paintedCount
+      ).toLocaleString();
+  
+      label.textContent = `${colorName} • ${paintedLabelText} / ${labelText}`;
+
+      const paletteEntry = combinedProgress[colorKey];
       let currentIndex = 0;
       swatch.addEventListener('click', () => {
         // if ((paletteEntry?.examples?.length ?? 0) > 0) {

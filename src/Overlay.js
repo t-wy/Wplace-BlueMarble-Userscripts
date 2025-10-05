@@ -406,6 +406,22 @@ export default class Overlay {
     return this;
   }
 
+  /** Adds a select to the overlay.
+   * @param {Object.<string, any>} [additionalProperties={}] - The DOM properties of the checkbox that are NOT shared between all overlay checkbox elements. These should be camelCase.
+   * @param {function(Overlay, HTMLSelectElement):void} [callback=()=>{}] - Additional JS modification to the checkbox.
+   * @returns {Overlay} Overlay class instance (this)
+   * @since 0.85.23
+   */
+  addSelect(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared checkbox DOM properties
+
+    const select = this.#createElement('select', properties, additionalProperties); // Creates the select element
+    
+    callback(this, select); // Runs any script passed in through the callback
+    return this;
+  }
+
   /** Adds a `input` to the overlay.
    * This `input` element will have properties shared between all `input` elements in the overlay.
    * You can override the shared properties by using a callback.
