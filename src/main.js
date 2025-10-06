@@ -131,15 +131,15 @@ inject(() => {
             status: cloned.status,
             statusText: cloned.statusText
           });
-          // if (blobProcessed instanceof ImageBitmap) {
-          //   // https://wplace.live/_app/immutable/nodes/4.DJNG-JQm.js
-          //   // It somehow supports the usage of ImageBitmap
-          //   // ae.data instanceof HTMLImageElement || s.b(ae.data) ? D(ae) : ae.data && ...
-          //   // s.b: return typeof ImageBitmap < "u" && n instanceof ImageBitmap
-          //   newResponse.arrayBuffer = () => {
-          //     return blobProcessed;
-          //   };
-          // }
+          if (blobProcessed instanceof ImageBitmap) {
+            // https://wplace.live/_app/immutable/nodes/4.DJNG-JQm.js
+            // It somehow supports the usage of ImageBitmap
+            // ae.data instanceof HTMLImageElement || s.b(ae.data) ? D(ae) : ae.data && ...
+            // s.b: return typeof ImageBitmap < "u" && n instanceof ImageBitmap
+            newResponse.arrayBuffer = () => {
+              return blobProcessed;
+            };
+          }
           resolve(newResponse);
 
           // Since this code does not run in the userscript, we can't use consoleLog().
@@ -224,7 +224,6 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   observeBlack(); // Observes the black palette color
 
   consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
-
 });
 
 /** Observe the black color, and add the "Move" button.

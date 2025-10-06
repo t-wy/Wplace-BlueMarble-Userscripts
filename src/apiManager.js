@@ -276,17 +276,17 @@ export default class ApiManager {
                 templateBlob.convertToBlob !== undefined
               ) {
                 const templateCanvas = templateBlob;
-              //   if (typeof ImageBitmap !== 'undefined') {
-              //     templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
-              //     templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
-              //       this.tileCache[tileKey] = { lastModified, fullKey, blob };
-              //       cleanUpCanvas(templateCanvas);
-              //     })
-              //   } else {
+                if (typeof ImageBitmap !== 'undefined' && navigator.deviceMemory === 8) { // Only Test This if we have at least 8GiB of RAM
+                  templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
+                  templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
+                    this.tileCache[tileKey] = { lastModified, fullKey, blob };
+                    cleanUpCanvas(templateCanvas);
+                  })
+                } else {
                   templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
                   this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
-                  // cleanUpCanvas(templateCanvas);
-              //   }
+                  cleanUpCanvas(templateCanvas);
+                }
               }
             } else {
               templateBlob = blobData;
