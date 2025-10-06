@@ -208,6 +208,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'uuid': uuid,
       'hideLockedColors': false,
       'progressBarEnabled': true,
+      'hideCompletedColors': false,
       'sortBy': 'total-desc',
       'smartPlace': false,
     });
@@ -472,8 +473,7 @@ async function buildOverlayMain() {
               '#bm-contain-automation > *:not(#bm-contain-coords)', // Automation section excluding coordinates
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
-              '#bm-checkbox-colors-unlocked',      // Hide locked Colors checkbox
-              '#bm-progress-bar-enabled',      // Hide locked Colors checkbox
+              '#bm-checkbox-container',      // Hide locked Colors checkbox
               '#bm-contain-colorfilter',           // Color filter UI
               '#bm-contain-templatefilter',        // Template filter UI
               // '#bm-footer'                         // Footer credit text
@@ -777,33 +777,45 @@ async function buildOverlayMain() {
           };
         }).buildElement()
       .buildElement()
-      // Color filter UI
-      .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
-        label.style.fontSize = '12px';
-        label.style.marginLeft = '5px'; // 4px padding + 1px border of the filter container below
-        checkbox.addEventListener('change', () => {
-          templateManager.setHideLockedColors(checkbox.checked);
-          buildColorFilterList();
-          if (checkbox.checked) {
-            instance.handleDisplayStatus("Hidden all locked colors.");
-          } else {
-            instance.handleDisplayStatus("Restored all colors.");
-          }
-        });
-      }).buildElement()
-      .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
-        label.style.fontSize = '12px';
-        label.style.marginLeft = '5px'; // 4px padding + 1px border of the filter container below
-        checkbox.addEventListener('change', () => {
-          templateManager.setProgressBarEnabled(checkbox.checked);
-          buildColorFilterList();
-          if (checkbox.checked) {
-            instance.handleDisplayStatus("Progress Bar Enabled.");
-          } else {
-            instance.handleDisplayStatus("Progress Bar Disabled.");
-          }
-        });
-      }).buildElement()
+      .addDiv({'id': 'bm-checkbox-container', 'style': 'max-width: 100%; white-space: nowrap; overflow-x: scroll; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: flex; gap: 5px;'})
+        // Color filter UI
+        .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
+          label.style.fontSize = '12px';
+          checkbox.addEventListener('change', () => {
+            templateManager.setHideLockedColors(checkbox.checked);
+            buildColorFilterList();
+            if (checkbox.checked) {
+              instance.handleDisplayStatus("Hidden all locked colors.");
+            } else {
+              instance.handleDisplayStatus("Restored all colors.");
+            }
+          });
+        }).buildElement()
+        .addCheckbox({'id': 'bm-checkbox-colors-completed', 'textContent': 'Hide Completed Colors', 'checked': templateManager.areCompletedColorsHidden()}, (instance, label, checkbox) => {
+          label.style.fontSize = '12px';
+          checkbox.addEventListener('change', () => {
+            templateManager.setHideCompletedColors(checkbox.checked);
+            buildColorFilterList();
+            if (checkbox.checked) {
+              instance.handleDisplayStatus("Hidden all completed colors.");
+            } else {
+              instance.handleDisplayStatus("Restored all colors.");
+            }
+          });
+        }).buildElement()
+        .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+          label.style.fontSize = '12px';
+          checkbox.addEventListener('change', () => {
+            templateManager.setProgressBarEnabled(checkbox.checked);
+            buildColorFilterList();
+            if (checkbox.checked) {
+              instance.handleDisplayStatus("Progress Bar Enabled.");
+            } else {
+              instance.handleDisplayStatus("Progress Bar Disabled.");
+            }
+          });
+        }).buildElement()
+      .buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
@@ -887,6 +899,7 @@ async function buildOverlayMain() {
   window.buildColorFilterList = function buildColorFilterList() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
     const toggleStatus = templateManager.getPaletteToggledStatus();
+    const hideCompleted = templateManager.areCompletedColorsHidden();
     listContainer.innerHTML = '';
     let hasColorPalette = false;
     const paletteSum = {};
@@ -938,6 +951,9 @@ async function buildOverlayMain() {
       if (templateManager.areLockedColorsHidden()) {
         if (rgb === 'other') continue;
       }
+      if (hideCompleted && paintedCount === totalCount) {
+        continue;
+      }
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
@@ -985,7 +1001,7 @@ async function buildOverlayMain() {
       let label = document.createElement('span');
       label.style.fontSize = '12px';
 
-      if (sortByParts[0] === "remaining") {
+      if (sortByParts[0] === "remaining" || hideCompleted) {
         const remainingLabelText = (totalCount - paintedCount).toLocaleString();
         label.textContent = `${colorName} • ${remainingLabelText} Left`;
       } else {

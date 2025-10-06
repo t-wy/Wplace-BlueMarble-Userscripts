@@ -958,6 +958,22 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
+  /** A utility to check if completed colors are set to be hidden.
+   * @since 0.85.27
+   */
+  areCompletedColorsHidden() {
+    return this.userSettings?.hideCompletedColors ?? false;
+  }
+
+  /** Sets the `hideCompletedColors` boolean in the `userSettings` to a value.
+   * @param {boolean} value - The value to set the boolean to
+   * @since 0.85.27
+   */
+  async setHideCompletedColors(value) {
+    this.userSettings.hideCompletedColors = value;
+    await this.storeUserSettings();
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17
