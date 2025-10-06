@@ -6,7 +6,9 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, getCenterGeoCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
+import { getCenterGeoCoords } from './utilsMaptiler.js';
+// import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript

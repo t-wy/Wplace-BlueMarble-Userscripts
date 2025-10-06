@@ -437,35 +437,6 @@ export function getOverlayCoords() {
   return [[tx, ty], [px, py]];
 }
 
-/** Get coordinates from the map center
- * @returns {number[]} [latitude, longitude]
- * @since 0.85.20
- */
-export function getCenterGeoCoords() {
-  const myLocationButton = document.querySelector(".right-3>button");
-  if ( myLocationButton !== null ) {
-    if (myLocationButton["__click"] !== undefined) {
-      const center = myLocationButton["__click"][3]["v"]["transform"]["center"];
-      return [center['lat'], center['lng']];
-    } else {
-      const injectedFunc = () => {
-          const script = document.currentScript;
-          const center = document.querySelector(".right-3>button")["__click"][3]["v"]["transform"]["center"];
-          script.setAttribute('bm-lat', center['lat']);
-          script.setAttribute('bm-lng', center['lng']);
-      };
-      const script = document.createElement('script');
-      script.textContent = `(${injectedFunc})();`;
-      document.documentElement?.appendChild(script);
-      const result = [+script.getAttribute('bm-lat'), +script.getAttribute('bm-lng')];
-      script.remove();
-      return result;
-    }
-  } else {
-    throw Error("Could not find the \"My location\" button.");
-  }
-}
-
 /** Available sorting options
  * @since 0.85.23
  * @examples

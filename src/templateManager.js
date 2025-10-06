@@ -325,8 +325,8 @@ export default class TemplateManager {
             template: template,
             storageKey: template.storageKey,
             bitmap: template.chunked[tile],
-            tileCoords: [coords[0], coords[1]],
-            pixelCoords: [coords[2], coords[3]]
+            tileCoords: [+coords[0], +coords[1]],
+            pixelCoords: [+coords[2], +coords[3]]
           }
         });
 
@@ -408,8 +408,8 @@ export default class TemplateManager {
           cleanUpCanvas(tempCanvas);
           tempCanvas = null;
 
-          const offsetX = Number(templateTile.pixelCoords[0]) * this.drawMult;
-          const offsetY = Number(templateTile.pixelCoords[1]) * this.drawMult;
+          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
+          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
 
           // Loops over all pixels in the template
           // Assigns each pixel a color (if center pixel)
@@ -569,8 +569,8 @@ export default class TemplateManager {
       if (templateTile.template.enabled ?? true) {
         try {
 
-          const offsetX = Number(templateTile.pixelCoords[0]) * this.drawMult;
-          const offsetY = Number(templateTile.pixelCoords[1]) * this.drawMult;
+          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
+          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
 
           // If none of the template colors are disabled, then draw the image normally
           if (!hasDisabled) {
@@ -701,9 +701,9 @@ export default class TemplateManager {
 
     console.log('Finish...', performance.now() - timeStart + ' ms');
 
-    // return canvas;
+    return canvas;
     // return resultBlob;
-    return await canvas.convertToBlob({ type: 'image/png' });
+    // return await canvas.convertToBlob({ type: 'image/png' });
   }
 
   /** Imports the JSON object, and appends it to any JSON object already loaded
