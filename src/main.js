@@ -630,13 +630,31 @@ async function buildOverlayMain() {
     .addHr().buildElement()
 
     .addDiv({'id': 'bm-contain-userinfo'})
-      .addP({'id': 'bm-user-name', 'textContent': 'Username:'}).buildElement()
+      .addP({'textContent': 'Username: '})
+        .addB({'id': 'bm-user-name'}).buildElement()
+      .buildElement()
       .addP({'id': 'bm-user-charges'}, (_, element) => {
         element.setAttribute('aria-live', 'polite');
-        element.innerHTML = 'Full Charges in <span class="bm-charge-countdown" data-role="countdown">--:--</span> <span class="bm-charge-count" data-role="charge-count">(0 / 0)</span>';
-      }).buildElement()
-      .addP({'id': 'bm-user-droplets', 'textContent': 'Droplets:'}).buildElement()
-      .addP({'id': 'bm-user-nextlevel', 'textContent': 'N/A more pixels to Lv. N/A'}).buildElement()
+      })
+        .addText('Full Charges in ')
+        .addSpan({'className': 'bm-charge-countdown', 'textContent': '--:--'}, (_, element) => {
+          element.dataset.role = 'countdown';
+        }).buildElement()
+        .addText(' ')
+        .addSpan({'className': 'bm-charge-count', 'textContent': '(0 / 0)'}, (_, element) => {
+          element.dataset.role = 'charge-count';
+        }).buildElement()
+      .buildElement()
+      .addP({'textContent': 'Droplets: '})
+        .addB({'id': 'bm-user-droplets'}).buildElement()
+      .buildElement()
+      .addP()
+        .addB({'id': 'bm-user-nextpixel', 'textContent': '--'}).buildElement()
+        .addText(' more pixel')
+        .addSpan({'id': 'bm-user-nextpixel-plural', 'textContent': 's'}).buildElement()
+        .addText(' to Lv. ')
+        .addB({'id': 'bm-user-nextlevel', 'textContent': '--'}).buildElement()
+      .buildElement()
     .buildElement()
 
     .addHr().buildElement()

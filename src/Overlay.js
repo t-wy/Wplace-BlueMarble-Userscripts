@@ -176,7 +176,34 @@ export default class Overlay {
     return this;
   }
 
+
+  /** Similar to addP, but adds a `span` instead.
+   * @since 0.85.27
+   */
+  addSpan(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared <span> DOM properties
+
+    const span = this.#createElement('span', properties, additionalProperties); // Creates the <span> element
+    callback(this, span); // Runs any script passed in through the callback
+    return this;
+  }
+
+
+  /** Similar to addSpan, but adds a `b` instead.
+   * @since 0.85.27
+   */
+  addB(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared <b> DOM properties
+
+    const b = this.#createElement('b', properties, additionalProperties); // Creates the <b> element
+    callback(this, b); // Runs any script passed in through the callback
+    return this;
+  }
+
   /** Adds plain text to the overlay
+   * No .buildElement() is required
    * @since 0.43.27
    */
   addText(textContent) {
