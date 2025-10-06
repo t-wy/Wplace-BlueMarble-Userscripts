@@ -437,31 +437,36 @@ export function getOverlayCoords() {
   return [[tx, ty], [px, py]];
 }
 
-/** Get coordinates from the BM overlay
- * @returns {number[]} [latitude, longitude]
- * @since 0.85.20
+/** Available sorting options
+ * @since 0.85.23
+ * @examples
+ * The function parameter is (rgb, enabled count, painted enabled count)
  */
-export function getCenterGeoCoords() {
-  const myLocationButton = document.querySelector(".right-3>button");
-  if ( myLocationButton !== null ) {
-    if (myLocationButton["__click"] !== undefined) {
-      const center = myLocationButton["__click"][3]["v"]["transform"]["center"];
-      return [center['lat'], center['lng']];
+export const sortByOptions = {
+  "total": ([rgb, paintedCount, totalCount]) => totalCount,
+  "painted": ([rgb, paintedCount, totalCount]) => paintedCount,
+  "remaining": ([rgb, paintedCount, totalCount]) => totalCount - paintedCount,
+  "painted%": ([rgb, paintedCount, totalCount]) => paintedCount / (totalCount === 0 ? 1 : totalCount),
+  "hue": ([rgb, paintedCount, totalCount]) => {
+    if (rgb === "other") return 361; // Force After All Colors
+    if (rgb === "#deface") return -1; // Force Before All Colors
+    const [r, g, b] = rgb.split(',').map(Number);
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+    if (delta === 0) return 361 + r; // Grayscale: Force After All Colors
+    if (max === r) {
+      return ((((g - b) / delta) + 6) % 6) * 60;
+    } else if (max === g) {
+      return (((b - r) / delta) + 2) * 60;
     } else {
-      const injectedFunc = () => {
-          const script = document.currentScript;
-          const center = document.querySelector(".right-3>button")["__click"][3]["v"]["transform"]["center"];
-          script.setAttribute('bm-lat', center['lat']);
-          script.setAttribute('bm-lng', center['lng']);
-      };
-      const script = document.createElement('script');
-      script.textContent = `(${injectedFunc})();`;
-      document.documentElement?.appendChild(script);
-      const result = [+script.getAttribute('bm-lat'), +script.getAttribute('bm-lng')];
-      script.remove();
-      return result;
+      return (((r - g) / delta) + 4) * 60;
     }
-  } else {
-    throw Error("Could not find the \"My location\" button.");
-  }
+  },
+  "luminance": ([rgb, paintedCount, totalCount]) => {
+    if (rgb === "other") return 2; // Force After All Colors
+    if (rgb === "#deface") return 0; // Force Before All Colors
+    const [r, g, b] = rgb.split(',').map(Number);
+    return (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255; // Range: 0-1
+  },
 }

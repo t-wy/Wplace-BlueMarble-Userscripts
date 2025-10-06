@@ -176,6 +176,43 @@ export default class Overlay {
     return this;
   }
 
+
+  /** Similar to addP, but adds a `span` instead.
+   * @since 0.85.27
+   */
+  addSpan(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared <span> DOM properties
+
+    const span = this.#createElement('span', properties, additionalProperties); // Creates the <span> element
+    callback(this, span); // Runs any script passed in through the callback
+    return this;
+  }
+
+
+  /** Similar to addSpan, but adds a `b` instead.
+   * @since 0.85.27
+   */
+  addB(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared <b> DOM properties
+
+    const b = this.#createElement('b', properties, additionalProperties); // Creates the <b> element
+    callback(this, b); // Runs any script passed in through the callback
+    return this;
+  }
+
+  /** Adds plain text to the overlay
+   * No .buildElement() is required
+   * @since 0.43.27
+   */
+  addText(textContent) {
+    if (!this.overlay) return this; // no parent
+    const textNode = document.createTextNode(textContent);
+    this.currentParent?.appendChild(textNode);
+    return this;
+  }
+
   /** Adds a `small` to the overlay.
    * This `small` element will have properties shared between all `small` elements in the overlay.
    * You can override the shared properties by using a callback.
@@ -403,6 +440,22 @@ export default class Overlay {
 
     const help = this.#createElement('button', properties, additionalProperties); // Creates the <button> element
     callback(this, help); // Runs any script passed in through the callback
+    return this;
+  }
+
+  /** Adds a select to the overlay.
+   * @param {Object.<string, any>} [additionalProperties={}] - The DOM properties of the checkbox that are NOT shared between all overlay checkbox elements. These should be camelCase.
+   * @param {function(Overlay, HTMLSelectElement):void} [callback=()=>{}] - Additional JS modification to the checkbox.
+   * @returns {Overlay} Overlay class instance (this)
+   * @since 0.85.23
+   */
+  addSelect(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared checkbox DOM properties
+
+    const select = this.#createElement('select', properties, additionalProperties); // Creates the select element
+    
+    callback(this, select); // Runs any script passed in through the callback
     return this;
   }
 

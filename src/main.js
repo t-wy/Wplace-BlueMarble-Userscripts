@@ -6,7 +6,9 @@ import Overlay from './Overlay.js';
 import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, getCenterGeoCoords, coordsGeoToTileCoords } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
+import { getCenterGeoCoords } from './utilsMaptiler.js';
+// import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
 const version = GM_info.script.version.toString(); // Version of userscript
@@ -126,11 +128,21 @@ inject(() => {
           // The response that triggers when the blob is finished processing
 
           // Creates a new response
-          resolve(new Response(blobProcessed, {
+          const newResponse = new Response(blobProcessed, {
             headers: cloned.headers,
             status: cloned.status,
             statusText: cloned.statusText
-          }));
+          });
+          if (blobProcessed instanceof ImageBitmap) {
+            // https://wplace.live/_app/immutable/nodes/4.DJNG-JQm.js
+            // It somehow supports the usage of ImageBitmap
+            // ae.data instanceof HTMLImageElement || s.b(ae.data) ? D(ae) : ae.data && ...
+            // s.b: return typeof ImageBitmap < "u" && n instanceof ImageBitmap
+            newResponse.arrayBuffer = () => {
+              return blobProcessed;
+            };
+          }
+          resolve(newResponse);
 
           // Since this code does not run in the userscript, we can't use consoleLog().
           console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
@@ -195,6 +207,8 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
     templateManager.setUserSettings({
       'uuid': uuid,
       'hideLockedColors': false,
+      'progressBarEnabled': true,
+      'sortBy': 'total-desc',
       'smartPlace': false,
     });
     templateManager.storeUserSettings();
@@ -212,7 +226,6 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   observeBlack(); // Observes the black palette color
 
   consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
-
 });
 
 /** Observe the black color, and add the "Move" button.
@@ -460,6 +473,7 @@ async function buildOverlayMain() {
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
               '#bm-checkbox-colors-unlocked',      // Hide locked Colors checkbox
+              '#bm-progress-bar-enabled',      // Hide locked Colors checkbox
               '#bm-contain-colorfilter',           // Color filter UI
               '#bm-contain-templatefilter',        // Template filter UI
               // '#bm-footer'                         // Footer credit text
@@ -616,13 +630,31 @@ async function buildOverlayMain() {
     .addHr().buildElement()
 
     .addDiv({'id': 'bm-contain-userinfo'})
-      .addP({'id': 'bm-user-name', 'textContent': 'Username:'}).buildElement()
+      .addP({'textContent': 'Username: '})
+        .addB({'id': 'bm-user-name'}).buildElement()
+      .buildElement()
       .addP({'id': 'bm-user-charges'}, (_, element) => {
         element.setAttribute('aria-live', 'polite');
-        element.innerHTML = 'Full Charges in <span class="bm-charge-countdown" data-role="countdown">--:--</span> <span class="bm-charge-count" data-role="charge-count">(0 / 0)</span>';
-      }).buildElement()
-      .addP({'id': 'bm-user-droplets', 'textContent': 'Droplets:'}).buildElement()
-      .addP({'id': 'bm-user-nextlevel', 'textContent': 'N/A more pixels to Lv. N/A'}).buildElement()
+      })
+        .addText('Full Charges in ')
+        .addSpan({'className': 'bm-charge-countdown', 'textContent': '--:--'}, (_, element) => {
+          element.dataset.role = 'countdown';
+        }).buildElement()
+        .addText(' ')
+        .addSpan({'className': 'bm-charge-count', 'textContent': '(0 / 0)'}, (_, element) => {
+          element.dataset.role = 'charge-count';
+        }).buildElement()
+      .buildElement()
+      .addP({'textContent': 'Droplets: '})
+        .addB({'id': 'bm-user-droplets'}).buildElement()
+      .buildElement()
+      .addP()
+        .addB({'id': 'bm-user-nextpixel', 'textContent': '--'}).buildElement()
+        .addText(' more pixel')
+        .addSpan({'id': 'bm-user-nextpixel-plural', 'textContent': 's'}).buildElement()
+        .addText(' to Lv. ')
+        .addB({'id': 'bm-user-nextlevel', 'textContent': '--'}).buildElement()
+      .buildElement()
     .buildElement()
 
     .addHr().buildElement()
@@ -695,8 +727,33 @@ async function buildOverlayMain() {
           }
         ).buildElement()
       .buildElement()
+      // Color sorting
+      .addP({'textContent': 'Sort Colors by ', 'style': 'font-size: small; margin-top: 3px; margin-left: 5px;'})
+        // Sorting UI
+        .addSelect({'id': 'bm-color-sort'}, (instance, select) => {
+          const order = [
+            "Asc", "Desc"
+          ]
+          const currentSortBy = templateManager.getSortBy();
+          Object.keys(sortByOptions).forEach(o => {
+            order.forEach(o2 => {
+              const option = document.createElement('option');
+              option.value = `${o.toLowerCase()}-${o2.toLowerCase()}`;
+              option.textContent = `${o[0].toUpperCase() + o.slice(1).toLowerCase()} (${o2}.)`;
+              if (option.value === currentSortBy) { option.selected = true; }
+              select.appendChild(option);
+            })
+          });
+          select.addEventListener('change', () => {
+            templateManager.setSortBy(select.value);
+            buildColorFilterList();
+            const parts = select.value.split('-');
+            instance.handleDisplayStatus(`Changed the sort criteria to "${parts[0][0].toUpperCase() + parts[0].slice(1).toLowerCase()}" in ${parts[1]}ending order.`);
+          })
+        }).buildElement()
+      .buildElement()
       // Color buttons
-      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px;'}) // removed margin-bottom: 6px;
+      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 0px;'})
         .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
           button.onclick = () => {
             templateManager.templatesArray.forEach(t => {
@@ -734,13 +791,26 @@ async function buildOverlayMain() {
           }
         });
       }).buildElement()
+      .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+        label.style.fontSize = '12px';
+        label.style.marginLeft = '5px'; // 4px padding + 1px border of the filter container below
+        checkbox.addEventListener('change', () => {
+          templateManager.setProgressBarEnabled(checkbox.checked);
+          buildColorFilterList();
+          if (checkbox.checked) {
+            instance.handleDisplayStatus("Progress Bar Enabled.");
+          } else {
+            instance.handleDisplayStatus("Progress Bar Disabled.");
+          }
+        });
+      }).buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
       .buildElement()
       // Template buttons
       .addDiv({'id': 'bm-contain-buttons-template'})
-        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Upload Template', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
-        .addButton({'id': 'bm-button-create', 'textContent': 'Create'}, (instance, button) => {
+        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
+        .addButton({'id': 'bm-button-create', 'textContent': 'Create Template'}, (instance, button) => {
           button.onclick = () => {
             const input = document.querySelector('#bm-input-file-template');
 
@@ -833,9 +903,6 @@ async function buildOverlayMain() {
       return;
     }
 
-    const paletteSumSorted = Object.entries(paletteSum)
-      .sort((a,b) => b[1] - a[1]); // sort by frequency desc
-
     const combinedProgress = {};
     for (const stats of templateManager.tileProgress.values()) {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
@@ -853,24 +920,34 @@ async function buildOverlayMain() {
       })
     };
 
-    for (const [rgb, totalCount] of paletteSumSorted) {
+    const sortBy = templateManager.getSortBy();
+    const sortByParts = sortBy.split('-');
+    const keyFunction = sortByOptions[sortByParts[0]];
+
+    const compareFunction = (
+      sortByParts[1] === "asc" ?
+        (a,b) => keyFunction(a) - keyFunction(b) :
+        (a,b) => keyFunction(b) - keyFunction(a)
+    );
+
+    const paletteSumSorted = Object.entries(paletteSum)
+      .map(([rgb, count]) => [rgb, combinedProgress[rgb]?.paintedAndEnabled ?? 0, count])
+      .sort(compareFunction); // sort by frequency desc
+
+    for (const [rgb, paintedCount, totalCount] of paletteSumSorted) {
       if (templateManager.areLockedColorsHidden()) {
         if (rgb === 'other') continue;
       }
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
-      row.style.gap = '8px';
+      row.style.gap = '6px';
       row.style.margin = '4px 0';
 
       let swatch = document.createElement('div');
       swatch.style.width = '14px';
       swatch.style.height = '14px';
       swatch.style.border = '1px solid rgba(255,255,255,0.5)';
-
-      let label = document.createElement('span');
-      label.style.fontSize = '12px';
-      const labelText = `${totalCount.toLocaleString()}`;
 
       let colorName = '';
       let colorKey = '';
@@ -893,18 +970,36 @@ async function buildOverlayMain() {
               if (!templateManager.isColorUnlocked(tMeta.id)) continue;
             }
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
-            const starLeft = tMeta.premium ? '★ ' : '';
-            colorName = `#${tMeta.id} ${starLeft}${displayName}`;
+            // const starLeft = tMeta.premium ? '★ ' : '';
+            // colorName = `#${tMeta.id} ${starLeft}${displayName}`;
+            if (tMeta.premium) {
+              swatch.style.borderColor = "gold";
+              swatch.style.boxShadow = "0 0 2px yellow";
+            }
+            colorName = `#${tMeta.id} ${displayName}`;
             colorKey = `${r},${g},${b}`;
           }
         } catch (ignored) {}
       }
-      const paletteEntry = combinedProgress[colorKey];
-      // const filledCount = paletteEntry?.painted ?? 0;
-      const filledCount = paletteEntry?.paintedAndEnabled ?? 0;
-      const filledLabelText = `${filledCount.toLocaleString()}`;
-      label.textContent = `${colorName} • ${filledLabelText} / ${labelText}`;
 
+      let label = document.createElement('span');
+      label.style.fontSize = '12px';
+
+      if (sortByParts[0] === "remaining") {
+        const remainingLabelText = (totalCount - paintedCount).toLocaleString();
+        label.textContent = `${colorName} • ${remainingLabelText} Left`;
+      } else {
+        const labelText = totalCount.toLocaleString();
+        const paintedLabelText = paintedCount.toLocaleString();
+        label.textContent = `${colorName} • ${paintedLabelText} / ${labelText}`;
+      }
+
+      if (templateManager.isProgressBarEnabled()) {
+        const percentageProgress = paintedCount / (totalCount === 0 ? 1 : totalCount) * 100;
+        row.style.background = `linear-gradient(to right, rgb(0, 128, 0, 0.8) 0%, rgb(0, 128, 0, 0.8) ${percentageProgress}%, transparent ${percentageProgress}%, transparent 100%)`;
+      }
+
+      const paletteEntry = combinedProgress[colorKey];
       let currentIndex = 0;
       swatch.addEventListener('click', () => {
         // if ((paletteEntry?.examples?.length ?? 0) > 0) {

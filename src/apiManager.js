@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords, cleanUpCanvas } from "./utils.js";
 
 export default class ApiManager {
 
@@ -26,8 +26,10 @@ export default class ApiManager {
 
   getCurrentCharges() {
     if (this.charges === null) {
-      this.#requestMe();
-      return 0;
+      this.#updateUserFromLocal();
+      if (this.charges === null) { // still not exist, maybe logged out
+        return 0;
+      }
     }
     const currentTime = Date.now();
     const timeDiff = currentTime - this.chargesUpdated;
@@ -64,17 +66,20 @@ export default class ApiManager {
     return `${minutes}:${seconds}`
   }
 
-  #setUpTimeout(overlay) {
-    this.#updateCharges(overlay);
+  #setUpTimeout() {
+    this.#updateCharges();
     this.chargeInterval = setInterval(() => {
-      this.#updateCharges(overlay);
+      this.#updateCharges();
     }, 1000);
   }
 
-  #updateCharges(overlay) {
+  #updateCharges() {
+    // Can check https://wplace.live/_app/immutable/chunks/OJISNkFj.js for the real implementation
     if (this.charges === null) {
-      this.#requestMe();
-      return;
+      this.#updateUserFromLocal();
+      if (this.charges === null) { // still not exist, maybe logged out
+        return;
+      }
     }
     const currentCharges = Math.floor(this.getCurrentCharges());
     const maxCharges = this.charges["max"];
@@ -82,30 +87,85 @@ export default class ApiManager {
     const maxChargesStr = new Intl.NumberFormat().format(maxCharges);
 
     const container = document.getElementById('bm-user-charges');
-    const countdownEl = container?.querySelector('[data-role="countdown"]');
-    const countEl = container?.querySelector('[data-role="charge-count"]');
+    const countdownElement = container?.querySelector('[data-role="countdown"]');
+    const countElement = container?.querySelector('[data-role="charge-count"]');
 
-    if (!container || !countdownEl || !countEl) {return;}
+    if (!container || !countdownElement || !countElement) {return;}
 
-    countdownEl.textContent = this.getFullRemainingTimeFormatted();
-    countEl.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
+    countdownElement.textContent = this.getFullRemainingTimeFormatted();
+    countElement.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
   }
 
-  #requestMe() {
+  #updateUserFromLocal() {
     const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-    if (logoutButton === null) return;
-    if (logoutButton["__click"] !== undefined) {
-      logoutButton["__click"][2]["user"]["refresh"]();
+    if (logoutButton === null) return null;
+    if (
+      logoutButton["__click"] !== undefined &&
+      logoutButton["__click"][2] !== undefined
+    ) {
+      const user = logoutButton["__click"][2]?.["user"];
+      const result = JSON.parse(JSON.stringify(user?.["data"] ?? null));
+      const lastFetch = user?.lastFetch ?? null;
+      this.#applyUserData(
+        result ?? null,
+        lastFetch ? +lastFetch : null
+      );
     } else {
       const injectedFunc = () => {
+        const script = document.currentScript;
         const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-        logoutButton["__click"][2]["user"]["refresh"]();
+        const user = logoutButton["__click"]?.[2]?.["user"];
+        script.setAttribute('bm-result', JSON.stringify(user?.["data"] ?? null));
+        script.setAttribute('bm-lastFetch', JSON.stringify(user?.["lastFetch"] ?? null));
       };
       const script = document.createElement('script');
       script.textContent = `(${injectedFunc})();`;
       document.documentElement?.appendChild(script);
+      const result = JSON.parse(script.getAttribute('bm-result'));
+      const lastFetch = JSON.parse(script.getAttribute('bm-lastFetch'));
       script.remove();
+      this.#applyUserData(
+        result ?? null,
+        lastFetch ? +lastFetch : null
+      );
     };
+  }
+
+  #applyUserData(dataJSON, fetchTime) {
+    if (dataJSON === null) return;
+    const nextLevelPixels = Math.ceil(Math.pow(Math.floor(dataJSON['level']) * Math.pow(30, 0.65), (1/0.65)) - dataJSON['pixelsPainted']); // Calculates pixels to the next level
+
+    console.log(dataJSON['id']);
+    if (!!dataJSON['id'] || dataJSON['id'] === 0) {
+      console.log(numberToEncoded(
+        dataJSON['id'],
+        '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+      ));
+    }
+    this.templateManager.userID = dataJSON['id'];
+    this.charges = dataJSON['charges'];
+    this.chargesUpdated = fetchTime;
+    this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
+    
+    const userNameElement = document.getElementById('bm-user-name');
+    if (userNameElement) {
+      userNameElement.textContent = dataJSON['name'];
+    }
+    const userDropletsElement = document.getElementById('bm-user-droplets');
+    if (userDropletsElement) {
+      userDropletsElement.textContent = new Intl.NumberFormat().format(dataJSON['droplets']);
+    }
+    // Updates the text content of the next level field
+    const nextPixelElement = document.getElementById('bm-user-nextpixel');
+    const nextPixelPluralElement = document.getElementById('bm-user-nextpixel-plural');
+    if (nextPixelElement && nextPixelPluralElement) {
+      nextPixelElement.textContent = new Intl.NumberFormat().format(nextLevelPixels);
+      nextPixelPluralElement.textContent = nextLevelPixels == 1 ? '' : 's';
+    }
+    const nextLevelElement = document.getElementById('bm-user-nextlevel');
+    if (nextLevelElement) {
+      nextLevelElement.textContent = Math.floor(dataJSON['level']) + 1;
+    }
   }
 
   /** Determines if the spontaneously received response is something we want.
@@ -117,7 +177,7 @@ export default class ApiManager {
   */
   spontaneousResponseListener(overlay) {
 
-    this.#setUpTimeout(overlay);
+    this.#setUpTimeout();
 
     // Triggers whenever a message is sent
     window.addEventListener('message', async (event) => {
@@ -154,24 +214,7 @@ export default class ApiManager {
             return; // Kills itself before attempting to display null userdata
           }
 
-          const nextLevelPixels = Math.ceil(Math.pow(Math.floor(dataJSON['level']) * Math.pow(30, 0.65), (1/0.65)) - dataJSON['pixelsPainted']); // Calculates pixels to the next level
-
-          console.log(dataJSON['id']);
-          if (!!dataJSON['id'] || dataJSON['id'] === 0) {
-            console.log(numberToEncoded(
-              dataJSON['id'],
-              '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'
-            ));
-          }
-          this.templateManager.userID = dataJSON['id'];
-          this.charges = dataJSON['charges'];
-          this.chargesUpdated = Date.now();
-          this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
-          
-          overlay.updateInnerHTML('bm-user-name', `Username: <b>${escapeHTML(dataJSON['name'])}</b>`); // Updates the text content of the username field
-          overlay.updateInnerHTML('bm-user-droplets', `Droplets: <b>${new Intl.NumberFormat().format(dataJSON['droplets'])}</b>`); // Updates the text content of the droplets field
-          overlay.updateInnerHTML('bm-user-nextlevel', `<b>${new Intl.NumberFormat().format(nextLevelPixels)}</b> more pixel${nextLevelPixels == 1 ? '' : 's'} to Lv. <b>${Math.floor(dataJSON['level']) + 1}</b>`); // Updates the text content of the next level field
-          break;
+          this.#applyUserData(dataJSON, Date.now());
 
         case 'pixel': // Request to retrieve pixel data
           const coordsTile = data['endpoint'].split('?')[0].split('/').filter(s => s && !isNaN(Number(s))).map(s => Number(s)); // Retrieves the tile coords as [x, y]
@@ -255,7 +298,6 @@ export default class ApiManager {
           }
           
           if (templateBlob === null) {
-            templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
             if (
               this.templateManager.templatesShouldBeDrawn &&
               this.templateManager.templatesArray.some(t => {
@@ -268,7 +310,33 @@ export default class ApiManager {
                 return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
               })
             ) {
-              this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+              templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
+              // if (
+              //   typeof ImageBitmap !== "undefined" &&
+              //   this.tileCache[tileKey] &&
+              //   this.tileCache[tileKey]["templateBlob"] instanceof ImageBitmap
+              // ) {
+              //   this.tileCache[tileKey]["templateBlob"].close();
+              // };
+              if (
+                (templateBlob instanceof HTMLCanvasElement || templateBlob instanceof OffscreenCanvas) &&
+                templateBlob.convertToBlob !== undefined
+              ) {
+                const templateCanvas = templateBlob;
+                if (typeof ImageBitmap !== 'undefined' && navigator.deviceMemory === 8) { // Only Test This if we have at least 8GiB of RAM
+                  templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
+                  templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
+                    this.tileCache[tileKey] = { lastModified, fullKey, blob };
+                    cleanUpCanvas(templateCanvas);
+                  })
+                } else {
+                  templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
+                  this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+                  cleanUpCanvas(templateCanvas);
+                }
+              }
+            } else {
+              templateBlob = blobData;
             }
           }
 

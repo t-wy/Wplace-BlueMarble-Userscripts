@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta, sortByOptions } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -275,6 +275,8 @@ export default class TemplateManager {
     // Returns early if no templates should be drawn
     if (!this.templatesShouldBeDrawn) {return tileBlob;}
 
+    const timeStart = performance.now();
+
     const drawSize = this.tileSize * this.drawMult; // Calculate draw multiplier for scaling
     
     const tileCoordsRaw = tileCoords; // We want the number version for later example finding
@@ -290,6 +292,8 @@ export default class TemplateManager {
     templateArray.sort((a, b) => {return a.sortID - b.sortID;});
 
     console.log(templateArray);
+
+    console.log(`Start checking touching templates...`, performance.now() - timeStart + ' ms');
 
     // Early exit if none of the active templates touch this tile
     const anyTouches = templateArray.some(t => {
@@ -321,8 +325,8 @@ export default class TemplateManager {
             template: template,
             storageKey: template.storageKey,
             bitmap: template.chunked[tile],
-            tileCoords: [coords[0], coords[1]],
-            pixelCoords: [coords[2], coords[3]]
+            tileCoords: [+coords[0], +coords[1]],
+            pixelCoords: [+coords[2], +coords[3]]
           }
         });
 
@@ -330,7 +334,7 @@ export default class TemplateManager {
       })
     .filter(Boolean);
 
-    console.log(templatesTilesToDraw);
+    console.log(templatesTilesToDraw, performance.now() - timeStart + ' ms');
 
     const templateCount = templatesTilesToDraw?.length || 0; // Number of templates to draw on this tile
     console.log(`templateCount = ${templateCount}`);
@@ -385,6 +389,7 @@ export default class TemplateManager {
       const templateKey = templateTile.storageKey;
       console.log(`Template:`);
       console.log(templateTile);
+      console.log(performance.now() - timeStart + ' ms');
 
       // Compute stats by sampling template center pixels against tile pixels,
       // honoring color enable/disable from the active template's palette
@@ -403,8 +408,8 @@ export default class TemplateManager {
           cleanUpCanvas(tempCanvas);
           tempCanvas = null;
 
-          const offsetX = Number(templateTile.pixelCoords[0]) * this.drawMult;
-          const offsetY = Number(templateTile.pixelCoords[1]) * this.drawMult;
+          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
+          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
 
           // Loops over all pixels in the template
           // Assigns each pixel a color (if center pixel)
@@ -433,7 +438,6 @@ export default class TemplateManager {
               // If the alpha of the center pixel is less than 64...
               if (templatePixelCenterAlpha < 64) {
                 try {
-                  const activeTemplate = this.templatesArray?.[0];
                   const tileIdx = (gy * drawSize + gx) * 4;
                   const pr = tilePixels[tileIdx];
                   const pg = tilePixels[tileIdx + 1];
@@ -565,8 +569,8 @@ export default class TemplateManager {
       if (templateTile.template.enabled ?? true) {
         try {
 
-          const offsetX = Number(templateTile.pixelCoords[0]) * this.drawMult;
-          const offsetY = Number(templateTile.pixelCoords[1]) * this.drawMult;
+          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
+          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
 
           // If none of the template colors are disabled, then draw the image normally
           if (!hasDisabled) {
@@ -575,7 +579,7 @@ export default class TemplateManager {
             // ELSE we need to apply the color filter
             if (!allDisabled) {
 
-              console.log('Applying color filter...');
+              console.log('Applying color filter...', performance.now() - timeStart + ' ms');
 
               const tempW = templateTile.bitmap.width;
               const tempH = templateTile.bitmap.height;
@@ -645,6 +649,8 @@ export default class TemplateManager {
       }
     }
 
+    console.log('Saving per-tile stats...', performance.now() - timeStart + ' ms');
+
     // Save per-tile stats and compute global aggregates across all processed tiles
     if (templateCount > 0) {
       const tileKey = tileCoords; // already padded string "xxxx,yyyy"
@@ -684,14 +690,20 @@ export default class TemplateManager {
       this.overlay.handleDisplayStatus(`Displaying ${enabledTemplateCount} template${enabledTemplateCount == 1 ? '' : 's'}.`);
     }
 
-    const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
+    console.log('Exporting tile overlay...', performance.now() - timeStart + ' ms');
 
-    cleanUpCanvas(canvas);
-    canvas = null;
+    // const resultBlob = typeof ImageBitmap !== 'undefined' ? createImageBitmap(canvas) : await canvas.convertToBlob({ type: 'image/png' });
+
+    console.log('Cleaning up...', performance.now() - timeStart + ' ms');
+
     window.buildColorFilterList();
     window.buildTemplateFilterList();
 
-    return resultBlob;
+    console.log('Finish...', performance.now() - timeStart + ' ms');
+
+    return canvas;
+    // return resultBlob;
+    // return await canvas.convertToBlob({ type: 'image/png' });
   }
 
   /** Imports the JSON object, and appends it to any JSON object already loaded
@@ -894,6 +906,55 @@ export default class TemplateManager {
    */
   async setHideLockedColors(value) {
     this.userSettings.hideLockedColors = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to get the current sort criteria.
+   * @since 0.85.23
+   */
+  getSortBy() {
+    const temp = this.userSettings?.sortBy ?? 'total-desc';
+    if (this.isValidSortBy(temp)) return temp;
+    return 'total-desc';
+  }
+
+
+  /** A utility to check if the sort criteria is valid.
+   * @param {string} value - The sort criteria
+   * @since 0.85.23
+   */
+  isValidSortBy(value) {
+    const parts = value.toLowerCase().split("-");
+    if (parts.length !== 2) return false;
+    if (sortByOptions[parts[0]] === undefined) return false;
+    if (!['desc', 'asc'].includes(parts[1])) return false;
+    return true;
+  }
+
+  /** Sets the sort criteria to a value.
+   * @param {string} value - The sort criteria
+   * @since 0.85.23
+   */
+  async setSortBy(value) {
+    if (!this.isValidSortBy(value)) return false;
+    this.userSettings.sortBy = value.toLowerCase();
+    await this.storeUserSettings();
+    return true;
+  }
+
+  /** A utility to check if hidden colors are set to be hidden.
+   * @since 0.85.26
+   */
+  isProgressBarEnabled() {
+    return this.userSettings?.progressBarEnabled ?? true;
+  }
+
+  /** Sets the sort criteria to a value.
+   * @param {boolean} value - The sort criteria
+   * @since 0.85.23
+   */
+  async setProgressBarEnabled(value) {
+    this.userSettings.progressBarEnabled = value;
     await this.storeUserSettings();
   }
 
