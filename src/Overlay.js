@@ -176,6 +176,16 @@ export default class Overlay {
     return this;
   }
 
+  /** Adds plain text to the overlay
+   * @since 0.43.27
+   */
+  addText(textContent) {
+    if (!this.overlay) return this; // no parent
+    const textNode = document.createTextNode(textContent);
+    this.currentParent?.appendChild(textNode);
+    return this;
+  }
+
   /** Adds a `small` to the overlay.
    * This `small` element will have properties shared between all `small` elements in the overlay.
    * You can override the shared properties by using a callback.
