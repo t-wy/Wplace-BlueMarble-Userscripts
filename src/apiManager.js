@@ -463,6 +463,7 @@ export default class ApiManager {
           }
 
           this.#applyUserData(dataJSON, Date.now());
+          break;
 
         case 'pixel': // Request to retrieve pixel data
           const coordsTile = data['endpoint'].split('?')[0].split('/').filter(s => s && !isNaN(Number(s))).map(s => Number(s)); // Retrieves the tile coords as [x, y]
