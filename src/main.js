@@ -3,7 +3,7 @@
  */
 import "./polyfill.js";
 import Overlay from './Overlay.js';
-import Observers from './observers.js';
+// import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
@@ -318,7 +318,6 @@ function observeBlack() {
             ];
           };
           // }
-          let tilesToPaint;
           if (examples.length <= currentCharges) {
             // do nothing as all are going to be painted anyway
           } else if (examples.length < 5000) { // performance is close at about 5000 ~ 10000
@@ -679,6 +678,7 @@ async function buildOverlayMain() {
               instance.updateInnerHTML('bm-input-ty', coords?.[1] || '');
               instance.updateInnerHTML('bm-input-px', coords?.[2] || '');
               instance.updateInnerHTML('bm-input-py', coords?.[3] || '');
+              apiManager.updateDownloadButton();
               persistCoords();
             }
           }
@@ -686,11 +686,24 @@ async function buildOverlayMain() {
         .addInput({'type': 'number', 'id': 'bm-input-tx', 'placeholder': 'Tl X', 'min': 0, 'max': 2047, 'step': 1, 'required': true, 'value': (savedCoords.tx ?? '')}, (instance, input) => {
           //if a paste happens on tx, split and format it into other coordinates if possible
           input.addEventListener("paste", (event) => {
-            let splitText = (event.clipboardData || window.clipboardData).getData("text").split(" ").filter(n => n).map(Number).filter(n => !isNaN(n)); //split and filter all Non Numbers
+            const clipboardText = (event.clipboardData || window.clipboardData).getData("text");
 
-            if (splitText.length !== 4 ) { // If we don't have 4 clean coordinates, end the function.
+            const matchResult = [
+              /^\s*(\d{1,4}),\s*(\d{1,4}),\s*(\d{1,4}),\s*(\d{1,4})\s*$/, // comma-separated
+              /^\s*(\d{1,4})\s+(\d{1,4})\s+(\d{1,4})\s+(\d{1,4})\s*$/, // space-separated
+              /^\s*\(?Tl X: (\d{1,4}), Tl Y: (\d{1,4}), Px X: (\d{1,4}), Px Y: (\d{1,4})\)?\s*$/, // display format
+            ].map(r => r.exec(clipboardText)).filter(r => r).pop(); //find the regex that matches the clipboard text
+
+            if (matchResult === undefined) { // If we don't have 4 clean coordinates, end the function.
               return;
             }
+            // let splitText = clipboardText.split(" ").filter(n => n).map(Number).filter(n => !isNaN(n)); //split and filter all Non Numbers
+
+            // if (splitText.length !== 4 ) { // If we don't have 4 clean coordinates, end the function.
+            //   return;
+            // }
+
+            let splitText = matchResult.slice(1).map(Number);
 
             let coords = selectAllCoordinateInputs(document); 
 
@@ -698,24 +711,26 @@ async function buildOverlayMain() {
               coords[i].value = splitText[i]; //add the split vales
             }
 
+            apiManager.updateDownloadButton();
+
             event.preventDefault(); //prevent the pasting of the original paste that would overide the split value
           })
-          const handler = () => persistCoords();
+          const handler = () => (apiManager.updateDownloadButton(), persistCoords());
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()
         .addInput({'type': 'number', 'id': 'bm-input-ty', 'placeholder': 'Tl Y', 'min': 0, 'max': 2047, 'step': 1, 'required': true, 'value': (savedCoords.ty ?? '')}, (instance, input) => {
-          const handler = () => persistCoords();
+          const handler = () => (apiManager.updateDownloadButton(), persistCoords());
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()
         .addInput({'type': 'number', 'id': 'bm-input-px', 'placeholder': 'Px X', 'min': 0, 'max': 2047, 'step': 1, 'required': true, 'value': (savedCoords.px ?? '')}, (instance, input) => {
-          const handler = () => persistCoords();
+          const handler = () => (apiManager.updateDownloadButton(), persistCoords());
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()
         .addInput({'type': 'number', 'id': 'bm-input-py', 'placeholder': 'Px Y', 'min': 0, 'max': 2047, 'step': 1, 'required': true, 'value': (savedCoords.py ?? '')}, (instance, input) => {
-          const handler = () => persistCoords();
+          const handler = () => (apiManager.updateDownloadButton(), persistCoords());
           input.addEventListener('input', handler);
           input.addEventListener('change', handler);
         }).buildElement()

@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta, sortByOptions } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta, sortByOptions, testCanvasSize } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -50,17 +50,7 @@ export default class TemplateManager {
     this.encodingBase = '!#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~'; // Characters to use for encoding/decoding
     this.tileSize = 1000; // The number of pixels in a tile. Assumes the tile is square
 
-    let canvas = new OffscreenCanvas(5000,5000);
-    const context = canvas.getContext('2d');
-    context.fillRect(4999, 4999, 1, 1);
-    if (context.getImageData(4999, 4999, 1, 1).data[3] !== 0) {
-      this.drawMult = 5; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
-    } else {
-      this.drawMult = 4;
-    }
-    // Release canvas
-    cleanUpCanvas(canvas);
-    canvas = null;
+    this.drawMult = testCanvasSize(5000, 5000) ? 5 : 4; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
 
     this.drawMultCenter = (this.drawMult - 1) >> 1; // Even: better be up left than down right
     

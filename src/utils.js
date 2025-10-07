@@ -426,15 +426,40 @@ export function teleportToTileCoords(coordsTile, coordsPixel, smooth = true) {
   teleportToGeoCoords(geoCoords[0], geoCoords[1], smooth);
 }
 
+/** Get raw coordinates from the BM overlay
+ * @since 0.85.28
+ */
+function getOverlayCoordsRaw() {
+  const tx = document.querySelector('#bm-input-tx')?.value || '';
+  const ty = document.querySelector('#bm-input-ty')?.value || '';
+  const px = document.querySelector('#bm-input-px')?.value || '';
+  const py = document.querySelector('#bm-input-py')?.value || '';
+  return [[tx, ty], [px, py]];
+}
+
 /** Get coordinates from the BM overlay
  * @since 0.85.20
  */
 export function getOverlayCoords() {
-  const tx = Number(document.querySelector('#bm-input-tx')?.value || '');
-  const ty = Number(document.querySelector('#bm-input-ty')?.value || '');
-  const px = Number(document.querySelector('#bm-input-px')?.value || '');
-  const py = Number(document.querySelector('#bm-input-py')?.value || '');
+  const rawCoords = getOverlayCoordsRaw();
+  const tx = Number(rawCoords[0][0]);
+  const ty = Number(rawCoords[0][1]);
+  const px = Number(rawCoords[1][0]);
+  const py = Number(rawCoords[1][1]);
   return [[tx, ty], [px, py]];
+}
+
+/** Check if the BM overlay coordinates are actually filled
+ * @since 0.85.20
+ */
+export function areOverlayCoordsFilledAndValid() {
+  const rawCoords = getOverlayCoordsRaw();
+  const parsedCoords = getOverlayCoords();
+  if (rawCoords[0][0] === '' || isNaN(parsedCoords[0][0])) return false;
+  if (rawCoords[0][1] === '' || isNaN(parsedCoords[0][1])) return false;
+  if (rawCoords[1][0] === '' || isNaN(parsedCoords[1][0])) return false;
+  if (rawCoords[1][1] === '' || isNaN(parsedCoords[1][1])) return false;
+  return true;
 }
 
 /** Available sorting options
@@ -469,4 +494,79 @@ export const sortByOptions = {
     const [r, g, b] = rgb.split(',').map(Number);
     return (r * 0.2126 + g * 0.7152 + b * 0.0722) / 255; // Range: 0-1
   },
+}
+
+/** Copy the specified text to Clipboard
+ * @param {string} text
+ * @since 0.85.28
+ */
+export function copyToClipboard(text) {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    navigator.clipboard.writeText(text);
+  } else {
+    var temp = document.createElement("textArea");
+    temp.innerHTML = text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+  }
+}
+
+/** Calculate the top left and size of the image to export
+ * @since 0.85.28
+ */
+export function calculateTopLeftAndSize(coords1, coords2) {
+  const xs = [
+    coords1[0][0] * 1000 + coords1[1][0],
+    coords2[0][0] * 1000 + coords2[1][0],
+  ];
+  const ys = [
+    coords1[0][1] * 1000 + coords1[1][1],
+    coords2[0][1] * 1000 + coords2[1][1],
+  ];
+  const top = Math.min(ys[0], ys[1]);
+  const height = Math.abs(ys[0] - ys[1]) + 1;
+  const rawWidth = Math.abs(xs[0] - xs[1]) + 1;
+  const earthWrap = rawWidth * 2 > 2048 * 1000;
+  const left = earthWrap ? Math.max(xs[0], xs[1]) : Math.min(xs[0], xs[1]);
+  const width = earthWrap ? (2048 * 1000 - rawWidth + 2) : rawWidth;
+  return [[left, top], [width, height]];
+}
+
+/** Test if the browser support canvas size of the specified dimensions
+ * @param {number} width
+ * @param {number} height
+ * @since 0.85.28
+ */
+export function testCanvasSize(width, height) {
+  // Check if the browser support canvas size of the specified dimensions
+  let canvas = new OffscreenCanvas(width, height);
+  const context = canvas.getContext('2d');
+  context.fillRect(width - 1, height - 1, 1, 1);
+  const result = context.getImageData(width - 1, height - 1, 1, 1).data[3] !== 0;
+  // Release canvas
+  cleanUpCanvas(canvas);
+  canvas = null;
+  return result;
+}
+
+/** Fetch the tile image
+ * @param {number} tx
+ * @param {number} ty
+ * @since 0.85.28
+ */
+export function downloadTile(tx, ty) {
+  const remoteURL = "https://backend.wplace.live/files/s0/tiles/" + (tx % 2048) + "/" + ty + ".png";
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = function() {
+      resolve(img);
+    };
+    img.onerror = function(error) {
+      reject(error);
+    }
+    img.src = remoteURL;
+  })
 }
