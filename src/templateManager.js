@@ -138,10 +138,16 @@ export default class TemplateManager {
     this.overlay.handleDisplayStatus(`Creating template at ${coords.join(', ')}...`);
 
     // Creates a new template instance
+    const authorID = numberToEncoded(this.userID || 0, this.encodingBase);
+    let assignSortID = 0; // Object.keys(this.templatesJSON.templates).length || 0;
+    // Prevent Overwriting templates
+    while (this.templatesJSON.templates[`${assignSortID} ${authorID}`] !== undefined) {
+      assignSortID++;
+    }
     const template = new Template({
       displayName: name,
-      sortID: Object.keys(this.templatesJSON.templates).length || 0, // Uncomment this to enable multiple templates (1/2)
-      authorID: numberToEncoded(this.userID || 0, this.encodingBase),
+      sortID: assignSortID, // Uncomment this to enable multiple templates (1/2)
+      authorID: authorID,
       file: blob,
       coords: coords
     });
