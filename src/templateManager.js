@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, colorpalette, allowedColorsSet, rgbToMeta, sortByOptions, testCanvasSize } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -52,7 +52,7 @@ export default class TemplateManager {
 
     this.drawMult = testCanvasSize(5000, 5000) ? 5 : 4; // The enlarged size for each pixel. E.g. when "3", a 1x1 pixel becomes a 1x1 pixel inside a 3x3 area. MUST BE ODD
 
-    this.drawMultCenter = (this.drawMult - 1) >> 1; // Even: better be up left than down right
+    this.drawMultCenter = (this.drawMult - 1) >> 1; // Even: better be upper left than down right
     
     // Template
     this.canvasTemplate = null; // Our canvas
@@ -63,8 +63,9 @@ export default class TemplateManager {
     this.templateState = ''; // The state of the template ('blob', 'proccessing', 'template', etc.)
     this.templatesArray = []; // All Template instnaces currently loaded (Template)
     this.templatesJSON = null; // All templates currently loaded (JSON)
-    this.templatesShouldBeDrawn = true; // Should ALL templates be drawn to the canvas?
+    // this.templatesShouldBeDrawn = true; // Should ALL templates be drawn to the canvas?
     this.tileProgress = new Map(); // Tracks per-tile progress stats {painted, required, wrong}
+    // this.tileOverlay = new Map(); // Cache tile overlay to save time
     this.extraColorsBitmap = 0; // List of unlocked colors, set by apiManager
     this.userSettings = {}; // User settings
     this.hideLockedColors = false; 
@@ -263,66 +264,48 @@ export default class TemplateManager {
   async drawTemplateOnTile(tileBlob, tileCoords) {
 
     // Returns early if no templates should be drawn
-    if (!this.templatesShouldBeDrawn) {return tileBlob;}
+    // if (!this.templatesShouldBeDrawn) {return tileBlob;}
 
     const timeStart = performance.now();
-
-    const drawSize = this.tileSize * this.drawMult; // Calculate draw multiplier for scaling
     
-    const tileCoordsRaw = tileCoords; // We want the number version for later example finding
     // Format tile coordinates with proper padding for consistent lookup
-    tileCoords = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
+    const tileCoordsPadded = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
 
-    console.log(`Searching for templates in tile: "${tileCoords}"`);
+    // console.log(`Searching for templates in tile: "${tileCoords}"`);
 
-    const templateArray = this.templatesArray; // Stores a copy for sorting
-    console.log(templateArray);
+    // const templateArray = this.templatesArray; // Stores a copy for sorting
+    // console.log(templateArray);
 
     // Sorts the array of Template class instances. 0 = first = lowest draw priority
-    templateArray.sort((a, b) => {return a.sortID - b.sortID;});
+    // Should be handled by getInvolvedTemplates now
+    // templateArray.sort((a, b) => {return a.sortID - b.sortID;});
 
-    console.log(templateArray);
+    // console.log(templateArray);
 
     console.log(`Start checking touching templates...`, performance.now() - timeStart + ' ms');
 
     // Early exit if none of the active templates touch this tile
-    const anyTouches = templateArray.some(t => {
-      if (!t?.chunked) { return false; }
-      // Fast path via recorded tile prefixes if available
-      if (t.tilePrefixes && t.tilePrefixes.size > 0) {
-        return t.tilePrefixes.has(tileCoords);
-      }
-      // Fallback: scan chunked keys
-      return Object.keys(t.chunked).some(k => k.startsWith(tileCoords));
-    });
-    if (!anyTouches) { return tileBlob; }
+    const involvedTemplates = this.getInvolvedTemplates(tileCoords);
+    if (involvedTemplates.length === 0) { return tileBlob; }
 
     // Retrieves the relavent template tile blobs
-    const templatesTilesToDraw = templateArray
-      .map(template => {
-        const matchingTiles = Object.keys(template.chunked).filter(tile =>
-          tile.startsWith(tileCoords)
+    const templatesTilesToDraw = involvedTemplates.map(template => {
+        const matchingTiles = Object.keys(template.chunked).filter(
+          tile => tile.startsWith(tileCoordsPadded)
         );
-
-        if (matchingTiles.length === 0) {return null;} // Return null when nothing is found
-
-        // Retrieves the blobs of the templates for this tile
-        const matchingTileBlobs = matchingTiles.map(tile => {
-
-          const coords = tile.split(','); // [x, y, x, y] Tile/pixel coordinates
-          
-          return {
-            template: template,
-            storageKey: template.storageKey,
-            bitmap: template.chunked[tile],
-            tileCoords: [+coords[0], +coords[1]],
-            pixelCoords: [+coords[2], +coords[3]]
-          }
-        });
-
-        return matchingTileBlobs?.[0];
-      })
-    .filter(Boolean);
+        // Return null when nothing is found (should not happen here anyways)
+        if (matchingTiles.length === 0) return null;
+        // The length should be 1 anyways
+        const tileKey = matchingTiles[0];
+        const coords = tileKey.split(','); // [x, y, x, y] Tile/pixel coordinates
+        return {
+          template: template,
+          storageKey: template.storageKey,
+          bitmap: template.chunked[tileKey],
+          tileCoords: [+coords[0], +coords[1]],
+          pixelCoords: [+coords[2], +coords[3]]
+        }
+    }).filter(Boolean);
 
     console.log(templatesTilesToDraw, performance.now() - timeStart + ' ms');
 
@@ -342,6 +325,18 @@ export default class TemplateManager {
     
     const tileBitmap = await createImageBitmap(tileBlob);
 
+    // honor the same toggle Status for all templates
+    const toggleStatus = this.getPaletteToggledStatus(); // Obtain the color palette of the template
+    const displayedColors = this.getDisplayedColorsSorted();
+    // const tileCacheKey = this.getTileCacheKeyFromCalculated(displayedColors, involvedTemplates);
+    const displayedColorSet = new Set(displayedColors);
+    const hasColorDisabled = displayedColors.length !== Object(toggleStatus).length;
+    const allColorsDisabled = displayedColors.length === 0; // Check if every color is disabled
+    const allTemplatesDisabled = templatesTilesToDraw.length === 0; // No need to draw if all templates are disabled
+    const needOverlay = !allTemplatesDisabled && !allColorsDisabled;
+
+    const drawSize = this.tileSize * this.drawMult; // Calculate draw multiplier for scaling
+
     let canvas = new OffscreenCanvas(drawSize, drawSize);
     const context = canvas.getContext('2d');
 
@@ -353,7 +348,8 @@ export default class TemplateManager {
     context.clip();
 
     context.clearRect(0, 0, drawSize, drawSize); // Draws transparent background
-    context.drawImage(tileBitmap, 0, 0, drawSize, drawSize);
+    context.drawImage(tileBitmap, 0, 0, drawSize, drawSize); // Enlarge the tile
+    tileBitmap.close(); // manually dispose
 
     // Grab a snapshot of the tile pixels BEFORE we draw any template overlays
     let tilePixels = null;
@@ -362,17 +358,6 @@ export default class TemplateManager {
     } catch (_) {
       // If reading fails for any reason, we will skip stats
     }
-
-    const colorpaletteRev = Object.fromEntries(colorpalette.map(color => {
-      const [r, g, b] = color.rgb;
-      return [`${r},${g},${b}`, color];
-    }))
-
-    // honor the same toggle Status for all templates
-    const toggleStatus = this.getPaletteToggledStatus(); // Obtain the color palette of the template
-    const hideLocked = this.areLockedColorsHidden();
-    const hasDisabled = Object.values(toggleStatus).some(v => v === false) || hideLocked;
-    const allDisabled = Object.values(toggleStatus).every(v => v === false); // Check if every color is disabled
 
     // For each template in this tile, draw them.
     for (const templateTile of templatesTilesToDraw) {
@@ -434,12 +419,12 @@ export default class TemplateManager {
                   const pb = tilePixels[tileIdx + 2];
                   const pa = tilePixels[tileIdx + 3];
 
-                  const key = allowedColorsSet.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
+                  const key = rgbToMeta.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
 
-                  const isSiteColor = allowedColorsSet.has(key);
+                  // const isSiteColor = rgbToMeta.has(key);
                   
                   // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
-                  if (pa >= 64 && isSiteColor) {
+                  if (pa >= 64) { // && isSiteColor) {
                     wrongCount++;
                   }
                 } catch (ignored) {}
@@ -454,7 +439,7 @@ export default class TemplateManager {
               //   const activeTemplate = this.templatesArray?.[0]; // Get the first template
 
               //   // IF the stored palette data exists, AND the pixel is not in the allowed palette
-              //   if (allowedColorsSet && !allowedColorsSet.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
+              //   if (rgbToMeta && !rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
 
               //     continue; // Skip this pixel if it is not in the allowed palette
               //   }
@@ -479,7 +464,7 @@ export default class TemplateManager {
                 paintedCount++; // ...the pixel is painted correctly
                 isPainted = true;
                 let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                if (colorpaletteRev[colorKey] === undefined) colorKey = 'other';
+                if (!rgbToMeta.has(colorKey)) colorKey = 'other';
                 if (paletteStats[colorKey] === undefined) {
                   paletteStats[colorKey] = {
                     painted: 1,
@@ -507,9 +492,9 @@ export default class TemplateManager {
               if (!isPainted) {
                 // add to palette stat
                 let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                if (colorpaletteRev[key] === undefined) key = 'other';
+                if (!rgbToMeta.has(key)) key = 'other';
                 const example = [ // use this tile as example
-                  tileCoordsRaw,
+                  tileCoords,
                   [
                     Math.floor(gx / this.drawMult),
                     Math.floor(gy / this.drawMult)
@@ -563,11 +548,11 @@ export default class TemplateManager {
           const offsetY = templateTile.pixelCoords[1] * this.drawMult;
 
           // If none of the template colors are disabled, then draw the image normally
-          if (!hasDisabled) {
+          if (!hasColorDisabled) {
             context.drawImage(templateTile.bitmap, offsetX, offsetY);
           } else {
             // ELSE we need to apply the color filter
-            if (!allDisabled) {
+            if (!allColorsDisabled) {
 
               console.log('Applying color filter...', performance.now() - timeStart + ' ms');
 
@@ -596,24 +581,9 @@ export default class TemplateManager {
 
                     if (a < 1) { continue; }
 
-                    let key = allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
-
-                    // Hide if color is not in allowed palette or explicitly disabled
-                    const inWplacePalette = allowedColorsSet.has(key);
-
-                    // if (inWplacePalette) {
-                    //   key = 'other'; // Map all non-palette colors to "other"
-                    //   console.log('Added color to other');
-                    // }
-
-                    const isPaletteColorEnabled = toggleStatus?.[key] !== false;
-                    const isForceHidden = hideLocked && (
-                      key === 'other' || (
-                        rgbToMeta.has(key) &&
-                        !this.isColorUnlocked(rgbToMeta.get(key).id)
-                      )
-                    );
-                    if (!inWplacePalette || !isPaletteColorEnabled || isForceHidden) {
+                    let key = `${r},${g},${b}`;
+                    if (!rgbToMeta.has(`${r},${g},${b}`)) key = 'other';
+                    if (!displayedColorSet.has(key)) {
                       data[idx + 3] = 0; // hide disabled color center pixel
                     }
                   }
@@ -642,48 +612,55 @@ export default class TemplateManager {
     console.log('Saving per-tile stats...', performance.now() - timeStart + ' ms');
 
     // Save per-tile stats and compute global aggregates across all processed tiles
-    if (templateCount > 0) {
-      const tileKey = tileCoords; // already padded string "xxxx,yyyy"
-      this.tileProgress.set(tileKey, {
+    // if (templateCount > 0) {
+    if (templateCount === 0) {
+      // if this is ever executed, idk why this still does not get deleted before
+      if (this.tileProgress.has(tileCoordsPadded)) {
+        this.tileProgress.delete(tileCoordsPadded);
+      }
+      // if (this.tileOverlay.has(tileCoordsPadded)) {
+      //   this.tileOverlay.delete(tileCoordsPadded);
+      // }
+    } else {
+      this.tileProgress.set(tileCoordsPadded, {
         painted: paintedCount,
         required: requiredCount,
         wrong: wrongCount,
         palette: paletteStats,
         template: templateStats,
       });
-
-      // Aggregate painted/wrong across tiles we've processed
-      let aggPainted = 0;
-      let aggRequiredTiles = 0;
-      let aggWrong = 0;
-      for (const stats of this.tileProgress.values()) {
-        aggPainted += stats.painted || 0;
-        aggRequiredTiles += stats.required || 0;
-        aggWrong += stats.wrong || 0;
-      }
-
-      // Determine total required across all templates
-      // Prefer precomputed per-template required counts; fall back to sum of processed tiles
-      const totalRequiredTemplates = this.templatesArray.reduce((sum, t) =>
-        sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
-      const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
-
-      // Turns numbers into formatted number strings. E.g., 1234 -> 1,234 OR 1.234 based on location of user
-      const paintedStr = new Intl.NumberFormat().format(aggPainted);
-      const requiredStr = new Intl.NumberFormat().format(totalRequired);
-      const wrongStr = new Intl.NumberFormat().format(totalRequired - aggPainted); // Used to be aggWrong, but that is bugged
-
-      this.overlay.handleDisplayStatus(
-        `Displaying ${enabledTemplateCount} template${enabledTemplateCount == 1 ? '' : 's'}.\nPainted ${paintedStr} / ${requiredStr} • Wrong ${wrongStr}`
-      );
-    } else {
-      this.overlay.handleDisplayStatus(`Displaying ${enabledTemplateCount} template${enabledTemplateCount == 1 ? '' : 's'}.`);
+      // this.tileOverlay.set(tileCoordsPadded, ...);
     }
+
+    // Aggregate painted/wrong across tiles we've processed
+    let aggPainted = 0;
+    let aggRequiredTiles = 0;
+    let aggWrong = 0;
+    for (const stats of this.tileProgress.values()) {
+      aggPainted += stats.painted || 0;
+      aggRequiredTiles += stats.required || 0;
+      aggWrong += stats.wrong || 0;
+    }
+
+    // Determine total required across all templates
+    // Prefer precomputed per-template required counts; fall back to sum of processed tiles
+    const totalRequiredTemplates = this.templatesArray.reduce((sum, t) =>
+      sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
+    const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
+
+    // Turns numbers into formatted number strings. E.g., 1234 -> 1,234 OR 1.234 based on location of user
+    const paintedStr = new Intl.NumberFormat().format(aggPainted);
+    const requiredStr = new Intl.NumberFormat().format(totalRequired);
+    const wrongStr = new Intl.NumberFormat().format(totalRequired - aggPainted); // Used to be aggWrong, but that is bugged
+
+    this.overlay.handleDisplayStatus(
+      `Displaying ${enabledTemplateCount} template${enabledTemplateCount == 1 ? '' : 's'}.\nPainted ${paintedStr} / ${requiredStr} • Wrong ${wrongStr}`
+    );
 
     console.log('Exporting tile overlay...', performance.now() - timeStart + ' ms');
 
     // const resultBlob = typeof ImageBitmap !== 'undefined' ? createImageBitmap(canvas) : await canvas.convertToBlob({ type: 'image/png' });
-    const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
+    const resultBlob = needOverlay ? await canvas.convertToBlob({ type: 'image/png' }) : tileBlob;
     cleanUpCanvas(canvas);
 
     console.log('Cleaning up...', performance.now() - timeStart + ' ms');
@@ -852,9 +829,9 @@ export default class TemplateManager {
    * @param {boolean} value - The value to set the boolean to
    * @since 0.73.7
    */
-  setTemplatesShouldBeDrawn(value) {
-    this.templatesShouldBeDrawn = value;
-  }
+  // setTemplatesShouldBeDrawn(value) {
+  //   this.templatesShouldBeDrawn = value;
+  // }
 
   /** Gets the palette toggled status from the first appearance of the color as a temporary measure
    * @since 0.85.11
@@ -868,6 +845,60 @@ export default class TemplateManager {
       }
     }
     return status;
+  }
+
+  /** Gets the list of displayed colors, sorted by rgb
+   * does not hide completed colors as that may become incomplete over time
+   * @since 0.85.30
+   */
+  getDisplayedColorsSorted() {
+    const toggledStatus = this.getPaletteToggledStatus();
+    const hideLocked = this.areLockedColorsHidden();
+    const colors = [];
+    Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
+      if (!enabled) return;
+      if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
+      colors.push(rgb);
+    })
+    return colors.sort();
+  }
+
+  /** Gets the list of involved templates, sorted by sortID
+   * @param {number[]} tileCoords
+   * @returns {Template[]}
+   * @since 0.85.30
+   */
+  getInvolvedTemplates(tileCoords) {
+    const tileCoordsPadded = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
+    return this.templatesArray.filter( template => {
+      if (!template?.chunked) return false; // no bitmap
+      // Fast path via recorded tile prefixes if available
+      if (template.tilePrefixes && template.tilePrefixes.size > 0) {
+        return template.tilePrefixes.has(tileCoordsPadded);
+      }
+      // Fallback: scan chunked keys
+      return Object.keys(template.chunked).some(k => k.startsWith(tileCoordsPadded));
+    }).sort((a, b) => a.sortID - b.sortID);
+  }
+
+  /** Gets the key that indicates if the toggled status is unchanged, so we can skip redrawing the overlay
+   * @param {number[]} tileCoords
+   * @since 0.85.30
+   */
+  getTileCacheKey(tileCoords) {
+    const displayedColors = this.getDisplayedColorsSorted();
+    const involvedTemplates = this.getInvolvedTemplates(tileCoords);
+    return this.getTileCacheKeyFromCalculated(displayedColors, involvedTemplates);
+  }
+
+  /** Gets the key that indicates if the toggled status is unchanged, so we can skip redrawing the overlay
+   * @param {string[]} displayedColors
+   * @param {Template[]} involvedTemplates
+   * @returns {string}
+   * @since 0.85.30
+   */
+  getTileCacheKeyFromCalculated(displayedColors, involvedTemplates) {
+    return displayedColors.join(';') + '||' + involvedTemplates.filter(t => t.enabled ?? true).map(t => t.storageKey + "," + t.storageTimeString).join(';');
   }
 
   /** Stores the JSON object of the user settings into TamperMonkey (GreaseMonkey) storage.
@@ -991,8 +1022,10 @@ export default class TemplateManager {
    * @since 0.85.19
    */
   clearTileProgress(template) {
+    // may improve: only delete those tiles that are no longer involved in other templates
     template.tilePrefixes.forEach(prefix => {
       this.tileProgress.delete(prefix);
+      // this.tileOverlay.delete(prefix);
     })
   }
 }

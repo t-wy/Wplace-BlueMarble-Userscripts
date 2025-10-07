@@ -915,6 +915,7 @@ async function buildOverlayMain() {
     const listContainer = document.querySelector('#bm-colorfilter-list');
     const toggleStatus = templateManager.getPaletteToggledStatus();
     const hideCompleted = templateManager.areCompletedColorsHidden();
+    const hideLocked = templateManager.areLockedColorsHidden();
     listContainer.innerHTML = '';
     let hasColorPalette = false;
     const paletteSum = {};
@@ -962,13 +963,10 @@ async function buildOverlayMain() {
       .map(([rgb, count]) => [rgb, combinedProgress[rgb]?.paintedAndEnabled ?? 0, count])
       .sort(compareFunction); // sort by frequency desc
 
+    let hasColors = false;
     for (const [rgb, paintedCount, totalCount] of paletteSumSorted) {
-      if (templateManager.areLockedColorsHidden()) {
-        if (rgb === 'other') continue;
-      }
-      if (hideCompleted && paintedCount === totalCount) {
-        continue;
-      }
+      if (hideLocked && rgb === 'other') continue;
+      if (hideCompleted && paintedCount === totalCount) continue;
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
@@ -995,11 +993,9 @@ async function buildOverlayMain() {
         const [r, g, b] = rgb.split(',').map(Number);
         swatch.style.background = `rgb(${r},${g},${b})`;
         try {
-          const tMeta = (templateManager.templatesArray ?? []).find(t => t.rgbToMeta?.has(rgb))?.rgbToMeta?.get(rgb);
+          const tMeta = rgbToMeta.get(rgb);
           if (tMeta && typeof tMeta.id === 'number') {
-            if (templateManager.areLockedColorsHidden()) {
-              if (!templateManager.isColorUnlocked(tMeta.id)) continue;
-            }
+            if (hideLocked && !templateManager.isColorUnlocked(tMeta.id)) continue;
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
             // const starLeft = tMeta.premium ? '★ ' : '';
             // colorName = `#${tMeta.id} ${starLeft}${displayName}`;
@@ -1066,6 +1062,18 @@ async function buildOverlayMain() {
       row.appendChild(swatch);
       row.appendChild(label);
       listContainer.appendChild(row);
+      hasColors = true;
+    }
+    if (!hasColors && listContainer) {
+      if (hideLocked) {
+        if (hideCompleted) {
+          listContainer.innerHTML = '<small>All owned colors have been completed.</small>';
+        } else {
+          listContainer.innerHTML = '<small>Remaining colors are all locked.</small>';
+        }
+      } else { // hideCompleted
+        listContainer.innerHTML = '<small>All colors have been completed.</small>';
+      }
     }
   };
 
@@ -1134,6 +1142,7 @@ async function buildOverlayMain() {
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
         if (!toggle.checked) {
           // reset related tiles if it is being toggled off
+          // since the tile may not be involed in the template anymore
           templateManager.clearTileProgress(template);
         }
         syncToggleList();

@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, colorpalette, coordsTileToGeoCoords, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, coordsTileToGeoCoords, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
 
 export default class ApiManager {
 
@@ -490,14 +490,8 @@ export default class ApiManager {
           const blobData = data['blobData'];
           const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
           const lastModified = data["lastModified"];
-          const lockedKey = this.templateManager.areLockedColorsHidden() ? '1': '0';
-          const fullKey = (this.templateManager.templatesArray?? []).map(template => {
-            const enabled = template.enabled ?? true;
-            const palette = template.colorPalette || {}; // Obtain the color palette of the template
-            const paletteStatus = Object.keys(palette).filter(key => palette[key]?.enabled !== false).sort().join(';');
-            const templateIdentifier = Object.keys(template.chunked || {}).sort().join(';');
-            return `${+enabled}|${paletteStatus}|${templateIdentifier}`
-          }).join("||") + "||" + lockedKey;
+          const fullKey = this.templateManager.getTileCacheKey(tileCoordsTile);
+          // TODO: Simplify the key to only use (enabled templates, enabled colors)
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {
@@ -511,18 +505,8 @@ export default class ApiManager {
           }
           
           if (templateBlob === null) {
-            if (
-              this.templateManager.templatesShouldBeDrawn &&
-              this.templateManager.templatesArray.some(t => {
-                if (!t?.chunked) { return false; }
-                // Fast path via recorded tile prefixes if available
-                if (t.tilePrefixes && t.tilePrefixes.size > 0) {
-                  return t.tilePrefixes.has(tileKey);
-                }
-                // Fallback: scan chunked keys
-                return Object.keys(t.chunked).some(k => k.startsWith(tileKey));
-              })
-            ) {
+            const involvedTemplates = this.templateManager.getInvolvedTemplates(tileCoordsTile);
+            if ( involvedTemplates.length > 0 ) {
               templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
               // if (
               //   typeof ImageBitmap !== "undefined" &&
@@ -545,7 +529,7 @@ export default class ApiManager {
                 //   })
                 // } else {
                   // templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
-                  // this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+                this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
                   // cleanUpCanvas(templateCanvas);
                 // }
               // }

@@ -217,25 +217,22 @@ export const colorpalette = [
 ];
 // All entries include fixed id (index-based) and premium flag by design.
 
-export const allowedColorsSet = new Set(
-  colorpalette
-    .filter(color => (color?.name || '').toLowerCase() !== 'transparent' && Array.isArray(color?.rgb))
-    .map(color => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
-);
-
-// Ensure template #deface marker is treated as allowed (maps to Transparent color)
-const defaceKey = '222,250,206';
-allowedColorsSet.add(defaceKey);
-
-const keyOther = 'other';
-allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
+// This actually should have the exact same keys as rgbToMeta
+// export const allowedColorsSet = new Set(
+//   colorpalette
+//     .filter(color => (color?.name || '').toLowerCase() !== 'transparent' && Array.isArray(color?.rgb))
+//     .map(color => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
+// );
 
 export const rgbToMeta = new Map(
   colorpalette
     .filter(color => Array.isArray(color?.rgb))
     .map(color => [ `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`, { id: color.id, premium: !!color.premium, name: color.name } ])
-);
+); // Notice that transparent (0) is overriden by black (1) here
 
+// Ensure template #deface marker is treated as allowed (maps to Transparent color)
+const defaceKey = '222,250,206';
+// allowedColorsSet.add(defaceKey);
 // Map #deface to Transparent meta for UI naming and ID continuity
 try {
   const transparent = colorpalette.find(color => (color?.name || '').toLowerCase() === 'transparent');
@@ -245,6 +242,8 @@ try {
 } catch (ignored) {}
 
 // Map other key to Other meta for UI naming and ID continuity
+const keyOther = 'other';
+// allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
 try {
   rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
 } catch (ignored) {}

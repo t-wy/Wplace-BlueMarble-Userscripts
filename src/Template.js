@@ -1,4 +1,4 @@
-import { uint8ToBase64, colorpalette, cleanUpCanvas, allowedColorsSet, rgbToMeta } from "./utils";
+import { uint8ToBase64, cleanUpCanvas, rgbToMeta } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -45,16 +45,17 @@ export default class Template {
     this.colorPalette = {}; // key: "r,g,b" -> { count: number, enabled: boolean }
     this.tilePrefixes = new Set(); // Set of "xxxx,yyyy" tiles this template touches
     this.storageKey = null; // Key used inside templatesJSON to persist settings
+    this.storageTimeString = Date.now().toString(); // Use to identify if the template is replaced but still with the same storageKey
 
     // Build allowed color set from site palette (exclude special Transparent entry by name)
     // Creates a Set of Wplace palette colors excluding "transparent"
-    const allowed = Array.isArray(colorpalette) ? colorpalette : [];
-    this.allowedColorsSet = allowedColorsSet;
+    // const allowed = Array.isArray(colorpalette) ? colorpalette : [];
+    // this.allowedColorsSet = allowedColorsSet;
 
     // Map rgb-> {id, premium}
-    this.rgbToMeta = rgbToMeta;
+    // this.rgbToMeta = rgbToMeta;
 
-    console.log('Allowed colors for template:', this.allowedColorsSet);
+    console.log('Allowed colors for template:', new Set(rgbToMeta.keys()));
 
     this.shreadSize = null; // Scale image factor, same as TemplateManager's drawMult
   }
@@ -144,8 +145,9 @@ export default class Template {
           const a = inspectData[idx + 3];
           if (a === 0) { continue; } // Ignored transparent pixel
           if (r === 222 && g === 250 && b === 206) { deface++; }
-          const key = this.allowedColorsSet.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
-          //if (!this.allowedColorsSet.has(key)) { continue; } // Skip non-palette colors (but #deface added to allowed)
+          // this key also includes #deface as "222,250,206"
+          const key = rgbToMeta.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
+          //if (!rgbToMeta.has(key)) { continue; } // Skip non-palette colors (but #deface added to allowed)
           required++;
           paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
         }
@@ -264,7 +266,7 @@ export default class Template {
               const r = imageData.data[pixelIndex];
               const g = imageData.data[pixelIndex + 1];
               const b = imageData.data[pixelIndex + 2];
-              if (!this.allowedColorsSet.has(`${r},${g},${b}`)) {
+              if (!rgbToMeta.has(`${r},${g},${b}`)) {
                 //imageData.data[pixelIndex + 3] = 0; // hide non-palette colors
               }
             */
