@@ -69,6 +69,7 @@ export default class TemplateManager {
     this.extraColorsBitmap = 0; // List of unlocked colors, set by apiManager
     this.userSettings = {}; // User settings
     this.hideLockedColors = false; 
+    this.largestSeenSortID = 0; // Even a safer approach: recording the largest storage Keys that have been used in this session. Don't remove anything here.
   }
 
   /** Retrieves the pixel art canvas.
@@ -139,18 +140,14 @@ export default class TemplateManager {
 
     // Creates a new template instance
     const authorID = numberToEncoded(this.userID || 0, this.encodingBase);
-    let assignSortID = 0; // Object.keys(this.templatesJSON.templates).length || 0;
-    // Prevent Overwriting templates
-    while (this.templatesJSON.templates[`${assignSortID} ${authorID}`] !== undefined) {
-      assignSortID++;
-    }
     const template = new Template({
       displayName: name,
-      sortID: assignSortID, // Uncomment this to enable multiple templates (1/2)
+      sortID: this.largestSeenSortID + 1, // Uncomment this to enable multiple templates (1/2)
       authorID: authorID,
       file: blob,
       coords: coords
     });
+    this.largestSeenSortID++;
     template.shreadSize = this.drawMult; // Copy to template's shread Size
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
     const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
@@ -776,10 +773,11 @@ export default class TemplateManager {
           // Creates a new Template class instance
           const template = new Template({
             displayName: displayName,
-            sortID: sortID || this.templatesArray?.length || 0,
+            sortID: sortID || (this.largestSeenSortID + 1) || 0,
             authorID: authorID || '',
             coords: templateCoords,
           });
+          if (template.sortID > this.largestSeenSortID) { this.largestSeenSortID = template.sortID; }
           template.shreadSize = this.drawMult; // Copy to template's shread Size
           template.chunked = templateTiles;
           template.requiredPixelCount = requiredPixelCount;
@@ -904,7 +902,8 @@ export default class TemplateManager {
    * @since 0.85.30
    */
   getTileCacheKeyFromCalculated(displayedColors, involvedTemplates) {
-    return displayedColors.join(';') + '||' + involvedTemplates.filter(t => t.enabled ?? true).map(t => t.storageKey + "," + t.storageTimeString).join(';');
+    // we still need to check the enabled status since disabled templates should still have the painted count updated.
+    return displayedColors.join(';') + '||' + involvedTemplates.map(t => t.storageKey + "," + t.storageTimeString + "," + (+(t.enabled ?? true))).join(';');
   }
 
   /** Stores the JSON object of the user settings into TamperMonkey (GreaseMonkey) storage.
