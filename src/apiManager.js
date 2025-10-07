@@ -272,8 +272,19 @@ export default class ApiManager {
         h3.className = "mb-1 mt-5 flex items-center gap-1 text-xl font-semibold";
         container.appendChild(h3);
 
+        const instruction = document.createElement('div');
+        instruction.className = `bg-base-200 border-base-content/10 rounded-xl border-2 p-3`;
+        instruction.style.fontSize = "small";
+        instruction.innerText = [
+          'Instruction to mark the rectangular range for downloading:',
+          '1. Pick the first reference point (e.g. the Top Left Corner) and use the "Pin" icon to record the coordinates.',
+          '2. Pick the second reference point, i.e. the opposite corner (e.g. the Bottom Right Corner), and click the "Share" button.'
+        ].join("\n");
+        container.appendChild(instruction);
+
         downloadBtnDim = document.createElement('span');
         downloadBtnDim.id = 'bm-download-coords-dim';
+        downloadBtnDim.style.fontSize = "small";
         container.appendChild(downloadBtnDim);
 
         container.appendChild(document.createElement('br'));
@@ -308,14 +319,14 @@ export default class ApiManager {
         svg.appendChild(path);
         downloadBtn.appendChild(svg);
 
-        downloadBtn.appendChild(document.createTextNode(' Download Raw'));
+        downloadBtn.appendChild(document.createTextNode(' Download'));
 
         const that = this;
         downloadBtn.addEventListener('click', async function () {
           const coordsTile = [ that.coordsTilePixel[0], that.coordsTilePixel[1] ];
           const coordsPixel = [ that.coordsTilePixel[2], that.coordsTilePixel[3] ];
           if (!areOverlayCoordsFilledAndValid()) {
-            alert(`Some coordinates textboxes are empty!`);
+            alert(`Some coordinates textboxes are empty or invalid!`);
             return;
           }
           const overlayCoords = getOverlayCoords();
@@ -394,7 +405,7 @@ export default class ApiManager {
           buttonLines.push(`Too large for the browser to export.`);
         }
       } else {
-        buttonLines.push(`Some coordinates textboxes are empty.`);
+        buttonLines.push(`Some coordinates textboxes are empty or invalid.`);
         downloadBtn.disabled = true;
       }
       downloadBtnDim.innerText = buttonLines.join('\n');

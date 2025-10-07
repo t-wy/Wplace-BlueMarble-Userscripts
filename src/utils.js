@@ -455,10 +455,24 @@ export function getOverlayCoords() {
 export function areOverlayCoordsFilledAndValid() {
   const rawCoords = getOverlayCoordsRaw();
   const parsedCoords = getOverlayCoords();
-  if (rawCoords[0][0] === '' || isNaN(parsedCoords[0][0])) return false;
-  if (rawCoords[0][1] === '' || isNaN(parsedCoords[0][1])) return false;
-  if (rawCoords[1][0] === '' || isNaN(parsedCoords[1][0])) return false;
-  if (rawCoords[1][1] === '' || isNaN(parsedCoords[1][1])) return false;
+  if (
+    rawCoords.some(
+      coords => coords.some(
+        coord => coord === ''
+      )
+    )
+  ) return false;
+  if (
+    parsedCoords.some(
+      coords => coords.some(
+        coord => isNaN(coord) || coord < 0
+      )
+    )
+  ) return false;
+  if (parsedCoords[0][0] > 2048) return false;
+  if (parsedCoords[0][1] > 2048) return false;
+  if (parsedCoords[1][0] > 1000) return false;
+  if (parsedCoords[1][1] > 1000) return false;
   return true;
 }
 
@@ -518,12 +532,12 @@ export function copyToClipboard(text) {
  */
 export function calculateTopLeftAndSize(coords1, coords2) {
   const xs = [
-    coords1[0][0] * 1000 + coords1[1][0],
-    coords2[0][0] * 1000 + coords2[1][0],
+    (coords1[0][0] % 2048) * 1000 + (coords1[1][0] % 1000),
+    (coords2[0][0] % 2048) * 1000 + (coords2[1][0] % 1000),
   ];
   const ys = [
-    coords1[0][1] * 1000 + coords1[1][1],
-    coords2[0][1] * 1000 + coords2[1][1],
+    (coords1[0][1] % 2048) * 1000 + (coords1[1][1] % 1000),
+    (coords2[0][1] % 2048) * 1000 + (coords2[1][1] % 1000),
   ];
   const top = Math.min(ys[0], ys[1]);
   const height = Math.abs(ys[0] - ys[1]) + 1;
