@@ -112,9 +112,12 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Optimize the for-loop for faster response.</li>
     <li>Allow multiple templates to be used at the same time.</li>
     <li>A button to teleport to the top-left corner of the selected template.</li>
-    <li>Allow locked colors (colors that are not unlocked) to be hidden from the color list</li>
+    <li>Allow locked colors (colors that are not unlocked) to be hidden from the color list.</li>
+    <li>Allow completed colors to be hidden from the color list.</li>
     <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance.</li>
     <li>Progress bar behind each color in the list that shows the relative progress</li>
+    <li>Allow different coordinate formats (`a, b, c, d`, `a b c d`, and `Tl X: a, Tl Y: b, Px X: c, Px Y: d`) to be pasted to the first coordinate textbox.</li>
+    <li>Allow downloading artworks (in exact size) from the map via the Share Button by two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map when clicking the "Share" button)</li>
   </ul>
 </p>
 
