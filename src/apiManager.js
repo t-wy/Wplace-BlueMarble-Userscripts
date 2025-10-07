@@ -302,7 +302,7 @@ export default class ApiManager {
         progressText = document.createElement('span');
         progressText.id = 'bm-download-progress-text';
         progressText.hidden = true;
-        progressText.textContent = '0/0';
+        progressText.textContent = '0 / 0';
         btnContainer.appendChild(progressText);
 
         downloadBtn = document.createElement('button');
@@ -323,6 +323,7 @@ export default class ApiManager {
 
         const that = this;
         downloadBtn.addEventListener('click', async function () {
+          this.disabled = true;
           const coordsTile = [ that.coordsTilePixel[0], that.coordsTilePixel[1] ];
           const coordsPixel = [ that.coordsTilePixel[2], that.coordsTilePixel[3] ];
           if (!areOverlayCoordsFilledAndValid()) {
@@ -345,6 +346,7 @@ export default class ApiManager {
           progress.max = tw * th;
           progress.value = 0;
           progress.hidden = false;
+          progressText.textContent = `0 / ${progress.max}`;
           progressText.hidden = false;
           try {
             const resultCanvas = new OffscreenCanvas(width, height);
@@ -359,6 +361,7 @@ export default class ApiManager {
                   ty * 1000 - top
                 );
                 progress.value++;
+                progressText.textContent = `${progress.value} / ${progress.max}`;
               }
             };
             const blob = await resultCanvas.convertToBlob({ type: "image/png" });
@@ -373,6 +376,7 @@ export default class ApiManager {
           } finally {
             progress.hidden = true;
             progressText.hidden = true;
+            this.disabled = false;
           }
         });
         btnContainer.appendChild(downloadBtn);
