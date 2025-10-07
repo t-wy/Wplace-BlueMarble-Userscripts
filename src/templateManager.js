@@ -683,6 +683,8 @@ export default class TemplateManager {
     console.log('Exporting tile overlay...', performance.now() - timeStart + ' ms');
 
     // const resultBlob = typeof ImageBitmap !== 'undefined' ? createImageBitmap(canvas) : await canvas.convertToBlob({ type: 'image/png' });
+    const resultBlob = await canvas.convertToBlob({ type: 'image/png' });
+    cleanUpCanvas(canvas);
 
     console.log('Cleaning up...', performance.now() - timeStart + ' ms');
 
@@ -691,8 +693,8 @@ export default class TemplateManager {
 
     console.log('Finish...', performance.now() - timeStart + ' ms');
 
-    return canvas;
-    // return resultBlob;
+    // return canvas;
+    return resultBlob;
     // return await canvas.convertToBlob({ type: 'image/png' });
   }
 

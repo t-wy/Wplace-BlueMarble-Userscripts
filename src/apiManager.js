@@ -531,23 +531,24 @@ export default class ApiManager {
               // ) {
               //   this.tileCache[tileKey]["templateBlob"].close();
               // };
-              if (
-                (templateBlob instanceof HTMLCanvasElement || templateBlob instanceof OffscreenCanvas) &&
-                templateBlob.convertToBlob !== undefined
-              ) {
-                const templateCanvas = templateBlob;
-                if (typeof ImageBitmap !== 'undefined' && navigator.deviceMemory === 8) { // Only Test This if we have at least 8GiB of RAM
-                  templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
-                  templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
-                    this.tileCache[tileKey] = { lastModified, fullKey, blob };
-                    cleanUpCanvas(templateCanvas);
-                  })
-                } else {
-                  templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
-                  this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
-                  cleanUpCanvas(templateCanvas);
-                }
-              }
+              // if (
+              //   (templateBlob instanceof HTMLCanvasElement || templateBlob instanceof OffscreenCanvas) &&
+              //   templateBlob.convertToBlob !== undefined
+              // ) {
+                // Don't know why, the tile loading system may fail
+                // const templateCanvas = templateBlob;
+                // if (typeof ImageBitmap !== 'undefined' && navigator.deviceMemory === 8) { // Only Test This if we have at least 8GiB of RAM
+                //   templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
+                //   templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
+                //     this.tileCache[tileKey] = { lastModified, fullKey, blob };
+                //     cleanUpCanvas(templateCanvas);
+                //   })
+                // } else {
+                  // templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
+                  // this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+                  // cleanUpCanvas(templateCanvas);
+                // }
+              // }
             } else {
               templateBlob = blobData;
             }
