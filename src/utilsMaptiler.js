@@ -62,7 +62,7 @@ function controlMapTiler(func, ...args) {
       return result;
     }
   } else {
-    throw Error("Could not find the \"My location\" button.");
+    throw new Error("Could not find the \"My location\" button.");
   }
 }
 

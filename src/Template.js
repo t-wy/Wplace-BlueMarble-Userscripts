@@ -28,6 +28,7 @@ export default class Template {
     file = null,
     coords = null,
     chunked = null,
+    chunkedBuffer = null,
     tileSize = 1000,
   } = {}) {
     this.displayName = displayName;
@@ -36,7 +37,8 @@ export default class Template {
     this.url = url;
     this.file = file;
     this.coords = coords;
-    this.chunked = chunked;
+    this.chunked = chunked; // tileKey => ImageBitmap, null if memory saving
+    this.chunkedBuffer = chunkedBuffer;
     this.tileSize = tileSize;
     this.enabled = true;
     this.pixelCount = 0; // Total pixel count in template
@@ -286,7 +288,7 @@ export default class Template {
           .padStart(4, '0')},${(pixelX % 1000)
           .toString()
           .padStart(3, '0')},${(pixelY % 1000).toString().padStart(3, '0')}`;
-
+          
         templateTiles[templateTileName] = await createImageBitmap(canvas); // Creates the bitmap
         // Record tile prefix for fast lookup later
         this.tilePrefixes.add(templateTileName.split(',').slice(0,2).join(','));
@@ -303,11 +305,32 @@ export default class Template {
 
       pixelY += drawSizeY;
     }
+    bitmap.close();
     cleanUpCanvas(canvas);
     canvas = null;
 
     console.log('Template Tiles: ', templateTiles);
     console.log('Template Tiles Buffers: ', templateTilesBuffers);
     return { templateTiles, templateTilesBuffers };
+  }
+
+  /** Get the bitmap for a tile key. Supporting memory-saving mode
+   * @param {string} tileKey - The tile key
+   * @param {boolean} memorySaving - Whether to store the bitmap in memory
+   * @since 0.85.33
+   */
+  async getChunked(tileKey, memorySaving = false) {
+    if (this.chunked[tileKey] === undefined) {
+      return undefined;
+    }
+    if (this.chunked[tileKey] !== null) {
+      return this.chunked[tileKey];
+    }
+    const templateBlob = new Blob([this.chunkedBuffer[tileKey]], { type: "image/png" }); // Uint8Array -> Blob
+    const templateBitmap = await createImageBitmap(templateBlob); // Blob -> Bitmap
+    if (memorySaving === false) {
+      this.chunked[tileKey] = templateBitmap;
+    };
+    return templateBitmap;
   }
 }

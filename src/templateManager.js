@@ -60,7 +60,7 @@ export default class TemplateManager {
     this.canvasTemplateID = 'bm-canvas'; // Our canvas ID
     this.canvasMainID = 'div#map canvas.maplibregl-canvas'; // The selector for the main canvas
     this.template = null; // The template image.
-    this.templateState = ''; // The state of the template ('blob', 'proccessing', 'template', etc.)
+    // this.templateState = ''; // The state of the template ('blob', 'proccessing', 'template', etc.)
     this.templatesArray = []; // All Template instnaces currently loaded (Template)
     this.templatesJSON = null; // All templates currently loaded (JSON)
     // this.templatesShouldBeDrawn = true; // Should ALL templates be drawn to the canvas?
@@ -158,7 +158,18 @@ export default class TemplateManager {
         template.colorPalette[key].enabled = toggleStatus[key];
       }
     }
-    template.chunked = templateTiles; // Stores the chunked tile bitmaps
+    if (this.isMemorySavingModeOn()) {
+      template.chunked = {};
+      Object.entries(templateTiles).forEach(([key, value]) => {
+        template.chunked[key] = null;
+        value.close();
+      });
+    } else {
+      template.chunked = templateTiles; // Stores the chunked tile bitmaps
+    }
+    template.chunkedBuffer = Object.fromEntries(Object.entries(
+      templateTilesBuffers
+    ).map(([key, value]) => [key, base64ToUint8(value)]));
 
     // Appends a child into the templates object
     // The child's name is the number of templates already in the list (sort order) plus the encoded player ID
@@ -254,8 +265,6 @@ export default class TemplateManager {
 
     // Creates the JSON object if it does not already exist
     if (!this.templatesJSON) {this.templatesJSON = await this.createJSON(); console.log(`Creating JSON...`);}
-
-
   }
 
   /** Draws all templates on the specified tile.
@@ -291,6 +300,8 @@ export default class TemplateManager {
     const involvedTemplates = this.getInvolvedTemplates(tileCoords);
     if (involvedTemplates.length === 0) { return tileBlob; }
 
+    const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
+
     // Retrieves the relavent template tile blobs
     const templatesTilesToDraw = involvedTemplates.map(template => {
         const matchingTiles = Object.keys(template.chunked).filter(
@@ -303,8 +314,7 @@ export default class TemplateManager {
         const coords = tileKey.split(','); // [x, y, x, y] Tile/pixel coordinates
         return {
           template: template,
-          storageKey: template.storageKey,
-          bitmap: template.chunked[tileKey],
+          tileKey: tileKey,
           tileCoords: [+coords[0], +coords[1]],
           pixelCoords: [+coords[2], +coords[3]]
         }
@@ -364,7 +374,8 @@ export default class TemplateManager {
 
     // For each template in this tile, draw them.
     for (const templateTile of templatesTilesToDraw) {
-      const templateKey = templateTile.storageKey;
+      const templateKey = templateTile.template.storageKey;
+      const templateTileBitmap = await templateTile.template.getChunked(templateTile.tileKey, currentMemorySavingMode);
       console.log(`Template:`);
       console.log(templateTile);
       console.log(performance.now() - timeStart + ' ms');
@@ -374,13 +385,13 @@ export default class TemplateManager {
       if (tilePixels) {
         try {
           
-          const tempWidth = templateTile.bitmap.width;
-          const tempHeight = templateTile.bitmap.height;
+          const tempWidth = templateTileBitmap.width;
+          const tempHeight = templateTileBitmap.height;
           let tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
           const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
           tempContext.imageSmoothingEnabled = false;
           tempContext.clearRect(0, 0, tempWidth, tempHeight);
-          tempContext.drawImage(templateTile.bitmap, 0, 0);
+          tempContext.drawImage(templateTileBitmap, 0, 0);
           const tImg = tempContext.getImageData(0, 0, tempWidth, tempHeight);
           const tData = tImg.data; // Tile Data, Template Data, or Temp Data????
           cleanUpCanvas(tempCanvas);
@@ -545,28 +556,26 @@ export default class TemplateManager {
 
       // Draw the template overlay for visual guidance, honoring color filter
       if (templateTile.template.enabled ?? true) {
+        const offsetX = templateTile.pixelCoords[0] * this.drawMult;
+        const offsetY = templateTile.pixelCoords[1] * this.drawMult;
         try {
-
-          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
-          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
-
           // If none of the template colors are disabled, then draw the image normally
           if (!hasColorDisabled) {
-            context.drawImage(templateTile.bitmap, offsetX, offsetY);
+            context.drawImage(templateTileBitmap, offsetX, offsetY);
           } else {
             // ELSE we need to apply the color filter
             if (!allColorsDisabled) {
 
               console.log('Applying color filter...', performance.now() - timeStart + ' ms');
 
-              const tempW = templateTile.bitmap.width;
-              const tempH = templateTile.bitmap.height;
+              const tempW = templateTileBitmap.width;
+              const tempH = templateTileBitmap.height;
 
               let filterCanvas = new OffscreenCanvas(tempW, tempH);
               const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
               filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
               filterCtx.clearRect(0, 0, tempW, tempH);
-              filterCtx.drawImage(templateTile.bitmap, 0, 0);
+              filterCtx.drawImage(templateTileBitmap, 0, 0);
 
               const img = filterCtx.getImageData(0, 0, tempW, tempH);
               const data = img.data;
@@ -607,8 +616,12 @@ export default class TemplateManager {
           console.warn('Failed to apply color filter:', exception);
 
           // Fallback to drawing raw bitmap if filtering fails
-            context.drawImage(templateTile.bitmap, offsetX, offsetY);
+            context.drawImage(templateTileBitmap, offsetX, offsetY);
         }
+      }
+
+      if (currentMemorySavingMode) {
+        templateTileBitmap.close();
       }
     }
 
@@ -705,6 +718,8 @@ export default class TemplateManager {
 
     console.log(`BlueMarble length: ${Object.keys(templates).length}`);
 
+    const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
+
     if (Object.keys(templates).length > 0) {
 
       for (const template in templates) {
@@ -723,6 +738,7 @@ export default class TemplateManager {
           //const coords = templateValue?.coords?.split(',').map(Number); // "1,2,3,4" -> [1, 2, 3, 4]
           const tilesbase64 = templateValue.tiles;
           const templateTiles = {}; // Stores the template bitmap tiles for each tile.
+          const templateTilesBuffer = {}; // Store the template bitmap tiles for each tile in Uint8Array.
           let requiredPixelCount = 0; // Global required pixel count for this imported template
           const paletteMap = new Map(); // Accumulates color counts across tiles (center pixels only)
 
@@ -734,7 +750,12 @@ export default class TemplateManager {
 
               const templateBlob = new Blob([templateUint8Array], { type: "image/png" }); // Uint8Array -> Blob
               const templateBitmap = await createImageBitmap(templateBlob) // Blob -> Bitmap
-              templateTiles[tile] = templateBitmap;
+              if (currentMemorySavingMode) {
+                templateTiles[tile] = null;
+              } else {
+                templateTiles[tile] = templateBitmap;
+              }
+              templateTilesBuffer[tile] = templateUint8Array;
 
               // Count required pixels in this bitmap (center pixels with alpha >= 64 and not #deface)
               try {
@@ -767,6 +788,9 @@ export default class TemplateManager {
               } catch (e) {
                 console.warn('Failed to count required pixels for imported tile', e);
               }
+              if (currentMemorySavingMode) {
+                templateBitmap.close();
+              }
             }
           }
 
@@ -780,6 +804,7 @@ export default class TemplateManager {
           if (template.sortID > this.largestSeenSortID) { this.largestSeenSortID = template.sortID; }
           template.shreadSize = this.drawMult; // Copy to template's shread Size
           template.chunked = templateTiles;
+          template.chunkedBuffer = templateTilesBuffer;
           template.requiredPixelCount = requiredPixelCount;
           template.enabled = templateValue.enabled ?? true;
           // Construct colorPalette from paletteMap
@@ -949,6 +974,7 @@ export default class TemplateManager {
 
   /** A utility to check if the sort criteria is valid.
    * @param {string} value - The sort criteria
+   * @returns {boolean}
    * @since 0.85.23
    */
   isValidSortBy(value) {
@@ -971,6 +997,7 @@ export default class TemplateManager {
   }
 
   /** A utility to check if hidden colors are set to be hidden.
+   * @returns {boolean}
    * @since 0.85.26
    */
   isProgressBarEnabled() {
@@ -987,6 +1014,7 @@ export default class TemplateManager {
   }
 
   /** A utility to check if completed colors are set to be hidden.
+   * @returns {boolean}
    * @since 0.85.27
    */
   areCompletedColorsHidden() {
@@ -1002,6 +1030,37 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
+  /** A utility to check if memory-saving mode is on.
+   * @returns {boolean}
+   * @since 0.85.27
+   */
+  isMemorySavingModeOn() {
+    return this.userSettings?.memorySavingMode ?? false;
+  }
+
+  /** Sets the `memorySavingMode` boolean in the `userSettings` to a value.
+   * @param {boolean} value - The value to set the boolean to
+   * @since 0.85.33
+   */
+  async setMemorySavingMode(value) {
+    this.userSettings.memorySavingMode = value;
+    await this.storeUserSettings();
+    if (!value) {
+      // unload template tiles in memory
+      this.templatesArray.forEach( template => {
+        if (!template?.chunked) return; // no bitmap
+        const chunked = template.chunked;
+        const temp = {};
+        Object.entries(chunked).forEach(([key, value]) => {
+          temp[key] = null;
+          if (value === null) return;
+          value.close();
+        });
+        template.chunked = temp;
+      });
+    }
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17
@@ -1014,6 +1073,7 @@ export default class TemplateManager {
 
   /** A utility to check if a color is unlocked.
    * @param {number} color - The id of the color
+   * @returns {boolean}
    * @since 0.85.17
    */
   isColorUnlocked(color) {

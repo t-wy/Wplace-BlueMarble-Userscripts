@@ -182,16 +182,6 @@ const apiManager = new ApiManager(templateManager); // Constructs a new ApiManag
 overlayMain.setApiManager(apiManager); // Sets the API manager
 
 GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
-  let storageTemplates;
-  try {
-    storageTemplates = JSON.parse(storageTemplatesValue);
-  } catch {
-    storageTemplates = {};
-  }
-
-  console.log(storageTemplates);
-  templateManager.importJSON(storageTemplates); // Loads the templates
-
   const userSettingsValue = await GM.getValue('bmUserSettings', '{}');
   let userSettings;
   try {
@@ -211,11 +201,23 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'hideCompletedColors': false,
       'sortBy': 'total-desc',
       'smartPlace': false,
+      'memorySavingMode': false,
     });
     templateManager.storeUserSettings();
   } else {
     templateManager.setUserSettings(userSettings);
   }
+
+  // load templates after user settings
+  let storageTemplates;
+  try {
+    storageTemplates = JSON.parse(storageTemplatesValue);
+  } catch {
+    storageTemplates = {};
+  }
+
+  console.log(storageTemplates);
+  templateManager.importJSON(storageTemplates); // Loads the templates
 
   await buildOverlayMain(); // Builds the main overlay
 
@@ -830,6 +832,18 @@ async function buildOverlayMain() {
             }
           });
         }).buildElement()
+        .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
+          label.style.fontSize = '12px';
+          checkbox.addEventListener('change', () => {
+            templateManager.setMemorySavingMode(checkbox.checked);
+            buildColorFilterList();
+            if (checkbox.checked) {
+              instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
+            } else {
+              instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
+            }
+          });
+        }).buildElement()
       .buildElement()
       .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
         .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
@@ -838,7 +852,7 @@ async function buildOverlayMain() {
       .addDiv({'id': 'bm-contain-buttons-template'})
         .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
         .addButton({'id': 'bm-button-create', 'textContent': 'Create Template'}, (instance, button) => {
-          button.onclick = () => {
+          button.onclick = async () => {
             const input = document.querySelector('#bm-input-file-template');
 
             const coordTlX = document.querySelector('#bm-input-tx');
@@ -853,7 +867,7 @@ async function buildOverlayMain() {
             // Kills itself if there is no file
             if (!input?.files[0]) {instance.handleDisplayError(`No file selected!`); return;}
 
-            templateManager.createTemplate(input.files[0], input.files[0]?.name.replace(/\.[^/.]+$/, ''), [Number(coordTlX.value), Number(coordTlY.value), Number(coordPxX.value), Number(coordPxY.value)]);
+            await templateManager.createTemplate(input.files[0], input.files[0]?.name.replace(/\.[^/.]+$/, ''), [Number(coordTlX.value), Number(coordTlY.value), Number(coordPxX.value), Number(coordPxY.value)]);
 
             // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
             // apiManager.templateCoordsTilePixel = apiManager.coordsTilePixel; // Update template coords
