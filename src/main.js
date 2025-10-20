@@ -795,7 +795,7 @@ async function buildOverlayMain() {
           };
         }).buildElement()
       .buildElement()
-      .addDiv({'id': 'bm-checkbox-container', 'style': 'max-width: 100%; white-space: nowrap; overflow-x: scroll; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: flex; gap: 5px;'})
+      .addDiv({'id': 'bm-checkbox-container', 'style': 'max-width: 100%; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: flex; flex-direction: column; gap: 5px;'})
         // Color filter UI
         .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
           label.style.fontSize = '12px';
