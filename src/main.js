@@ -854,7 +854,7 @@ async function buildOverlayMain() {
       // Template buttons
       .addDiv({'id': 'bm-contain-buttons-template'})
         .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
-        .addButton({'id': 'bm-button-create', 'textContent': 'Create Template'}, (instance, button) => {
+        .addButton({'id': 'bm-button-create', 'textContent': 'Create Template', 'style': 'margin: 0 1ch;'}, (instance, button) => {
           button.onclick = async () => {
             const input = document.querySelector('#bm-input-file-template');
 
