@@ -1,4 +1,4 @@
-import { uint8ToBase64, cleanUpCanvas, rgbToMeta } from "./utils";
+import { uint8ToBase64, cleanUpCanvas, rgbToMeta, testCanvasSize } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -87,33 +87,47 @@ export default class Template {
     return result;
   }
 
-  testCanvasSize() {
-    // Check if the browser support canvas size more than 4096 x 4096 for 5x to work
-    let canvas = new OffscreenCanvas(5000, 5000);
-    const context = canvas.getContext('2d');
-    context.fillRect(4999, 4999, 1, 1);
-    const result = context.getImageData(4999, 4999, 1, 1).data[3] !== 0;
-    cleanUpCanvas(canvas);
-    canvas = null;
-    return result;
-  }
-
   /** Creates chunks of the template for each tile.
    * 
    * @returns {Object} Collection of template bitmaps & buffers organized by tile coordinates
    * @since 0.65.4
    */
-  async createTemplateTiles() {
+  async createTemplateTiles(anchor) {
     console.log('Template coordinates:', this.coords);
 
     if (this.shreadSize === null) {
       // initialize shreadSize (usually already assigned by the template manager)
-      this.shreadSize = this.testCanvasSize() ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
+      this.shreadSize = testCanvasSize(5000, 5000) ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
     }
     const shreadSize = this.shreadSize;
     const bitmap = await createImageBitmap(this.file, { "colorSpaceConversion": "none" }); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
+  
+    const [tx, ty, px, py] = this.coords;
+    let mapX = tx * this.tileSize + px;
+    let mapY = ty * this.tileSize + py;
+    // process anchor
+    mapX -= Math.floor((imageWidth - 1) * {
+      "l": 0,
+      "m": 0.5,
+      "r": 1,
+    }[anchor[0]]);
+    mapY -= Math.floor((imageHeight - 1) * {
+      "t": 0,
+      "m": 0.5,
+      "b": 1,
+    }[anchor[1]]);
+    if (mapX < 0) {
+      mapX += 2048 * this.tileSize;
+    }
+    this.coords = [
+      Math.floor(mapX / this.tileSize),
+      Math.floor(mapY / this.tileSize),
+      mapX % this.tileSize,
+      mapY % this.tileSize
+    ];
+    console.log('Top left template coordinates:', this.coords);
     
     // Calculate total pixel count using standard width × height formula
     // TODO: Use non-transparent pixels instead of basic width times height
@@ -281,13 +295,13 @@ export default class Template {
         context.putImageData(imageData, 0, 0);
 
         // Creates the "0000,0000,000,000" key name
-        const templateTileName = `${(this.coords[0] + Math.floor(pixelX / 1000))
+        const templateTileName = `${(this.coords[0] + Math.floor(pixelX / this.tileSize))
           .toString()
-          .padStart(4, '0')},${(this.coords[1] + Math.floor(pixelY / 1000))
+          .padStart(4, '0')},${(this.coords[1] + Math.floor(pixelY / this.tileSize))
           .toString()
-          .padStart(4, '0')},${(pixelX % 1000)
+          .padStart(4, '0')},${(pixelX % this.tileSize)
           .toString()
-          .padStart(3, '0')},${(pixelY % 1000).toString().padStart(3, '0')}`;
+          .padStart(3, '0')},${(pixelY % this.tileSize).toString().padStart(3, '0')}`;
           
         templateTiles[templateTileName] = await createImageBitmap(canvas); // Creates the bitmap
         // Record tile prefix for fast lookup later

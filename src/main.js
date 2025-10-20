@@ -200,6 +200,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'progressBarEnabled': true,
       'hideCompletedColors': false,
       'sortBy': 'total-desc',
+      'anchor': 'lt', // Top left
       'smartPlace': false,
       'memorySavingMode': false,
     });
@@ -691,9 +692,9 @@ async function buildOverlayMain() {
             const clipboardText = (event.clipboardData || window.clipboardData).getData("text");
 
             const matchResult = [
-              /^\s*(\d{1,4}),\s*(\d{1,4}),\s*(\d{1,4}),\s*(\d{1,4})\s*$/, // comma-separated
-              /^\s*(\d{1,4})\s+(\d{1,4})\s+(\d{1,4})\s+(\d{1,4})\s*$/, // space-separated
-              /^\s*\(?Tl X: (\d{1,4}), Tl Y: (\d{1,4}), Px X: (\d{1,4}), Px Y: (\d{1,4})\)?\s*$/, // display format
+              /^\s*([012]?\d{1,3}),\s*([012]?\d{1,3}),\s*(\d{1,3}),\s*(\d{1,3})\s*$/, // comma-separated
+              /^\s*([012]?\d{1,3})\s+([012]?\d{1,3})\s+(\d{1,3})\s+(\d{1,3})\s*$/, // space-separated
+              /^\s*\(?Tl X: ([012]?\d{1,3}), Tl Y: ([012]?\d{1,3}), Px X: (\d{1,3}), Px Y: (\d{1,3})\)?\s*$/, // display format
             ].map(r => r.exec(clipboardText)).filter(r => r).pop(); //find the regex that matches the clipboard text
 
             if (matchResult === undefined) { // If we don't have 4 clean coordinates, end the function.
@@ -876,6 +877,41 @@ async function buildOverlayMain() {
 
             instance.handleDisplayStatus(`Drew to canvas!`);
           }
+        }).buildElement()
+        .addSelect({'id': 'bm-template-anchor'}, (instance, select) => {
+          const anchors = {
+            "lt": "⟔",
+            "mt": "⨪",
+            "rt": "ᒬ",
+            "lm": "꜏",
+            "mm": "⊡",
+            "rm": "꜊",
+            "lb": "Ŀ",
+            "mb": "∸",
+            "rb": "⟓",
+          };
+          const anchorTextX = {
+            "l": "Left",
+            "m": "Center",
+            "r": "Right",
+          };
+          const anchorTextY = {
+            "t": "Top",
+            "m": "Middle",
+            "b": "Bottom",
+          };
+          const currentAnchor = templateManager.getAnchor();
+          Object.entries(anchors).forEach(([anchor, displayText]) => {
+            const option = document.createElement('option');
+            option.value = anchor;
+            option.textContent = displayText;
+            if (anchor === currentAnchor) { option.selected = true; }
+            select.appendChild(option);
+          });
+          select.addEventListener('change', () => {
+            templateManager.setAnchor(select.value);
+            instance.handleDisplayStatus(`Changed the default template anchor to "${anchorTextY[select.value[1]]} ${anchorTextX[select.value[0]]}".`);
+          })
         }).buildElement()
       .buildElement()
       // Template filter UI

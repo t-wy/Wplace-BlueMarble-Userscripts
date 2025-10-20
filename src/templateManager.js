@@ -145,12 +145,13 @@ export default class TemplateManager {
       sortID: this.largestSeenSortID + 1, // Uncomment this to enable multiple templates (1/2)
       authorID: authorID,
       file: blob,
-      coords: coords
+      coords: coords,
+      tileSize: this.tileSize,
     });
     this.largestSeenSortID++;
     template.shreadSize = this.drawMult; // Copy to template's shread Size
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
-    const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
+    const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.getAnchor()); // Chunks the tiles
     // Modify palette enabled status using the honored one
     const toggleStatus = this.getPaletteToggledStatus();
     for (const key of Object.keys(template.colorPalette)) {
@@ -1059,6 +1060,39 @@ export default class TemplateManager {
         template.chunked = temp;
       });
     }
+  }
+
+  /** A utility to get the current anchor.
+   * @since 0.85.34
+   * @returns {string}
+   */
+  getAnchor() {
+    const temp = this.userSettings?.anchor ?? 'lt'; // top left
+    if (this.isValidAnchor(temp)) return temp.toLowerCase();
+    return 'lt';
+  }
+
+
+  /** A utility to check if the anchor is valid.
+   * @param {string} value - The anchor
+   * @returns {boolean}
+   * @since 0.85.34
+   */
+  isValidAnchor(value) {
+    if (value.length !== 2) return false;
+    value = value.toLowerCase();
+    return "lmr".includes(value[0]) && "tmb".includes(value[1]);
+  }
+
+  /** Sets the anchor to a value.
+   * @param {string} value - The anchor
+   * @since 0.85.34
+   */
+  async setAnchor(value) {
+    if (!this.isValidAnchor(value)) return false;
+    this.userSettings.anchor = value.toLowerCase();
+    await this.storeUserSettings();
+    return true;
   }
 
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
