@@ -745,6 +745,59 @@ async function buildOverlayMain() {
           }
         ).buildElement()
       .buildElement()
+      .addDetails({'id': 'bm-checkbox-container', 'textContent': 'User Settings', 'style': 'max-width: 100%; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'})
+        // Color filter UI
+        .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
+          .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setHideLockedColors(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden all locked colors.");
+              } else {
+                instance.handleDisplayStatus("Restored all colors.");
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-checkbox-colors-completed', 'textContent': 'Hide Completed Colors', 'checked': templateManager.areCompletedColorsHidden()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setHideCompletedColors(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden all completed colors.");
+              } else {
+                instance.handleDisplayStatus("Restored all colors.");
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setProgressBarEnabled(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Progress Bar Enabled.");
+              } else {
+                instance.handleDisplayStatus("Progress Bar Disabled.");
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setMemorySavingMode(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
+              } else {
+                instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
+              }
+            });
+          }).buildElement()
+        .buildElement()
+      .buildElement()
       // Color sorting
       .addP({'textContent': 'Sort Colors by ', 'style': 'font-size: small; margin-top: 3px; margin-left: 5px;'})
         // Sorting UI
@@ -795,59 +848,8 @@ async function buildOverlayMain() {
           };
         }).buildElement()
       .buildElement()
-      .addDiv({'id': 'bm-checkbox-container', 'style': 'max-width: 100%; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: flex; flex-direction: column; gap: 5px;'})
-        // Color filter UI
-        .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
-          label.style.fontSize = '12px';
-          checkbox.addEventListener('change', () => {
-            templateManager.setHideLockedColors(checkbox.checked);
-            buildColorFilterList();
-            if (checkbox.checked) {
-              instance.handleDisplayStatus("Hidden all locked colors.");
-            } else {
-              instance.handleDisplayStatus("Restored all colors.");
-            }
-          });
-        }).buildElement()
-        .addCheckbox({'id': 'bm-checkbox-colors-completed', 'textContent': 'Hide Completed Colors', 'checked': templateManager.areCompletedColorsHidden()}, (instance, label, checkbox) => {
-          label.style.fontSize = '12px';
-          checkbox.addEventListener('change', () => {
-            templateManager.setHideCompletedColors(checkbox.checked);
-            buildColorFilterList();
-            if (checkbox.checked) {
-              instance.handleDisplayStatus("Hidden all completed colors.");
-            } else {
-              instance.handleDisplayStatus("Restored all colors.");
-            }
-          });
-        }).buildElement()
-        .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
-          label.style.fontSize = '12px';
-          checkbox.addEventListener('change', () => {
-            templateManager.setProgressBarEnabled(checkbox.checked);
-            buildColorFilterList();
-            if (checkbox.checked) {
-              instance.handleDisplayStatus("Progress Bar Enabled.");
-            } else {
-              instance.handleDisplayStatus("Progress Bar Disabled.");
-            }
-          });
-        }).buildElement()
-        .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
-          label.style.fontSize = '12px';
-          checkbox.addEventListener('change', () => {
-            templateManager.setMemorySavingMode(checkbox.checked);
-            buildColorFilterList();
-            if (checkbox.checked) {
-              instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
-            } else {
-              instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
-            }
-          });
-        }).buildElement()
-      .buildElement()
-      .addDiv({'id': 'bm-contain-colorfilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
-        .addDiv({'id': 'bm-colorfilter-list'}).buildElement()
+      .addDiv({'id': 'bm-contain-colorfilter', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
+        .addDiv({'id': 'bm-colorfilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Template buttons
       .addDiv({'id': 'bm-contain-buttons-template'})
@@ -915,8 +917,10 @@ async function buildOverlayMain() {
         }).buildElement()
       .buildElement()
       // Template filter UI
-      .addDiv({'id': 'bm-contain-templatefilter', 'style': 'max-height: 125px; overflow: auto; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; resize: vertical;'})
-        .addDiv({'id': 'bm-templatefilter-list'}).buildElement()
+      .addDetails({'id': 'bm-contain-templatefilter', 'textContent': 'Templates', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
+        details.open = true;
+      })
+        .addDiv({'id': 'bm-templatefilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Status
       .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}).buildElement()
@@ -1021,7 +1025,6 @@ async function buildOverlayMain() {
       row.style.display = 'flex';
       row.style.alignItems = 'center';
       row.style.gap = '6px';
-      row.style.margin = '4px 0';
 
       let swatch = document.createElement('div');
       swatch.style.width = '14px';
@@ -1153,8 +1156,7 @@ async function buildOverlayMain() {
       let row = document.createElement('div');
       row.style.display = 'flex';
       row.style.alignItems = 'center';
-      row.style.gap = '8px';
-      row.style.margin = '4px 0';
+      row.style.gap = '6px';
 
       let removeButton = document.createElement('a');
       removeButton.title = "Remove template";

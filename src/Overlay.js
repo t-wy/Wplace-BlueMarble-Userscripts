@@ -370,6 +370,38 @@ export default class Overlay {
     callback(this, label, checkbox); // Runs any script passed in through the callback
     return this;
   }
+
+  /** Adds a 'details' to the overlay.
+   * This details element will have properties shared between all details elements in the overlay.
+   * You can override the shared properties by using a callback. Note: the summary element is inside a details element.
+   * @param {Object.<string, any>} [additionalProperties={}] - The DOM properties of the details that are NOT shared between all overlay details elements. These should be camelCase.
+   * @param {function(Overlay, HTMLSummaryElement, HTMLDetailsElement):void} [callback=()=>{}] - Additional JS modification to the details.
+   * @returns {Overlay} Overlay class instance (this)
+   * @since 0.85.34
+   * @example
+   * // Assume all details elements have a shared class (e.g. {'className': 'bar'})
+   * overlay.addDetails({'id': 'foo', 'textContent': 'Foobar.'}).buildOverlay(document.body);
+   * // Output:
+   * // (Assume <body> already exists in the webpage)
+   * <body>
+   *   <details id="foo" class="bar">
+   *     <summary>Foobar.</summary>
+   *   </details>
+   * </body>
+   */
+  addDetails(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {'type': 'details'}; // Shared checkbox DOM properties
+    const textContent = additionalProperties['textContent'];
+    delete additionalProperties['textContent']; // Deletes 'textContent' DOM property before adding the properties to the details
+
+    const details = this.#createElement('details', properties, additionalProperties); // Creates the details element
+    const summary = this.#createElement('summary', {'textContent': textContent ?? ''}); // Creates the summary element
+    details.appendChild(summary);
+    this.buildElement(); // Signifies that we are done adding children to the summary
+    callback(this, summary, details); // Runs any script passed in through the callback
+    return this;
+  }
   
   /** Adds a `button` to the overlay.
    * This `button` element will have properties shared between all `button` elements in the overlay.
