@@ -1373,15 +1373,7 @@ async function buildOverlayMain() {
         hasEntries = true;
       });
       if (!hasEntries && listContainer) {
-        if (showClaimed) {
-          listContainer.innerHTML = '<small>No items have data available.</small>';
-        } else { // hideClaimed
-          if (showUnavailable) {
-            listContainer.innerHTML = '<small>All items have been claimed.</small>';
-          } else {
-            listContainer.innerHTML = '<small>No unclaimed items have data available.</small>';
-          }
-        }
+        listContainer.innerHTML = `<small>No ${showClaimed ? "" : "unclaimed "}items have ${showUnavailable ? "" : "recent "}data available.</small>`;
       }
     }).catch(err => {
       listContainer.innerHTML = '<small>Failed fetching the event item info from the provider. Make sure the provider URL is valid and can be accessed with appropriate CORS.</small>';
