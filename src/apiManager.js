@@ -22,6 +22,7 @@ export default class ApiManager {
     this.chargesUpdated = null;
     this.chargeInterval = null;
     this.tileCache = {};
+    this.eventClaimed = null;
   }
 
   getCurrentCharges() {
@@ -545,6 +546,11 @@ export default class ApiManager {
             blobData: templateBlob,
             blink: data['blink']
           });
+          break;
+
+        case 'claimed': // Claimed # in event
+          this.eventClaimed = dataJSON['claimed']??[];
+          this.templateManager.requestEventRebuild();
           break;
 
         case 'robots': // Request to retrieve what script types are allowed

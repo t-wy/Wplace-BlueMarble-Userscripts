@@ -6,7 +6,7 @@ import Overlay from './Overlay.js';
 // import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, rgbToMeta, getOverlayCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, teleportToGeoCoords, rgbToMeta, getOverlayCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
 import { getCenterGeoCoords } from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
@@ -203,6 +203,10 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'anchor': 'lt', // Top left
       'smartPlace': false,
       'memorySavingMode': false,
+      'eventEnabled': false,
+      'eventProvider': '',
+      'eventClaimedShown': true,
+      'eventUnavailableShown': true,
     });
     templateManager.storeUserSettings();
   } else {
@@ -455,6 +459,7 @@ async function buildOverlayMain() {
             const createButton = document.querySelector('#bm-button-create');
             const enableButton = document.querySelector('#bm-button-enable');
             const disableButton = document.querySelector('#bm-button-disable');
+            const eventContainer = document.querySelector('#bm-contain-eventitem');
             const coordInputs = document.querySelectorAll('#bm-contain-coords input');
             
             // Pre-restore original dimensions when switching to maximized state
@@ -517,6 +522,11 @@ async function buildOverlayMain() {
               // Hide disable templates button
               if (disableButton) {
                 disableButton.style.display = 'none';
+              }
+
+              // Hide bm-contain-eventitem
+              if (templateManager.isEventEnabled()) {
+                eventContainer.style.display = 'none';
               }
               
               // Hide all coordinate input fields individually (failsafe)
@@ -583,6 +593,13 @@ async function buildOverlayMain() {
               if (disableButton) {
                 disableButton.style.display = '';
                 disableButton.style.marginTop = '';
+              }
+
+              // Restore bm-contain-eventitem
+              if (templateManager.isEventEnabled()) {
+                eventContainer.style.display = '';
+              } else {
+                eventContainer.style.display = 'none'; // eventManager itself matches #bm-contain-automation > *:not(#bm-contain-coords)
               }
               
               // Restore all coordinate input fields
@@ -796,6 +813,44 @@ async function buildOverlayMain() {
               }
             });
           }).buildElement()
+          .addCheckbox({'id': 'bm-event-enabled', 'textContent': 'Enable Event', 'checked': templateManager.isEventEnabled()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setEventEnabled(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Event Mode Enabled.");
+                document.getElementById('bm-contain-eventitem').style.display = '';
+                buildEventList();
+              } else {
+                instance.handleDisplayStatus("Event Mode Disabled.");
+                document.getElementById('bm-contain-eventitem').style.display = 'none';
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-event-hide-claimed', 'textContent': 'Hide Event Claimed Items', 'checked': !templateManager.isEventClaimedShown()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setEventClaimedShown(!checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden All Event Claimed Items.");
+              } else {
+                instance.handleDisplayStatus("Restored All Event Claimed Items.");
+              }
+              buildEventList();
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-event-hide-unavailable', 'textContent': 'Hide Unavailable Event Items', 'checked': !templateManager.isEventUnavailableShown()}, (instance, label, checkbox) => {
+            label.style.fontSize = '12px';
+            checkbox.addEventListener('change', () => {
+              templateManager.setEventUnavailableShown(!checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden All Unavailable Event Items.");
+              } else {
+                instance.handleDisplayStatus("Restored All Unavailable Event Items.");
+              }
+              buildEventList();
+            });
+          }).buildElement()
         .buildElement()
       .buildElement()
       // Color sorting
@@ -921,6 +976,34 @@ async function buildOverlayMain() {
         details.open = true;
       })
         .addDiv({'id': 'bm-templatefilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
+      .buildElement()
+      // Event UI
+      .addDetails({'id': 'bm-contain-eventitem', 'textContent': 'Event', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
+        if (templateManager.isEventEnabled()) {
+          details.style.display = '';
+        }
+        details.open = true;
+      })
+        .addButton({'id': 'bm-button-set-eventprovider', 'textContent': 'Set Event Provider', 'style': 'margin: 0 1ch;'}, (instance, button) => {
+          button.onclick = () => {
+            const providerURL = prompt('Enter the event provider JSON URL:', templateManager.getEventProvider());
+            if (!providerURL) { return; }
+            const isUrl = (content => {
+              try { return Boolean(new URL(content)); }
+              catch(e){ return false; }
+            })(providerURL);
+            if (!isUrl) {
+              alert("The URL you entered is not valid!");
+              return;
+            }
+            templateManager.setEventProvider(providerURL);
+            buildEventList();
+          };
+        }).buildElement()
+        .addButton({'id': 'bm-button-refresh-event', 'textContent': 'Refresh', 'style': 'margin: 0 1ch;'}, (instance, button) => {
+          button.onclick = () => buildEventList();
+        }).buildElement()
+        .addDiv({'id': 'bm-eventitem-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Status
       .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}).buildElement()
@@ -1208,12 +1291,110 @@ async function buildOverlayMain() {
     }
   };
 
+  window.buildEventList = function buildEventList() {
+    const listContainer = document.querySelector('#bm-eventitem-list');
+    const showClaimed = templateManager.isEventClaimedShown();
+    const showUnavailable = templateManager.isEventUnavailableShown();
+    const provider = templateManager.getEventProvider();
+    if (provider === null || provider == "") {
+      listContainer.innerHTML = '<small>Event provider is not set.</small>';
+      return;
+    };
+    if (apiManager.eventClaimed === null) {
+      listContainer.innerHTML = '<small>Event claimed items are not known. Make sure you have clicked the Event button from the top left corner.</small>';
+      return;
+    };
+    const eventClaimedList = new Set(apiManager.eventClaimed);
+    consoleLog("eventClaimedList", eventClaimedList);
+    // Format: e.g. https://wplace.samuelscheit.com/tiles/pumpkin.json
+    fetch(provider).then(response => response.json()).then(data => {
+      consoleLog("event Location data", data);
+      if (typeof data !== 'object') {
+        listContainer.innerHTML = '<small>The event provider does not provide a known format.</small>';
+        return;
+      }
+      listContainer.textContent = "";
+      let hasEntries = false;
+      Object.entries(data).forEach(([itemId, info]) => {
+        itemId = Number(itemId);
+        if (eventClaimedList.has(itemId) && !showClaimed) return;
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '6px';
+
+        let coords = null;
+        let coordStatus = "";
+        if (typeof info === 'object') {
+          if (info['lat'] !== undefined && info['lng'] !== undefined) {
+            coords = [info['lat'], info['lng']];
+          } else if (
+            info['tileX'] !== undefined && info['offsetX'] !== undefined &&
+            info['tileY'] !== undefined && info['offsetY'] !== undefined
+          ) {
+            coords = coordsTileToGeoCoords(
+              [info['tileX'], info['tileY']],
+              [info['offsetX'], info['offsetY']]
+            )
+          }
+          // Check Time
+          if (info['foundAt'] !== undefined) {
+            const currentTimestamp = Date.now();
+            const currentHour = currentTimestamp - (currentTimestamp % 3600000);
+            const foundTimestamp = new Date(info['foundAt']).getTime();
+            const foundHour = foundTimestamp - (foundTimestamp % 3600000);
+            if (currentHour !== foundHour) {
+              coordStatus = "Expired • ";
+              if (!showUnavailable) return;
+            }
+          }
+        }
+
+        if (coords !== null) {
+          let teleportButton = document.createElement('a');
+          teleportButton.title = "Teleport to template";
+          teleportButton.textContent = "✈️";
+          teleportButton.style.fontSize = '12px';
+          teleportButton.onclick = () => {
+            teleportToGeoCoords(coords[0], coords[1], false);
+          }
+          row.appendChild(teleportButton);
+        } else {
+          coordStatus = "Unknown Coordinate Format • ";
+        }
+
+        let label = document.createElement('span');
+        label.style.fontSize = '12px';
+        label.textContent = `#${itemId} • ${coordStatus}${eventClaimedList.has(itemId) ? "Claimed" : "Unclaimed"}`;
+        row.appendChild(label);
+        listContainer.appendChild(row);
+        hasEntries = true;
+      });
+      if (!hasEntries && listContainer) {
+        if (showClaimed) {
+          listContainer.innerHTML = '<small>No items have data available.</small>';
+        } else { // hideClaimed
+          if (showUnavailable) {
+            listContainer.innerHTML = '<small>All items have been claimed.</small>';
+          } else {
+            listContainer.innerHTML = '<small>No unclaimed items have data available.</small>';
+          }
+        }
+      }
+    }).catch(err => {
+      listContainer.innerHTML = '<small>Failed fetching the event item info from the provider. Make sure the provider URL is valid and can be accessed with appropriate CORS.</small>';
+    });
+
+  };
+
   // Listen for template creation/import completion to (re)build palette list
   window.addEventListener('message', (event) => {
     if (event?.data?.bmEvent === 'bm-rebuild-color-list') {
       try { buildColorFilterList(); } catch (_) {}
     } else if (event?.data?.bmEvent === 'bm-rebuild-template-list') {
       try { buildTemplateFilterList(); } catch (_) {}
+    } else if (event?.data?.bmEvent === 'bm-rebuild-event-list') {
+      try { buildEventList(); } catch (_) {}
     }
   });
 
@@ -1229,6 +1410,11 @@ async function buildOverlayMain() {
         const templateUI = document.querySelector('#bm-contain-templatefilter');
         if (templateUI) { templateUI.style.display = ''; }
         buildTemplateFilterList();
+      }
+    } catch (_) {}
+    try {
+      if (templateManager.isEventEnabled()) {
+        buildEventList();
       }
     } catch (_) {}
   }, 0);
