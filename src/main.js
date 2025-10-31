@@ -480,9 +480,9 @@ async function buildOverlayMain() {
               '#bm-contain-automation > *:not(#bm-contain-coords)', // Automation section excluding coordinates
               '#bm-contain-buttons-action',        // Action buttons container
               `#${instance.outputStatusId}`,       // Status log textarea for user feedback
-              '#bm-checkbox-container',      // Hide locked Colors checkbox
-              '#bm-contain-colorfilter',           // Color filter UI
-              '#bm-contain-templatefilter',        // Template filter UI
+              // '#bm-checkbox-container',      // Hide locked Colors checkbox
+              // '#bm-contain-colorfilter',           // Color filter UI
+              // '#bm-contain-templatefilter',        // Template filter UI
               // '#bm-footer'                         // Footer credit text
             ];
             
@@ -853,128 +853,130 @@ async function buildOverlayMain() {
           }).buildElement()
         .buildElement()
       .buildElement()
-      // Color sorting
-      .addP({'textContent': 'Sort Colors by ', 'style': 'font-size: small; margin-top: 3px; margin-left: 5px;'})
-        // Sorting UI
-        .addSelect({'id': 'bm-color-sort'}, (instance, select) => {
-          const order = [
-            "Asc", "Desc"
-          ]
-          const currentSortBy = templateManager.getSortBy();
-          Object.keys(sortByOptions).forEach(o => {
-            order.forEach(o2 => {
-              const option = document.createElement('option');
-              option.value = `${o.toLowerCase()}-${o2.toLowerCase()}`;
-              option.textContent = `${o[0].toUpperCase() + o.slice(1).toLowerCase()} (${o2}.)`;
-              if (option.value === currentSortBy) { option.selected = true; }
-              select.appendChild(option);
+      .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
+        details.open = true;
+      })
+        // Color sorting
+        .addP({'textContent': 'Sort Colors by ', 'style': 'font-size: small; margin-top: 3px; margin-left: 5px;'})
+          // Sorting UI
+          .addSelect({'id': 'bm-color-sort'}, (instance, select) => {
+            const order = [
+              "Asc", "Desc"
+            ]
+            const currentSortBy = templateManager.getSortBy();
+            Object.keys(sortByOptions).forEach(o => {
+              order.forEach(o2 => {
+                const option = document.createElement('option');
+                option.value = `${o.toLowerCase()}-${o2.toLowerCase()}`;
+                option.textContent = `${o[0].toUpperCase() + o.slice(1).toLowerCase()} (${o2}.)`;
+                if (option.value === currentSortBy) { option.selected = true; }
+                select.appendChild(option);
+              })
+            });
+            select.addEventListener('change', () => {
+              templateManager.setSortBy(select.value);
+              buildColorFilterList();
+              const parts = select.value.split('-');
+              instance.handleDisplayStatus(`Changed the sort criteria to "${parts[0][0].toUpperCase() + parts[0].slice(1).toLowerCase()}" in ${parts[1]}ending order.`);
             })
-          });
-          select.addEventListener('change', () => {
-            templateManager.setSortBy(select.value);
-            buildColorFilterList();
-            const parts = select.value.split('-');
-            instance.handleDisplayStatus(`Changed the sort criteria to "${parts[0][0].toUpperCase() + parts[0].slice(1).toLowerCase()}" in ${parts[1]}ending order.`);
-          })
-        }).buildElement()
-      .buildElement()
-      // Color buttons
-      .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 0px;'})
-        .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
-          button.onclick = () => {
-            templateManager.templatesArray.forEach(t => {
-              if (!t?.colorPalette) { return; }
-              Object.values(t.colorPalette).forEach(v => v.enabled = true);
-            })
-            syncToggleList();
-            buildColorFilterList();
-            instance.handleDisplayStatus('Enabled all colors');
-          };
-        }).buildElement()
-        .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
-          button.onclick = () => {
-            templateManager.templatesArray.forEach(t => {
-              if (!t?.colorPalette) { return; }
-              Object.values(t.colorPalette).forEach(v => v.enabled = false);
-            })
-            syncToggleList();
-            buildColorFilterList();
-            instance.handleDisplayStatus('Disabled all colors');
-          };
-        }).buildElement()
-      .buildElement()
-      .addDiv({'id': 'bm-contain-colorfilter', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none;'})
+          }).buildElement()
+        .buildElement()
+        // Color buttons
+        .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 0px;'})
+          .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
+            button.onclick = () => {
+              templateManager.templatesArray.forEach(t => {
+                if (!t?.colorPalette) { return; }
+                Object.values(t.colorPalette).forEach(v => v.enabled = true);
+              })
+              syncToggleList();
+              buildColorFilterList();
+              instance.handleDisplayStatus('Enabled all colors');
+            };
+          }).buildElement()
+          .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
+            button.onclick = () => {
+              templateManager.templatesArray.forEach(t => {
+                if (!t?.colorPalette) { return; }
+                Object.values(t.colorPalette).forEach(v => v.enabled = false);
+              })
+              syncToggleList();
+              buildColorFilterList();
+              instance.handleDisplayStatus('Disabled all colors');
+            };
+          }).buildElement()
+        .buildElement()
         .addDiv({'id': 'bm-colorfilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
-      .buildElement()
-      // Template buttons
-      .addDiv({'id': 'bm-contain-buttons-template'})
-        .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
-        .addButton({'id': 'bm-button-create', 'textContent': 'Create Template', 'style': 'margin: 0 1ch;'}, (instance, button) => {
-          button.onclick = async () => {
-            const input = document.querySelector('#bm-input-file-template');
-
-            const coordTlX = document.querySelector('#bm-input-tx');
-            if (!coordTlX.checkValidity()) {coordTlX.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
-            const coordTlY = document.querySelector('#bm-input-ty');
-            if (!coordTlY.checkValidity()) {coordTlY.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
-            const coordPxX = document.querySelector('#bm-input-px');
-            if (!coordPxX.checkValidity()) {coordPxX.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
-            const coordPxY = document.querySelector('#bm-input-py');
-            if (!coordPxY.checkValidity()) {coordPxY.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
-
-            // Kills itself if there is no file
-            if (!input?.files[0]) {instance.handleDisplayError(`No file selected!`); return;}
-
-            await templateManager.createTemplate(input.files[0], input.files[0]?.name.replace(/\.[^/.]+$/, ''), [Number(coordTlX.value), Number(coordTlY.value), Number(coordPxX.value), Number(coordPxY.value)]);
-
-            // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
-            // apiManager.templateCoordsTilePixel = apiManager.coordsTilePixel; // Update template coords
-            // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
-            // templateManager.setTemplateImage(input.files[0]);
-
-            instance.handleDisplayStatus(`Drew to canvas!`);
-          }
-        }).buildElement()
-        .addSelect({'id': 'bm-template-anchor'}, (instance, select) => {
-          const anchors = {
-            "lt": "⟔",
-            "mt": "⨪",
-            "rt": "ᒬ",
-            "lm": "꜏",
-            "mm": "⊡",
-            "rm": "꜊",
-            "lb": "Ŀ",
-            "mb": "∸",
-            "rb": "⟓",
-          };
-          const anchorTextX = {
-            "l": "Left",
-            "m": "Center",
-            "r": "Right",
-          };
-          const anchorTextY = {
-            "t": "Top",
-            "m": "Middle",
-            "b": "Bottom",
-          };
-          const currentAnchor = templateManager.getAnchor();
-          Object.entries(anchors).forEach(([anchor, displayText]) => {
-            const option = document.createElement('option');
-            option.value = anchor;
-            option.textContent = displayText;
-            if (anchor === currentAnchor) { option.selected = true; }
-            select.appendChild(option);
-          });
-          select.addEventListener('change', () => {
-            templateManager.setAnchor(select.value);
-            instance.handleDisplayStatus(`Changed the default template anchor to "${anchorTextY[select.value[1]]} ${anchorTextX[select.value[0]]}".`);
-          })
-        }).buildElement()
       .buildElement()
       // Template filter UI
       .addDetails({'id': 'bm-contain-templatefilter', 'textContent': 'Templates', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
         details.open = true;
       })
+        // Template buttons
+        .addDiv({'id': 'bm-contain-buttons-template'})
+          .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
+          .addButton({'id': 'bm-button-create', 'textContent': 'Create Template', 'style': 'margin: 0 1ch;'}, (instance, button) => {
+            button.onclick = async () => {
+              const input = document.querySelector('#bm-input-file-template');
+
+              const coordTlX = document.querySelector('#bm-input-tx');
+              if (!coordTlX.checkValidity()) {coordTlX.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
+              const coordTlY = document.querySelector('#bm-input-ty');
+              if (!coordTlY.checkValidity()) {coordTlY.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
+              const coordPxX = document.querySelector('#bm-input-px');
+              if (!coordPxX.checkValidity()) {coordPxX.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
+              const coordPxY = document.querySelector('#bm-input-py');
+              if (!coordPxY.checkValidity()) {coordPxY.reportValidity(); instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?'); return;}
+
+              // Kills itself if there is no file
+              if (!input?.files[0]) {instance.handleDisplayError(`No file selected!`); return;}
+
+              await templateManager.createTemplate(input.files[0], input.files[0]?.name.replace(/\.[^/.]+$/, ''), [Number(coordTlX.value), Number(coordTlY.value), Number(coordPxX.value), Number(coordPxY.value)]);
+
+              // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
+              // apiManager.templateCoordsTilePixel = apiManager.coordsTilePixel; // Update template coords
+              // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
+              // templateManager.setTemplateImage(input.files[0]);
+
+              instance.handleDisplayStatus(`Drew to canvas!`);
+            }
+          }).buildElement()
+          .addSelect({'id': 'bm-template-anchor'}, (instance, select) => {
+            const anchors = {
+              "lt": "⟔",
+              "mt": "⨪",
+              "rt": "ᒬ",
+              "lm": "꜏",
+              "mm": "⊡",
+              "rm": "꜊",
+              "lb": "Ŀ",
+              "mb": "∸",
+              "rb": "⟓",
+            };
+            const anchorTextX = {
+              "l": "Left",
+              "m": "Center",
+              "r": "Right",
+            };
+            const anchorTextY = {
+              "t": "Top",
+              "m": "Middle",
+              "b": "Bottom",
+            };
+            const currentAnchor = templateManager.getAnchor();
+            Object.entries(anchors).forEach(([anchor, displayText]) => {
+              const option = document.createElement('option');
+              option.value = anchor;
+              option.textContent = displayText;
+              if (anchor === currentAnchor) { option.selected = true; }
+              select.appendChild(option);
+            });
+            select.addEventListener('change', () => {
+              templateManager.setAnchor(select.value);
+              instance.handleDisplayStatus(`Changed the default template anchor to "${anchorTextY[select.value[1]]} ${anchorTextX[select.value[0]]}".`);
+            })
+          }).buildElement()
+        .buildElement()
         .addDiv({'id': 'bm-templatefilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Event UI
@@ -984,9 +986,9 @@ async function buildOverlayMain() {
         }
         details.open = true;
       })
-        .addButton({'id': 'bm-button-set-eventprovider', 'textContent': 'Set Event Provider', 'style': 'margin: 0 1ch;'}, (instance, button) => {
+        .addButton({'id': 'bm-button-set-eventprovider', 'textContent': 'Set Data Provider', 'style': 'margin: 0 1ch;'}, (instance, button) => {
           button.onclick = () => {
-            const providerURL = prompt('Enter the event provider JSON URL:', templateManager.getEventProvider());
+            const providerURL = prompt('Enter the event data provider JSON URL:', templateManager.getEventProvider());
             if (!providerURL) { return; }
             const isUrl = (content => {
               try { return Boolean(new URL(content)); }
@@ -1000,7 +1002,7 @@ async function buildOverlayMain() {
             buildEventList();
           };
         }).buildElement()
-        .addButton({'id': 'bm-button-refresh-event', 'textContent': 'Refresh', 'style': 'margin: 0 1ch;'}, (instance, button) => {
+        .addButton({'id': 'bm-button-refresh-event', 'textContent': 'Refresh Data', 'style': 'margin: 0 1ch;'}, (instance, button) => {
           button.onclick = () => buildEventList();
         }).buildElement()
         .addDiv({'id': 'bm-eventitem-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
