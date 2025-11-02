@@ -853,7 +853,7 @@ async function buildOverlayMain() {
           }).buildElement()
         .buildElement()
       .buildElement()
-      .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
+      .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
         details.open = true;
       })
         // Color sorting
@@ -909,7 +909,7 @@ async function buildOverlayMain() {
         .addDiv({'id': 'bm-colorfilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Template filter UI
-      .addDetails({'id': 'bm-contain-templatefilter', 'textContent': 'Templates', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
+      .addDetails({'id': 'bm-contain-templatefilter', 'textContent': 'Templates', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
         details.open = true;
       })
         // Template buttons
@@ -988,7 +988,8 @@ async function buildOverlayMain() {
       })
         .addButton({'id': 'bm-button-set-eventprovider', 'textContent': 'Set Data Provider', 'style': 'margin: 0 1ch;'}, (instance, button) => {
           button.onclick = () => {
-            const providerURL = prompt('Enter the event data provider JSON URL:', templateManager.getEventProvider());
+            const currentProvider = templateManager.getEventProvider();
+            const providerURL = prompt('Enter the event data provider JSON URL:', currentProvider === "" ? "https://wplace.samuelscheit.com/tiles/pumpkin.json" : currentProvider);
             if (!providerURL) { return; }
             const isUrl = (content => {
               try { return Boolean(new URL(content)); }
@@ -1299,11 +1300,11 @@ async function buildOverlayMain() {
     const showUnavailable = templateManager.isEventUnavailableShown();
     const provider = templateManager.getEventProvider();
     if (provider === null || provider == "") {
-      listContainer.innerHTML = '<small>Event provider is not set.</small>';
+      listContainer.innerHTML = '<small>Event data provider is not set.</small>';
       return;
     };
     if (apiManager.eventClaimed === null) {
-      listContainer.innerHTML = '<small>Event claimed items are not known. Make sure you have clicked the Event button from the top left corner.</small>';
+      listContainer.innerHTML = '<small>The event claimed items list is not loaded. Make sure you have clicked the ongoing Event button from the top left corner.</small>';
       return;
     };
     const eventClaimedList = new Set(apiManager.eventClaimed);
@@ -1312,7 +1313,7 @@ async function buildOverlayMain() {
     fetch(provider).then(response => response.json()).then(data => {
       consoleLog("event Location data", data);
       if (typeof data !== 'object') {
-        listContainer.innerHTML = '<small>The event provider does not provide a known format.</small>';
+        listContainer.innerHTML = '<small>The event data provider does not provide a known format.</small>';
         return;
       }
       listContainer.textContent = "";
@@ -1376,7 +1377,7 @@ async function buildOverlayMain() {
         listContainer.innerHTML = `<small>No ${showClaimed ? "" : "unclaimed "}items have ${showUnavailable ? "" : "recent "}data available.</small>`;
       }
     }).catch(err => {
-      listContainer.innerHTML = '<small>Failed fetching the event item info from the provider. Make sure the provider URL is valid and can be accessed with appropriate CORS.</small>';
+      listContainer.innerHTML = '<small>Failed fetching the event item info from the event data provider. Make sure the provider URL is a valid JSON resource and can be accessed with appropriate CORS.</small>';
     });
 
   };
@@ -1396,13 +1397,11 @@ async function buildOverlayMain() {
   setTimeout(() => {
     try {
       if (templateManager.templatesArray?.length > 0) {
-        const colorUI = document.querySelector('#bm-contain-colorfilter');
-        if (colorUI) { colorUI.style.display = ''; }
+        // const colorUI = document.querySelector('#bm-contain-colorfilter');
+        // if (colorUI) { colorUI.style.display = ''; }
         buildColorFilterList();
       }
       if (templateManager.templatesArray?.length > 0) {
-        const templateUI = document.querySelector('#bm-contain-templatefilter');
-        if (templateUI) { templateUI.style.display = ''; }
         buildTemplateFilterList();
       }
     } catch (_) {}

@@ -209,14 +209,14 @@ export default class TemplateManager {
 
   requestListRebuild() {
     try {
-      const colorUI = document.querySelector('#bm-contain-colorfilter');
-      if (colorUI) { colorUI.style.display = ''; }
+      // const colorUI = document.querySelector('#bm-contain-colorfilter');
+      // if (colorUI) { colorUI.style.display = ''; }
       // Deferred palette list rendering; actual DOM is built in main via helper
       window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-color-list' }, '*');
     } catch (_) { /* no-op */ }
     try {
-      const templateUI = document.querySelector('#bm-contain-templatefilter');
-      if (templateUI) { templateUI.style.display = ''; }
+      // const templateUI = document.querySelector('#bm-contain-templatefilter');
+      // if (templateUI) { templateUI.style.display = ''; }
       // Deferred palette list rendering; actual DOM is built in main via helper
       window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-template-list' }, '*');
     } catch (_) { /* no-op */ }
@@ -846,13 +846,13 @@ export default class TemplateManager {
       }
       // After importing templates from storage, reveal color UI and request palette list build
       try {
-        const colorUI = document.querySelector('#bm-contain-colorfilter');
-        if (colorUI) { colorUI.style.display = ''; }
+        // const colorUI = document.querySelector('#bm-contain-colorfilter');
+        // if (colorUI) { colorUI.style.display = ''; }
         window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-color-list' }, '*');
       } catch (_) { /* no-op */ }
       try {
-        const templateUI = document.querySelector('#bm-contain-templatefilter');
-        if (templateUI) { templateUI.style.display = ''; }
+        // const templateUI = document.querySelector('#bm-contain-templatefilter');
+        // if (templateUI) { templateUI.style.display = ''; }
         window.postMessage({ source: 'blue-marble', bmEvent: 'bm-rebuild-template-list' }, '*');
       } catch (_) { /* no-op */ }
     }
