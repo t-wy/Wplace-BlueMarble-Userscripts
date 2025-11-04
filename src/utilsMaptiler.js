@@ -136,6 +136,6 @@ export function addTemplate(sortID, tileName, base64, drawMult) {
  */
 export function forceRefreshTiles() {
   return controlMapTiler(map => {
-    return map.refreshTiles("pixel-art-layer");
+    return map["refreshTiles"]("pixel-art-layer");
   });
 }
