@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor } from "./utils";
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -350,11 +350,10 @@ export default class TemplateManager {
     const tileBitmap = await createImageBitmap(tileBlob);
 
     // honor the same toggle Status for all templates
-    const toggleStatus = this.getPaletteToggledStatus(); // Obtain the color palette of the template
     const displayedColors = this.getDisplayedColorsSorted();
     // const tileCacheKey = this.getTileCacheKeyFromCalculated(displayedColors, involvedTemplates);
     const displayedColorSet = new Set(displayedColors);
-    const hasColorDisabled = displayedColors.length !== Object(toggleStatus).length;
+    const hasColorDisabled = displayedColors.length !== Object(this.getPaletteToggledStatus()).length;
     const allColorsDisabled = displayedColors.length === 0; // Check if every color is disabled
     const allTemplatesDisabled = templatesTilesToDraw.length === 0; // No need to draw if all templates are disabled
     const needOverlay = !allTemplatesDisabled && !allColorsDisabled;
@@ -889,17 +888,28 @@ export default class TemplateManager {
 
   /** Gets the list of displayed colors, sorted by rgb
    * does not hide completed colors as that may become incomplete over time
+   * @returns {string[]}
    * @since 0.85.30
    */
   getDisplayedColorsSorted() {
-    const toggledStatus = this.getPaletteToggledStatus();
+    const currentOnly = this.isOnlyCurrentColorShown();
     const hideLocked = this.areLockedColorsHidden();
+    const toggledStatus = this.getPaletteToggledStatus();
     const colors = [];
-    Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
-      if (!enabled) return;
-      if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
-      colors.push(rgb);
-    })
+    if (currentOnly) {
+      const currentColor = getCurrentColor();
+      Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
+        if (rgbToMeta.get(rgb).id !== currentColor) return;
+        if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
+        colors.push(rgb);
+      });
+    } else {
+      Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
+        if (!enabled) return;
+        if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
+        colors.push(rgb);
+      });
+    }
     return colors.sort();
   }
 
@@ -1170,6 +1180,23 @@ export default class TemplateManager {
    */
   async setEventProvider(value) {
     this.userSettings.eventProvider = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to check if only the currently selected color is shown.
+   * @returns {boolean}
+   * @since 0.85.37
+   */
+  isOnlyCurrentColorShown() {
+    return this.userSettings?.onlyCurrentColorShown ?? false;
+  }
+
+  /** Sets the onlyCurrentColorShown to a value.
+   * @param {boolean} value - The value
+   * @since 0.85.37
+   */
+  async setOnlyCurrentColorShown(value) {
+    this.userSettings.onlyCurrentColorShown = value;
     await this.storeUserSettings();
   }
 

@@ -583,3 +583,13 @@ export function downloadTile(tx, ty) {
     img.src = remoteURL;
   })
 }
+
+/** Get the currently selected color
+ * @return {number}
+ * @since 0.85.37
+ */
+export function getCurrentColor() {
+  const currentColor = Number(localStorage.getItem("selected-color")) ?? 0;
+  if (isNaN(currentColor) || !isFinite(currentColor) || currentColor < 0 || currentColor >= 64) return 0;
+  return currentColor;
+}

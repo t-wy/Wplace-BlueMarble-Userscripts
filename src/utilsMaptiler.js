@@ -78,6 +78,17 @@ export function getCenterGeoCoords() {
   })
 }
 
+/** Get the displacement in pixels per wplace pixel
+ * @returns {number}
+ * @since 0.85.37
+ */
+export function getPixelPerWplacePixel() {
+  return controlMapTiler(map => {
+    // scale: 1 means (tileSize = 512) pixel on canvas covers the full longitude (i.e. 2048000 wplace pixels)
+    return map["transform"]["tileSize"] * map["transform"]["scale"] / 2048000;
+  });
+}
+
 /** Remove Template from Maptiler's Source
  * @since 0.85.27
  */

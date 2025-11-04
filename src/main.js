@@ -6,8 +6,8 @@ import Overlay from './Overlay.js';
 // import Observers from './observers.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
-import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, teleportToGeoCoords, rgbToMeta, getOverlayCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, sortByOptions } from './utils.js';
-import { getCenterGeoCoords } from './utilsMaptiler.js';
+import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, teleportToGeoCoords, rgbToMeta, getOverlayCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, sortByOptions, getCurrentColor } from './utils.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel } from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -207,6 +207,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'eventProvider': '',
       'eventClaimedShown': true,
       'eventUnavailableShown': true,
+      'onlyCurrentColorShown': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -285,13 +286,12 @@ function observeBlack() {
         paint.onclick = function() {
           const currentCharges = Math.floor(apiManager.getCurrentCharges());
           let examples = [];
-          const toggleStatus = templateManager.getPaletteToggledStatus();
+          const toggleStatus = new Set(templateManager.getDisplayedColorsSorted());
           for (const stats of templateManager.tileProgress.values()) {
             Object.entries(stats.palette).forEach(([colorKey, content]) => {
-              if (!rgbToMeta.has(colorKey)) return;
-              if (!toggleStatus?.[colorKey]) return;
+              if (!toggleStatus.has(colorKey)) return;
               const colorId = rgbToMeta.get(colorKey).id;
-              if (!templateManager.isColorUnlocked(colorId)) return; // color not owned
+              if (!templateManager.isColorUnlocked(colorId)) return; // color not owned, need to disable no matter if enabled or not
               
               examples.push(...content.examplesEnabled.map(example => [colorId, example]));
             })
@@ -369,17 +369,44 @@ function observeBlack() {
             examples = resultExamples.slice(0, currentCharges);
           }
           const canvas = document.querySelector("canvas.maplibregl-canvas");
+          // for (let i = 0; i < examples.length; i++) {
+          //   const [colorId, example] = examples[i];
+          //   document.getElementById("color-" + colorId).click();
+          //   teleportToTileCoords(example[0], example[1], false);
+          //   const ev = new MouseEvent("click", {
+          //     "bubbles": true, "cancelable": true, "clientX": canvas.offsetWidth / 2, "clientY": canvas.offsetHeight / 2, "button": 0
+          //   });
+          //   canvas.dispatchEvent(ev);
+          // }
+          // Get back to the first point to show where the painted pixels are based on
+          teleportToTileCoords(examples[0][1][0], examples[0][1][1], false);
+          let currentColorId = examples[0][0];
+          document.getElementById("color-" + currentColorId).click();
+
+          const refW = [
+            examples[0][1][0][0] * templateManager.tileSize + examples[0][1][1][0],
+            examples[0][1][0][1] * templateManager.tileSize + examples[0][1][1][1],
+          ]; // reference Wplace coord
+          const cliC = [canvas.offsetWidth / 2, canvas.offsetHeight / 2]; // reference canvas coord
+          const pxPerW = getPixelPerWplacePixel();
           for (let i = 0; i < examples.length; i++) {
             const [colorId, example] = examples[i];
-            document.getElementById("color-" + colorId).click();
-            teleportToTileCoords(example[0], example[1], false);
+            if (currentColorId !== colorId) {
+              currentColorId = colorId;
+              document.getElementById("color-" + colorId).click();
+            };
+            const exW = [
+              example[0][0] * templateManager.tileSize + example[1][0],
+              example[0][1] * templateManager.tileSize + example[1][1],
+            ]
             const ev = new MouseEvent("click", {
-              "bubbles": true, "cancelable": true, "clientX": canvas.offsetWidth / 2, "clientY": canvas.offsetHeight / 2, "button": 0
+              "bubbles": true, "cancelable": true,
+              "clientX": cliC[0] + (exW[0] - refW[0]) * pxPerW,
+              "clientY": cliC[1] + (exW[1] - refW[1]) * pxPerW,
+              "button": 0
             });
             canvas.dispatchEvent(ev);
           }
-          // Get back to the first point to show where the painted pixels are based on
-          teleportToTileCoords(examples[0][1][0], examples[0][1][1], false);
         }
 
         // Attempts to find the "Paint Pixel" element for anchoring
@@ -766,7 +793,6 @@ async function buildOverlayMain() {
         // Color filter UI
         .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
           .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
             checkbox.addEventListener('change', () => {
               templateManager.setHideLockedColors(checkbox.checked);
               buildColorFilterList();
@@ -778,7 +804,6 @@ async function buildOverlayMain() {
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-checkbox-colors-completed', 'textContent': 'Hide Completed Colors', 'checked': templateManager.areCompletedColorsHidden()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
             checkbox.addEventListener('change', () => {
               templateManager.setHideCompletedColors(checkbox.checked);
               buildColorFilterList();
@@ -790,7 +815,6 @@ async function buildOverlayMain() {
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
             checkbox.addEventListener('change', () => {
               templateManager.setProgressBarEnabled(checkbox.checked);
               buildColorFilterList();
@@ -802,7 +826,6 @@ async function buildOverlayMain() {
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
             checkbox.addEventListener('change', () => {
               templateManager.setMemorySavingMode(checkbox.checked);
               buildColorFilterList();
@@ -814,21 +837,28 @@ async function buildOverlayMain() {
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-event-enabled', 'textContent': 'Enable Event', 'checked': templateManager.isEventEnabled()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
             checkbox.addEventListener('change', () => {
               templateManager.setEventEnabled(checkbox.checked);
               if (checkbox.checked) {
                 instance.handleDisplayStatus("Event Mode Enabled.");
                 document.getElementById('bm-contain-eventitem').style.display = '';
+                document.getElementById('bm-event-hide-claimed').parentElement.style.display = ''; // the label containing not the checkbox
+                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = ''; // the label containing not the checkbox
                 buildEventList();
               } else {
                 instance.handleDisplayStatus("Event Mode Disabled.");
                 document.getElementById('bm-contain-eventitem').style.display = 'none';
+                document.getElementById('bm-event-hide-claimed').parentElement.style.display = 'none'; // the label containing not the checkbox
+                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = 'none'; // the label containing not the checkbox
               }
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-event-hide-claimed', 'textContent': 'Hide Event Claimed Items', 'checked': !templateManager.isEventClaimedShown()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
+          .addCheckbox({'id': 'bm-event-hide-claimed', 'textContent': 'Hide Claimed Event Items', 'checked': !templateManager.isEventClaimedShown()}, (instance, label, checkbox) => {
+            if (templateManager.isEventEnabled()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
             checkbox.addEventListener('change', () => {
               templateManager.setEventClaimedShown(!checkbox.checked);
               if (checkbox.checked) {
@@ -840,7 +870,11 @@ async function buildOverlayMain() {
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-event-hide-unavailable', 'textContent': 'Hide Unavailable Event Items', 'checked': !templateManager.isEventUnavailableShown()}, (instance, label, checkbox) => {
-            label.style.fontSize = '12px';
+            if (templateManager.isEventEnabled()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
             checkbox.addEventListener('change', () => {
               templateManager.setEventUnavailableShown(!checkbox.checked);
               if (checkbox.checked) {
@@ -849,6 +883,18 @@ async function buildOverlayMain() {
                 instance.handleDisplayStatus("Restored All Unavailable Event Items.");
               }
               buildEventList();
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-only-current-color-enabled', 'textContent': 'Show Current Color Only', 'checked': templateManager.isOnlyCurrentColorShown()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setOnlyCurrentColorShown(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Only the currently selected color will be shown.");
+                buildColorFilterList();
+              } else {
+                instance.handleDisplayStatus("Color filter is restored.");
+                buildColorFilterList();
+              }
             });
           }).buildElement()
         .buildElement()
@@ -1119,6 +1165,7 @@ async function buildOverlayMain() {
 
       let colorName = '';
       let colorKey = '';
+      const tMeta = rgbToMeta.get(rgb);
       // Special handling for "other" and "transparent"
       if (rgb === 'other') {
         swatch.style.background = '#888'; // Neutral color for "Other"
@@ -1132,7 +1179,6 @@ async function buildOverlayMain() {
         const [r, g, b] = rgb.split(',').map(Number);
         swatch.style.background = `rgb(${r},${g},${b})`;
         try {
-          const tMeta = rgbToMeta.get(rgb);
           if (tMeta && typeof tMeta.id === 'number') {
             if (hideLocked && !templateManager.isColorUnlocked(tMeta.id)) continue;
             const displayName = tMeta?.name || `rgb(${r},${g},${b})`;
@@ -1185,7 +1231,12 @@ async function buildOverlayMain() {
 
       const toggle = document.createElement('input');
       toggle.type = 'checkbox';
-      toggle.checked = toggleStatus[rgb] ?? true;
+      if (templateManager.isOnlyCurrentColorShown()) {
+        toggle.checked = tMeta?.id === getCurrentColor();
+        toggle.disabled = true;
+      } else {
+        toggle.checked = toggleStatus[rgb] ?? true;
+      }
       toggle.addEventListener('change', () => {
         (templateManager.templatesArray ?? []).forEach(t => {
           if (!t?.colorPalette) return;

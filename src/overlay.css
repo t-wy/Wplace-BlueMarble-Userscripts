@@ -328,3 +328,8 @@ input[type="file"][id*="template"] {
 #bm-overlay details > summary {
   font-size: small;
 }
+
+/* All checkbox labels in user settings */
+#bm-checkbox-container label {
+  font-size: small;
+}
