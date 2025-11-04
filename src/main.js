@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, teleportToGeoCoords, rgbToMeta, getOverlayCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel } from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles } from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -414,7 +414,20 @@ function observeBlack() {
 
         paintPixel.parentNode?.appendChild(paint); // Adds the paint button
       }
-    }
+    };
+
+    // Hook color change to force refresh
+    Array.from(black.parentNode.parentNode.getElementsByTagName('button')).forEach((button) => {
+      if (button.classList.contains("bm-hooked")) {
+        return;
+      }
+      button.addEventListener('click', () => {
+        if (templateManager.isOnlyCurrentColorShown()) {
+          forceRefreshTiles();
+        };
+      });
+      button.classList.add("bm-hooked");
+    })
   });
 
   observer.observe(document.body, { childList: true, subtree: true });
@@ -894,7 +907,8 @@ async function buildOverlayMain() {
               } else {
                 instance.handleDisplayStatus("Color filter is restored.");
                 buildColorFilterList();
-              }
+              };
+              forceRefreshTiles();
             });
           }).buildElement()
         .buildElement()
@@ -938,6 +952,7 @@ async function buildOverlayMain() {
               syncToggleList();
               buildColorFilterList();
               instance.handleDisplayStatus('Enabled all colors');
+              forceRefreshTiles();
             };
           }).buildElement()
           .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
@@ -949,6 +964,7 @@ async function buildOverlayMain() {
               syncToggleList();
               buildColorFilterList();
               instance.handleDisplayStatus('Disabled all colors');
+              forceRefreshTiles();
             };
           }).buildElement()
         .buildElement()
@@ -1246,6 +1262,7 @@ async function buildOverlayMain() {
         })
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
         syncToggleList();
+        forceRefreshTiles();
       });
 
       row.appendChild(toggle);
@@ -1335,6 +1352,7 @@ async function buildOverlayMain() {
           templateManager.clearTileProgress(template);
         }
         syncToggleList();
+        forceRefreshTiles();
       });
 
       row.appendChild(toggle);

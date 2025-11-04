@@ -130,3 +130,12 @@ export function addTemplate(sortID, tileName, base64, drawMult) {
     });
   }, sourceID, dataURL, geoCoords1, geoCoords2);
 }
+
+/** Force the on-screen tiles to be refreshed
+ * @since 0.85.37
+ */
+export function forceRefreshTiles() {
+  return controlMapTiler(map => {
+    return map.refreshTiles("pixel-art-layer");
+  });
+}
