@@ -353,7 +353,7 @@ export default class TemplateManager {
     const displayedColors = this.getDisplayedColorsSorted();
     // const tileCacheKey = this.getTileCacheKeyFromCalculated(displayedColors, involvedTemplates);
     const displayedColorSet = new Set(displayedColors);
-    const hasColorDisabled = displayedColors.length !== Object(this.getPaletteToggledStatus()).length;
+    const hasColorDisabled = displayedColors.length !== Object.keys(this.getPaletteToggledStatus()).length;
     const allColorsDisabled = displayedColors.length === 0; // Check if every color is disabled
     const allTemplatesDisabled = templatesTilesToDraw.length === 0; // No need to draw if all templates are disabled
     const needOverlay = !allTemplatesDisabled && !allColorsDisabled;
