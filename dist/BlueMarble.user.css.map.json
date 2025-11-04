@@ -70,8 +70,9 @@
   "bm-cStyle": "bm-14",
   "bm-canvas": "bm-15",
   "bm-footer": "bm-16",
-  "bm-name": "bm-17",
-  "bm-help": "bm-18",
-  "bm-lat": "bm-19",
-  "bm-lng": "bm-1a"
+  "bm-hooked": "bm-17",
+  "bm-name": "bm-18",
+  "bm-help": "bm-19",
+  "bm-lat": "bm-1a",
+  "bm-lng": "bm-1b"
 }
