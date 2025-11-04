@@ -1,8 +1,12 @@
 Preview Images of This Fork:
 
-| Template | Overlay | Pixel Info |
-|-|-|-|
-| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) | ![Pixel Info](assets/PixelInfo.png) |
+| Template | Overlay |
+|-|-|
+| ![Template](assets/Template.png) | ![Overlay](assets/Overlay.png) |
+
+| Pixel Info | Map Export (From the Share Dialog) |
+|-|-|
+| ![Pixel Info](assets/PixelInfo.png) | ![Map Export](assets/ExportMap.png)
 
 More Information Regarding this Fork **[Here](#regarding-this-fork)**.
 
@@ -119,6 +123,10 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Allow different coordinate formats (`a, b, c, d`, `a b c d`, and `Tl X: a, Tl Y: b, Px X: c, Px Y: d`) to be pasted to the first coordinate textbox.</li>
     <li>Allow downloading artworks (in exact size) from the map via the Share Button by two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button)</li>
     <li>Memory-saving Mode: Create ImageBitmap only when the templates are processed, and release them immediately afterwards to prevent using up all available memory.</li>
+    <li>Allow setting the anchor for the coordinates specified for the template to be placed. (By default the coordinates are the top-left corner of the template)</li>
+    <li>Support displaying the locations of Event Items. (Need to provide a JSON data provider (e.g. <a href="https://wplace.samuelscheit.com/tiles/pumpkin.json">Wplace Archive pumpkin.json</a>) for this feature to work)</li>
+    <li>Allow only show the pixels of the currently selected color in Wplace automatically.</li>
+    <li>Try to refresh the tiles when selected colors / templates changes as soon as possible.</li>
   </ul>
 </p>
 
