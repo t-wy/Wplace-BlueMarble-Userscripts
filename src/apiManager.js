@@ -466,8 +466,19 @@ export default class ApiManager {
           this.#applyUserData(dataJSON, Date.now());
           break;
 
-        case 'pixel': // Request to retrieve pixel data
+        case 'pixel': // Request to retrieve pixel data (or when submitting a pixel)
           const coordsTile = data['endpoint'].split('?')[0].split('/').filter(s => s && !isNaN(Number(s))).map(s => Number(s)); // Retrieves the tile coords as [x, y]
+          if ((data['jsonData'] ?? {})["painted"] !== undefined) { // POST request
+            if (!coordsTile.length) {
+              return; // Kills itself
+            }
+            // Force remove the tile from the cache since Last-Modified updates not at the same time as pixel submissions
+            const tileKey = coordsTile[0].toString().padStart(4, '0') + ',' + coordsTile[1].toString().padStart(4, '0');
+            if (this.tileCache[tileKey]) {
+              delete this.tileCache[tileKey];
+            }
+            break;
+          }
           const payloadExtractor = new URLSearchParams(data['endpoint'].split('?')[1]); // Declares a new payload deconstructor and passes in the fetch request payload
           const coordsPixel = [+payloadExtractor.get('x'), +payloadExtractor.get('y')]; // Retrieves the deconstructed pixel coords from the payload
           
