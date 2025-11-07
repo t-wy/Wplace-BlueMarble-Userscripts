@@ -158,7 +158,7 @@ export const themeList = {
 export function setTheme(themeName) {
   if (!themeList[themeName]) return;
   return controlMapTiler((map, themeName) => {
-    map.setStyle("https://maps.wplace.live/styles/" + themeName, {});
+    map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
   }, themeName);
 }
