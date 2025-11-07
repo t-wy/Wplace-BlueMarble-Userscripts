@@ -158,6 +158,52 @@ export const themeList = {
 export function setTheme(themeName) {
   if (!themeList[themeName]) return;
   return controlMapTiler((map, themeName) => {
+    // The default pixel-hover styledata callback only triggers once that we cannot reset
+    const restorePixelHover = async () => {
+      const hoverData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAAAAACoWZBhAAAAAXNSR0IArs4c6QAAACpJREFUeNpj+AsEZ86ASIa/DAwMZ84ACRDzDBigMs/AARITq1oUwxBWAADaREUdDMswKwAAAABJRU5ErkJggg==";
+      const name = "pixel-hover";
+      const epsilon = 1e-5;
+      const bounds = [
+        [0, 0],
+        [epsilon, 0],
+        [epsilon, -epsilon],
+        [0, -epsilon]
+      ];
+      const opacity = 0.4;
+
+      if (!map["getSource"](name)) {
+        
+        const a = document.createElement("canvas");
+        const hoverImg = document.createElement("img");
+        hoverImg.src = hoverData;
+        await new Promise(resolve => hoverImg.addEventListener("load", () => resolve(hoverImg)));
+        a.width = hoverImg.naturalWidth,
+        a.height = hoverImg.naturalHeight;
+        const h = a.getContext("2d");
+        h.drawImage(hoverImg, 0, 0),
+        
+        map["addSource"](name, {
+          "type": "canvas",
+          "canvas": a,
+          "coordinates": bounds
+        });
+      };
+      if (!map["getLayer"](name)) {
+        map["addLayer"]({
+          "id": name,
+          "type": "raster",
+          "source": name,
+          "paint": {
+              "raster-resampling": "nearest",
+              "raster-opacity": opacity
+          }
+        });
+      };
+    }
+    restorePixelHover.name = "restorePixelHover";
+    if ((map._listeners["styledata"] ?? []).every(listener => listener.name !== restorePixelHover.name)) { // only need to register once
+      map["on"]("styledata", restorePixelHover);
+    };
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
   }, themeName);
