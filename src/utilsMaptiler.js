@@ -201,7 +201,7 @@ export function setTheme(themeName) {
       };
     }
     restorePixelHover.name = "restorePixelHover";
-    if ((map._listeners["styledata"] ?? []).every(listener => listener.name !== restorePixelHover.name)) { // only need to register once
+    if ((map["_listeners"]["styledata"] ?? []).every(listener => listener.name !== restorePixelHover.name)) { // only need to register once
       map["on"]("styledata", restorePixelHover);
     };
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
