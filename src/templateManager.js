@@ -1,5 +1,6 @@
 import Template from "./Template";
 import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor } from "./utils";
+import { themeList } from './utilsMaptiler.js';
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -1008,6 +1009,7 @@ export default class TemplateManager {
 
   /** Sets the sort criteria to a value.
    * @param {string} value - The sort criteria
+   * @returns {boolean}
    * @since 0.85.23
    */
   async setSortBy(value) {
@@ -1198,6 +1200,46 @@ export default class TemplateManager {
   async setOnlyCurrentColorShown(value) {
     this.userSettings.onlyCurrentColorShown = value;
     await this.storeUserSettings();
+  }
+
+  /** A utility to check if the theme is overridden.
+   * @returns {boolean}
+   * @since 0.85.40
+   */
+  isThemeOverridden() {
+    return this.userSettings?.themeOverridden ?? false;
+  }
+
+  /** Sets the themeOverridden to a value.
+   * @param {boolean} value - The value
+   * @since 0.85.40
+   */
+  async setThemeOverridden(value) {
+    this.userSettings.themeOverridden = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to return the current theme.
+   * @returns {string}
+   * @since 0.85.40
+   */
+  getCurrentTheme() {
+    const temp = (this.userSettings?.currentTheme ?? Object.keys(themeList)[0]).toLowerCase();
+    if (themeList[temp]) return temp;
+    return Object.keys(themeList)[0];
+  }
+
+  /** Sets the current theme to a value.
+   * @param {string} value - The value
+   * @returns {boolean}
+   * @since 0.85.40
+   */
+  async setCurrentTheme(value) {
+    value = value.toLowerCase();
+    if (!themeList[value]) return false;
+    this.userSettings.currentTheme = value;
+    await this.storeUserSettings();
+    return true;
   }
 
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.

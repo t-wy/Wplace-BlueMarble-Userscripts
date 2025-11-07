@@ -1,6 +1,6 @@
 import { coordsTileToGeoCoords } from './utils.js';
 
-function isMapTilerLoaded() {
+export function isMapTilerLoaded() {
   const myLocationButton = document.querySelector(".right-3>button");
   if ( myLocationButton === null ) {
     return false;
@@ -138,4 +138,27 @@ export function forceRefreshTiles() {
   return controlMapTiler(map => {
     return map["refreshTiles"]("pixel-art-layer");
   });
+}
+
+/** The theme list used by wplace.live
+ * Format: themeName: Label
+ * @since 0.85.40
+ */
+export const themeList = {
+  "liberty": "Liberty (Default)",
+  "bright": "Bright",
+  "positron": "Positron",
+  "dark": "Dark",
+  "fiord": "Fiord (Halloween)",
+};
+
+/** Override the map theme
+ * @since 0.85.40
+ */
+export function setTheme(themeName) {
+  if (!themeList[themeName]) return;
+  return controlMapTiler((map, themeName) => {
+    map.setStyle("https://maps.wplace.live/styles/" + themeName, {});
+    return null;
+  }, themeName);
 }

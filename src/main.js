@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, teleportToTileCoords, teleportToGeoCoords, rgbToMeta, getOverlayCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles } from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, themeList, setTheme, isMapTilerLoaded } from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -208,6 +208,8 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'eventClaimedShown': true,
       'eventUnavailableShown': true,
       'onlyCurrentColorShown': false,
+      'themeOverridden': false,
+      'currentTheme': '',
     });
     templateManager.storeUserSettings();
   } else {
@@ -911,6 +913,31 @@ async function buildOverlayMain() {
               forceRefreshTiles();
             });
           }).buildElement()
+          .addCheckbox({'id': 'bm-theme-override-enabled', 'textContent': 'Theme Override: ', 'checked': templateManager.isThemeOverridden()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', async () => {
+              await templateManager.setThemeOverridden(checkbox.checked);
+              const select = document.getElementById('bm-theme-setting');
+              select.disabled = !checkbox.checked;
+              forceUpdateTheme();
+            });
+          })
+            .addSelect({'id': 'bm-theme-setting'}, (instance, select) => {
+              select.disabled = !templateManager.isThemeOverridden();
+              const currentTheme = templateManager.getCurrentTheme();
+              Object.entries(themeList).forEach(([themeValue, displayText]) => {
+                const option = document.createElement('option');
+                option.value = themeValue;
+                option.textContent = displayText;
+                if (themeValue === currentTheme) { option.selected = true; }
+                select.appendChild(option);
+              });
+              select.addEventListener('change', async () => {
+                await templateManager.setCurrentTheme(select.value);
+                instance.handleDisplayStatus(`Changed the theme to "${themeList[select.value]}".`);
+                forceUpdateTheme();
+              })
+            }).buildElement()
+          .buildElement()
         .buildElement()
       .buildElement()
       .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
@@ -1451,6 +1478,18 @@ async function buildOverlayMain() {
 
   };
 
+  window.forceUpdateTheme = function forceUpdateTheme() {
+    if (!isMapTilerLoaded()) {
+      setTimeout(forceUpdateTheme, 100);
+      return;
+    };
+    if (templateManager.isThemeOverridden()) {
+      setTheme(templateManager.getCurrentTheme());
+    } else {
+      setTheme(Object.keys(themeList)[0]);
+    }
+  };
+
   // Listen for template creation/import completion to (re)build palette list
   window.addEventListener('message', (event) => {
     if (event?.data?.bmEvent === 'bm-rebuild-color-list') {
@@ -1477,6 +1516,11 @@ async function buildOverlayMain() {
     try {
       if (templateManager.isEventEnabled()) {
         buildEventList();
+      }
+    } catch (_) {}
+    try {
+      if (templateManager.isThemeOverridden()) {
+        forceUpdateTheme();
       }
     } catch (_) {}
   }, 0);
