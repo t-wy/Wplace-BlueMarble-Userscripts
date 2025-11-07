@@ -141,15 +141,15 @@ export function forceRefreshTiles() {
 }
 
 /** The theme list used by wplace.live
- * Format: themeName: Label
+ * Format: themeName: [label, darkUI]
  * @since 0.85.40
  */
 export const themeList = {
-  "liberty": "Liberty (Default)",
-  "bright": "Bright",
-  "positron": "Positron",
-  "dark": "Dark",
-  "fiord": "Fiord (Halloween)",
+  "liberty": ["Liberty (Default)", false],
+  "bright": ["Bright", false],
+  "positron": ["Positron", false],
+  "dark": ["Dark", true],
+  "fiord": ["Fiord (Halloween)", true],
 };
 
 /** Override the map theme
@@ -157,51 +157,61 @@ export const themeList = {
  */
 export function setTheme(themeName) {
   if (!themeList[themeName]) return;
+  const isDark = themeList[themeName][1];
+  document.documentElement.dataset["theme"] = isDark ? "dark" : "";
   return controlMapTiler((map, themeName) => {
     // The default pixel-hover styledata callback only triggers once that we cannot reset
+    // May try to somehow get the current source / layer as reference, but that is also not reliable enough.
+    const layerName = "pixel-hover";
+    let layerSource = map["getSource"](layerName); // prevent recreation
     const restorePixelHover = async () => {
-      const hoverData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAAAAACoWZBhAAAAAXNSR0IArs4c6QAAACpJREFUeNpj+AsEZ86ASIa/DAwMZ84ACRDzDBigMs/AARITq1oUwxBWAADaREUdDMswKwAAAABJRU5ErkJggg==";
-      const name = "pixel-hover";
-      const epsilon = 1e-5;
-      const bounds = [
-        [0, 0],
-        [epsilon, 0],
-        [epsilon, -epsilon],
-        [0, -epsilon]
-      ];
-      const opacity = 0.4;
-
-      if (!map["getSource"](name)) {
-        
-        const a = document.createElement("canvas");
-        const hoverImg = document.createElement("img");
-        hoverImg.src = hoverData;
-        await new Promise(resolve => hoverImg.addEventListener("load", () => resolve(hoverImg)));
-        a.width = hoverImg.naturalWidth,
-        a.height = hoverImg.naturalHeight;
-        const h = a.getContext("2d");
-        h.drawImage(hoverImg, 0, 0),
-        
-        map["addSource"](name, {
-          "type": "canvas",
-          "canvas": a,
-          "coordinates": bounds
-        });
+      if (!map["getSource"](layerName)) {
+        if (layerSource) { 
+          map["addSource"](layerName, {
+            "type": "canvas",
+            "canvas": layerSource.canvas,
+            "coordinates": layerSource.coordinates
+          });
+        } else {
+          const hoverCanvas = document.createElement("canvas");
+          const hoverImg = document.createElement("img");
+          hoverImg.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAAAAACoWZBhAAAAAXNSR0IArs4c6QAAACpJREFUeNpj+AsEZ86ASIa/DAwMZ84ACRDzDBigMs/AARITq1oUwxBWAADaREUdDMswKwAAAABJRU5ErkJggg==";
+          await new Promise(resolve => hoverImg.addEventListener("load", () => resolve(hoverImg)));
+          hoverCanvas.width = hoverImg.naturalWidth,
+          hoverCanvas.height = hoverImg.naturalHeight;
+          const hoverContext = hoverCanvas.getContext("2d");
+          hoverContext.drawImage(hoverImg, 0, 0);
+          const epsilon = 1e-5;
+          const bounds = [
+            [0, 0],
+            [epsilon, 0],
+            [epsilon, -epsilon],
+            [0, -epsilon]
+          ];
+          
+          layerSource = {
+            "type": "canvas",
+            "canvas": hoverCanvas,
+            "coordinates": bounds
+          };
+          map["addSource"](layerName, layerSource);
+        };
       };
-      if (!map["getLayer"](name)) {
+      if (!map["getLayer"](layerName)) {
         map["addLayer"]({
-          "id": name,
+          "id": layerName,
           "type": "raster",
-          "source": name,
+          "source": layerName,
           "paint": {
               "raster-resampling": "nearest",
-              "raster-opacity": opacity
+              "raster-opacity": 0.4
           }
         });
       };
     }
     restorePixelHover.name = "restorePixelHover";
     if ((map["_listeners"]["styledata"] ?? []).every(listener => listener.name !== restorePixelHover.name)) { // only need to register once
+      // map.once would not work, since there may be race condition stealing the event before pixel-data is removed
       map["on"]("styledata", restorePixelHover);
     };
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
