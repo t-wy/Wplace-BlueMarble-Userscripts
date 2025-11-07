@@ -101,32 +101,36 @@ To use it, copy the content and paste it in the URL field when creating a bookma
   </p>
 
   <ul>
-    <li>Show Charges Count outside the Button that may be covered by Cloudflare Turnstile.</li>
-    <li>Display the palette hints as crosshair instead of a dot for better visibility.</li>
+    <li>Show Charges Count outside the Button that may be covered by Cloudflare Turnstile. (v0.85.3)</li>
+    <li>Show Remaining Time to Full Charges. (v0.85.9)</li>
+    <li>Display the palette hints as crosshair instead of a dot for better visibility. (v0.85.2)</li>
     <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
-    <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged)</li>
-    <li>Testing semi-transparency for the Blue Marble Overlay.</li>
-    <li>Fixed the non-persistent palette toggle bug.</li>
-    <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh.</li>
-    <li>Fixed the bug that the "Enable All" and "Disable All" buttons do not persist.</li>
-    <li>Show the filled count of each color.</li>
-    <li>Directly teleport to one of the unfilled pixel when clicking on an unfinished color block in the filter.</li>
-    <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes.</li>
-    <li>Show also geographical coordinates besides tile coordinates.</li>
-    <li>Optimize the for-loop for faster response.</li>
-    <li>Allow multiple templates to be used at the same time.</li>
-    <li>A button to teleport to the top-left corner of the selected template.</li>
-    <li>Allow locked colors (colors that are not unlocked) to be hidden from the color list.</li>
-    <li>Allow completed colors to be hidden from the color list.</li>
-    <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance.</li>
-    <li>Progress bar behind each color in the list that shows the relative progress</li>
-    <li>Allow different coordinate formats (`a, b, c, d`, `a b c d`, and `Tl X: a, Tl Y: b, Px X: c, Px Y: d`) to be pasted to the first coordinate textbox.</li>
-    <li>Allow downloading artworks (in exact size) from the map via the Share Button by two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button)</li>
-    <li>Memory-saving Mode: Create ImageBitmap only when the templates are processed, and release them immediately afterwards to prevent using up all available memory.</li>
-    <li>Allow setting the anchor for the coordinates specified for the template to be placed. (By default the coordinates are the top-left corner of the template)</li>
-    <li>Support displaying the locations of Event Items. (Need to provide a JSON data provider (e.g. <a href="https://wplace.samuelscheit.com/tiles/pumpkin.json">Wplace Archive pumpkin.json</a>) for this feature to work)</li>
-    <li>Allow only show the pixels of the currently selected color in Wplace automatically.</li>
-    <li>Try to refresh the tiles when selected colors / templates changes as soon as possible.</li>
+    <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged) (v0.85.4)</li>
+    <li>Fixed the non-persistent palette toggle bug. (v0.85.1)</li>
+    <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh. (v0.85.2)</li>
+    <li>Fixed the bug that the "Enable All" and "Disable All" buttons do not persist. (v0.85.13)</li>
+    <li>Fixed the color space conversion issue on Firefox. (v0.85.16)</li>
+    <li>Show the filled count of each color. (v0.85.10)</li>
+    <li>Directly teleport to one of the unfilled pixel when clicking on an unfinished color block in the filter. (v0.85.10)</li>
+    <li>Allow teleporting to the given tile coordinates via the plane button next to the input boxes. (v0.85.9)</li>
+    <li>Show also geographical coordinates besides tile coordinates. (v0.85.5)</li>
+    <li>Optimize the for-loop for faster response. (v0.85.7)</li>
+    <li>Allow multiple templates to be used at the same time. (v0.85.11)</li>
+    <li>A button to teleport to the top-left corner of the selected template. (v0.85.12)</li>
+    <li>Option to hide locked colors (colors that are not unlocked) from the color list. (v0.85.17)</li>
+    <li>Provide the bookmarklet version. (v0.85.22)</li>
+    <li>Allow completed colors to be hidden from the color list. (v0.85.23)</li>
+    <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance. (v0.85.23)</li>
+    <li>Progress bar behind each color in the list that shows the relative progress (v0.85.24)</li>
+    <li>Allow different coordinate formats (`a, b, c, d`, `a b c d`, and `Tl X: a, Tl Y: b, Px X: c, Px Y: d`) to be pasted to the first coordinate textbox. (v0.85.28)</li>
+    <li>Allow downloading artworks (in exact size) from the map via the Share Button by two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.85.28)</li>
+    <li>Memory-saving Mode: Create ImageBitmap only when the templates are processed, and release them immediately afterwards to prevent using up all available memory. (v0.85.33)</li>
+    <li>Allow setting the anchor for the coordinates specified for the template to be placed. (By default the coordinates are the top-left corner of the template) (v0.85.34)</li>
+    <li>Support displaying the locations of Event Items. (Need to provide a JSON data provider (e.g. <a href="https://wplace.samuelscheit.com/tiles/pumpkin.json">Wplace Archive pumpkin.json</a>) for this feature to work) (v0.85.35)</li>
+    <li>Allow only show the pixels of the currently selected color in Wplace automatically. (v0.85.37)</li>
+    <li>Try to refresh the tiles when selected colors / templates changes as soon as possible. (v0.85.38)</li>
+    <li>Try to refresh the tiles after pixel submission as soon as possible. (v0.85.39)</li>
+    <li>Switching between Wplace's builtin themes. (v0.85.40)</li>
   </ul>
 </p>
 
