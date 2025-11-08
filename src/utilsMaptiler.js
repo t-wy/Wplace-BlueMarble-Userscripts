@@ -162,15 +162,36 @@ export function setTheme(themeName) {
   return controlMapTiler((map, themeName) => {
     // The default pixel-hover styledata callback only triggers once that we cannot reset
     // May try to somehow get the current source / layer as reference, but that is also not reliable enough.
-    const layerName = "pixel-hover";
-    let layerSource = map["getSource"](layerName); // prevent recreation
-    const restorePixelHover = async () => {
-      if (!map["getSource"](layerName)) {
-        if (layerSource) { 
-          map["addSource"](layerName, {
+    const artLayerName = "pixel-art-layer";
+    const hoverLayerName = "pixel-hover";
+    let hoverLayerSource = map["getSource"](hoverLayerName); // prevent recreation
+    const restoreLayers = async () => { // one problem: pixel-hover may has a lower order than pixel-art-layer, need to make sure pixel-art-layer exists before recreating pixel-hover
+      if (!map["getSource"](artLayerName)) {
+        map["addSource"](artLayerName, {
+          "type": "raster",
+          "tiles": ['https://backend.wplace.live/files/s0/tiles/{x}/{y}.png'],
+          "minzoom": 11,
+          "maxzoom": 11,
+          "tileSize": window.innerWidth > 640 ? 550 : 400
+        });
+      };
+      if (!map["getLayer"](artLayerName)) {
+        map["addLayer"]({
+          "id": artLayerName,
+          "type": "raster",
+          "source": artLayerName,
+          "paint": {
+              "raster-resampling": "nearest",
+              "raster-opacity": 1
+          }
+        });
+      };
+      if (!map["getSource"](hoverLayerName)) {
+        if (hoverLayerSource) { 
+          map["addSource"](hoverLayerName, {
             "type": "canvas",
-            "canvas": layerSource.canvas,
-            "coordinates": layerSource.coordinates
+            "canvas": hoverLayerSource.canvas,
+            "coordinates": hoverLayerSource.coordinates
           });
         } else {
           const hoverCanvas = document.createElement("canvas");
@@ -189,30 +210,37 @@ export function setTheme(themeName) {
             [0, -epsilon]
           ];
           
-          layerSource = {
+          hoverLayerSource = {
             "type": "canvas",
             "canvas": hoverCanvas,
             "coordinates": bounds
           };
-          map["addSource"](layerName, layerSource);
+          map["addSource"](hoverLayerName, hoverLayerSource);
         };
       };
-      if (!map["getLayer"](layerName)) {
+      if (!map["getLayer"](hoverLayerName)) {
         map["addLayer"]({
-          "id": layerName,
+          "id": hoverLayerName,
           "type": "raster",
-          "source": layerName,
+          "source": hoverLayerName,
           "paint": {
               "raster-resampling": "nearest",
               "raster-opacity": 0.4
           }
         });
+      } else {
+        // check layer order
+        const layers = map["getLayersOrder"]();
+        if (layers && layers.length > 0 && layers[layers.length - 1] !== hoverLayerName) {
+          // move to the end (i.e. top of other layers)
+          map["moveLayer"](hoverLayerName);
+        };
       };
     }
-    restorePixelHover.name = "restorePixelHover";
-    if ((map["_listeners"]["styledata"] ?? []).every(listener => listener.name !== restorePixelHover.name)) { // only need to register once
+    restoreLayers.name = "restoreLayers";
+    if ((map["_listeners"]["styledata"] ?? []).every(listener => listener.name !== restoreLayers.name)) { // only need to register once
       // map.once would not work, since there may be race condition stealing the event before pixel-data is removed
-      map["on"]("styledata", restorePixelHover);
+      map["on"]("styledata", restoreLayers);
     };
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
