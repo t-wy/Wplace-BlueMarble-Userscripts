@@ -1242,6 +1242,23 @@ export default class TemplateManager {
     return true;
   }
 
+  /** A utility to check if the status textbox is hidden.
+   * @returns {boolean}
+   * @since 0.85.41
+   */
+  isStatusHidden() {
+    return this.userSettings?.hideStatus ?? false;
+  }
+
+  /** Sets the hideStatus to a value.
+   * @param {boolean} value - The value
+   * @since 0.85.41
+   */
+  async setStatusHidden(value) {
+    this.userSettings.hideStatus = value;
+    await this.storeUserSettings();
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17

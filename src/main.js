@@ -210,6 +210,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'onlyCurrentColorShown': false,
       'themeOverridden': false,
       'currentTheme': '',
+      'hideStatus': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -503,6 +504,7 @@ async function buildOverlayMain() {
             const disableButton = document.querySelector('#bm-button-disable');
             const eventContainer = document.querySelector('#bm-contain-eventitem');
             const coordInputs = document.querySelectorAll('#bm-contain-coords input');
+            const statusTextbox = document.getElementById(instance.outputStatusId); // Status log textarea for user feedback
             
             // Pre-restore original dimensions when switching to maximized state
             // This ensures smooth transition and prevents layout issues
@@ -521,11 +523,6 @@ async function buildOverlayMain() {
               '#bm-overlay hr',                    // Visual separator lines
               '#bm-contain-automation > *:not(#bm-contain-coords)', // Automation section excluding coordinates
               '#bm-contain-buttons-action',        // Action buttons container
-              `#${instance.outputStatusId}`,       // Status log textarea for user feedback
-              // '#bm-checkbox-container',      // Hide locked Colors checkbox
-              // '#bm-contain-colorfilter',           // Color filter UI
-              // '#bm-contain-templatefilter',        // Template filter UI
-              // '#bm-footer'                         // Footer credit text
             ];
             
             // Apply visibility changes to all toggleable elements
@@ -571,6 +568,11 @@ async function buildOverlayMain() {
                 eventContainer.style.display = 'none';
               }
               
+              // Hide status textarea
+              if (!templateManager.isStatusHidden()) {
+                statusTextbox.style.display = 'none';
+              }
+
               // Hide all coordinate input fields individually (failsafe)
               coordInputs.forEach(input => {
                 input.style.display = 'none';
@@ -642,6 +644,13 @@ async function buildOverlayMain() {
                 eventContainer.style.display = '';
               } else {
                 eventContainer.style.display = 'none'; // eventManager itself matches #bm-contain-automation > *:not(#bm-contain-coords)
+              }
+              
+              // Restore status textarea
+              if (!templateManager.isStatusHidden()) {
+                statusTextbox.style.display = '';
+              } else {
+                statusTextbox.style.display = 'none'; // statusTextbox itself matches #bm-contain-automation > *:not(#bm-contain-coords)
               }
               
               // Restore all coordinate input fields
@@ -938,6 +947,18 @@ async function buildOverlayMain() {
               })
             }).buildElement()
           .buildElement()
+          .addCheckbox({'id': 'bm-status-hidden', 'textContent': 'Hide Status Display', 'checked': templateManager.isStatusHidden()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setStatusHidden(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Status Display Hidden.");
+                document.getElementById(overlayMain.outputStatusId).style.display = 'none';
+              } else {
+                instance.handleDisplayStatus("Status Display Restored.");
+                document.getElementById(overlayMain.outputStatusId).style.display = '';
+              }
+            });
+          }).buildElement()
         .buildElement()
       .buildElement()
       .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
@@ -1098,7 +1119,11 @@ async function buildOverlayMain() {
         .addDiv({'id': 'bm-eventitem-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Status
-      .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}).buildElement()
+      .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}, (instance, textarea) => {
+        if (templateManager.isStatusHidden()) {
+          textarea.style.display = 'none';
+        }
+      }).buildElement()
       .addDiv({'id': 'bm-contain-buttons-action'})
         .addDiv()
           // .addButton({'id': 'bm-button-teleport', 'className': 'bm-help', 'textContent': '✈'}).buildElement()
