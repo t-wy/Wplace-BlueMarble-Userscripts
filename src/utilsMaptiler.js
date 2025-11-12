@@ -8,10 +8,14 @@ export function isMapTilerLoaded() {
       myLocationButton["__click"][3] !== undefined &&
       myLocationButton["__click"][3]["v"] !== undefined &&
       myLocationButton["__click"][3]["v"]["addSource"] !== undefined
-    )
+    ) || document.head.__bmmap !== undefined;
   } else {
     const injector = () => {
       const script = document.currentScript;
+      if (document.head.__bmmap) {
+        script.setAttribute('bm-result', 'true');
+        return;
+      }
       try {
         const mapAddSource = document.querySelector(".right-3>button")["__click"][3]["v"]["addSource"];
         if (mapAddSource !== undefined) {
@@ -45,10 +49,14 @@ export function isWplaceDoingBadThing() {
   if (myLocationButton["__click"] !== undefined) {
     return (
       typeof myLocationButton["__click"] !== "object"
-    )
+    ) && document.head.__bmmap === undefined;
   } else {
     const injector = () => {
       const script = document.currentScript;
+      if (document.head.__bmmap) {
+        script.setAttribute('bm-result', 'false');
+        return;
+      }
       try {
         const myLocationButton = document.querySelector(".right-3>button");
         if (myLocationButton !== undefined && myLocationButton["__click"] !== "object") {
@@ -79,17 +87,20 @@ function controlMapTiler(func, ...args) {
     throw new Error("Wplace sucks. It disables maptiler access.");
   };
   const myLocationButton = document.querySelector(".right-3>button");
-  if ( myLocationButton !== null ) {
-    if (myLocationButton["__click"] !== undefined) {
+  if (document.head.__bmmap) {
+    const map = document.head.__bmmap;
+    return func(map, ...args);
+  } else if ( myLocationButton !== null ) {
+    if (myLocationButton["__click"]) {
       const map = myLocationButton["__click"][3]["v"];
       return func(map, ...args);
     } else {
       const getMap = () => {
-          return document.querySelector(".right-3>button")["__click"][3]["v"];
+          return document.head.__bmmap || document.querySelector(".right-3>button")["__click"][3]["v"];
       };
       const injector = result => {
           const script = document.currentScript;
-          script.setAttribute('bm-result', JSON.stringify(result));
+          script.setAttribute('bm-result', JSON.stringify(result ?? null));
       }
       const passArgs = args.map(arg => JSON.stringify(arg)).join(',');
       const script = document.createElement('script');
@@ -302,9 +313,21 @@ export async function teleportToGeoCoords(lat, lng) {
 
   if (!isWplaceDoingBadThing()) {
     const funcName = smooth ? "flyTo" : "jumpTo";
-    return controlMapTiler((map, lat, lng, funcName) => {
+    controlMapTiler((map, lat, lng, funcName) => {
       map[funcName]({'center': [lng, lat], 'zoom': 16});
     }, lat, lng, funcName);
+    const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+    if (allianceButton) {
+      // not in painting mode, click on center to show pixel info
+      const canvas = document.querySelector("canvas.maplibregl-canvas");
+      const ev = new MouseEvent("click", {
+        "bubbles": true, "cancelable": true,
+        "clientX": canvas.offsetWidth / 2,
+        "clientY": canvas.offsetHeight / 2,
+        "button": 0
+      });
+      canvas.dispatchEvent(ev);
+    }
   } else {
     const randomTeleportBtn = document.querySelector(".mb-2>.btn-ghost");
     if (randomTeleportBtn !== undefined) {

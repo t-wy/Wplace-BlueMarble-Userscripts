@@ -202,6 +202,35 @@ inject(() => {
 
     return response; // Returns the original response
   };
+
+  const hookedMapFuncs = {
+    "values": Map.prototype.values
+  };
+  const hookedMapValues = function () {
+    const temp = hookedMapFuncs.values.call(this);
+    Array.from(temp).forEach(x => {
+        if (x && x["maps"] instanceof Set) {
+            Array.from(x["maps"]).forEach(y => {
+                if (y && y["flyTo"]) (document.head["__bmmap"] = y, restoreMapPrototype());
+            });
+        };
+    })
+    return temp;
+  };
+  const restoreMapPrototype = function () {
+    for (const key in hookedMapFuncs) {
+      Map.prototype[key] = hookedMapFuncs[key];
+    }
+  };
+  // Don't hook "set", "get", "has", some Proxy object doing something like "setDefault" may make it into infinite recursion
+  [].forEach(key => {
+    hookedMapFuncs[key] = Map.prototype[key];
+    Map.prototype[key] = function (...args) {
+      this.values(); // call this once
+      return hookedMapFuncs[key].call(this, ...args);
+    };
+  });
+  Map.prototype.values = hookedMapValues;
 });
 
 // Imports the CSS file from dist folder on github
@@ -959,9 +988,9 @@ async function buildOverlayMain() {
               forceRefreshTiles();
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-theme-override-enabled', 'textContent': 'Theme Override: ', 'checked': templateManager.isThemeOverridden(), "disabled": true}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-theme-override-enabled', 'textContent': 'Theme Override: ', 'checked': templateManager.isThemeOverridden()}, (instance, label, checkbox) => {
             // this feature is currently broken by wplace
-            label.style.display = "none";
+            // label.style.display = "none";
             checkbox.addEventListener('change', async () => {
               await templateManager.setThemeOverridden(checkbox.checked);
               const select = document.getElementById('bm-theme-setting');
@@ -971,7 +1000,7 @@ async function buildOverlayMain() {
           })
             .addSelect({'id': 'bm-theme-setting'}, (instance, select) => {
               // this feature is currently broken by wplace
-              select.disabled = true; // !templateManager.isThemeOverridden();
+              // select.disabled = true; // !templateManager.isThemeOverridden();
               const currentTheme = templateManager.getCurrentTheme();
               Object.entries(themeList).forEach(([themeValue, [displayText, isDark]]) => {
                 const option = document.createElement('option');
@@ -1545,15 +1574,41 @@ async function buildOverlayMain() {
 
   window.forceUpdateTheme = function forceUpdateTheme() {
     if (!isMapTilerLoaded()) {
-      setTimeout(forceUpdateTheme, 100);
-      return;
-    };
-    if (templateManager.isThemeOverridden()) {
+      // prevent multiple calls
+      if (!forceUpdateTheme.timeout) {
+        forceUpdateTheme.timeout = setTimeout(() => {
+          forceUpdateTheme.timeout = null;
+          forceUpdateTheme();
+        }, 100);
+      }
+    } else if (templateManager.isThemeOverridden()) {
       setTheme(templateManager.getCurrentTheme());
     } else {
       setTheme(Object.keys(themeList)[0]);
     }
   };
+
+  // a workaround to force Map.prototype to be called
+  window.forceClickCenter = function forceClickCenter() {
+    if (!isMapTilerLoaded()) {
+      if (!forceClickCenter.clickCount) forceClickCenter.clickCount = 0;
+      // Try at most 10 times
+      if (forceClickCenter.clickCount < 10) {
+        const canvas = document.querySelector("canvas.maplibregl-canvas");
+        if (canvas) {
+          const ev = new MouseEvent("click", {
+            "bubbles": true, "cancelable": true,
+            "clientX": canvas.offsetWidth / 2,
+            "clientY": canvas.offsetHeight / 2,
+            "button": 0
+          });
+          canvas.dispatchEvent(ev);
+          ++forceClickCenter.clickCount;
+        };
+      };
+      setTimeout(forceClickCenter, 100);
+    };
+  }
 
   // Listen for template creation/import completion to (re)build palette list
   window.addEventListener('message', (event) => {
@@ -1585,9 +1640,12 @@ async function buildOverlayMain() {
     } catch (_) {}
     try {
       // this feature is currently broken by wplace
-      if (false && templateManager.isThemeOverridden()) {
+      if (templateManager.isThemeOverridden()) {
         forceUpdateTheme();
       }
+    } catch (_) {}
+    try {
+      forceClickCenter();
     } catch (_) {}
   }, 0);
 
