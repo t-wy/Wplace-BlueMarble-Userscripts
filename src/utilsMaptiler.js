@@ -1,5 +1,3 @@
-import { coordsTileToGeoCoords } from './utils.js';
-
 export function isMapTilerLoaded() {
   const myLocationButton = document.querySelector(".right-3>button");
   if ( myLocationButton === null ) {
@@ -36,10 +34,50 @@ export function isMapTilerLoaded() {
   }
 }
 
+/** Wplace like breaking things
+ * @since 0.85.43
+ */
+export function isWplaceDoingBadThing() {
+  const myLocationButton = document.querySelector(".right-3>button");
+  if ( myLocationButton === null ) {
+    return false;
+  }
+  if (myLocationButton["__click"] !== undefined) {
+    return (
+      typeof myLocationButton["__click"] !== "object"
+    )
+  } else {
+    const injector = () => {
+      const script = document.currentScript;
+      try {
+        const myLocationButton = document.querySelector(".right-3>button");
+        if (myLocationButton !== undefined && myLocationButton["__click"] !== "object") {
+          script.setAttribute('bm-result', 'true');
+        } else {
+          script.setAttribute('bm-result', 'false');
+        }
+      } catch (e) {
+        if (e instanceof TypeError) {
+          script.setAttribute('bm-result', 'false');
+        }
+      }
+    }
+    const script = document.createElement('script');
+    script.textContent = `(${injector})();`;
+    document.documentElement?.appendChild(script);
+    const result = script.getAttribute('bm-result') === 'true';
+    script.remove();
+    return result;
+  }
+}
+
 /** Remove Template from Maptiler's Source
  * @since 0.85.27
  */
 function controlMapTiler(func, ...args) {
+  if (isWplaceDoingBadThing()) {
+    throw new Error("Wplace sucks. It disables maptiler access.");
+  };
   const myLocationButton = document.querySelector(".right-3>button");
   if ( myLocationButton !== null ) {
     if (myLocationButton["__click"] !== undefined) {
@@ -131,13 +169,15 @@ export function addTemplate(sortID, tileName, base64, drawMult) {
   }, sourceID, dataURL, geoCoords1, geoCoords2);
 }
 
-/** Force the on-screen tiles to be refreshed
+/** Try to force the on-screen tiles to be refreshed
  * @since 0.85.37
  */
 export function forceRefreshTiles() {
-  return controlMapTiler(map => {
-    return map["refreshTiles"]("pixel-art-layer");
-  });
+  try {
+    return controlMapTiler(map => {
+      return map["refreshTiles"]("pixel-art-layer");
+    });
+  } catch (ignored) {};
 }
 
 /** The theme list used by wplace.live
@@ -245,4 +285,104 @@ export function setTheme(themeName) {
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
   }, themeName);
+}
+
+export var overrideRandom = {
+  "data": null
+}; // The coordinates to override teleportation
+
+/** Teleport user to coordinate
+ * @param {*} lat - latitude
+ * @param {*} lng - longitude
+ * @param {boolean} smooth - smooth transition
+ * @since 0.85.9
+ */
+export async function teleportToGeoCoords(lat, lng) {
+  let smooth = false;
+
+  if (!isWplaceDoingBadThing()) {
+    const funcName = smooth ? "flyTo" : "jumpTo";
+    return controlMapTiler((map, lat, lng, funcName) => {
+      map[funcName]({'center': [lng, lat], 'zoom': 16});
+    }, lat, lng, funcName);
+  } else {
+    const randomTeleportBtn = document.querySelector(".mb-2>.btn-ghost");
+    if (randomTeleportBtn !== undefined) {
+      // Notice that it teleports to the .0 point instead of .5 (center) of the pixel, so we do not need to add an extra 0.5
+      overrideRandom["data"] = coordsGeoToTileCoords(lat, lng, false);
+      randomTeleportBtn.click();
+    } else {
+      // The final resort
+      const url = `https://wplace.live/?lat=${lat}&lng=${lng}&zoom=16`;
+      window.location.href = url;
+    }
+  }
+}
+
+
+/** Teleport user to coordinate
+ * @param {number[]} coordsTile
+ * @param {number[]} coordsPixel
+ * @param {boolean} smooth - smooth transition (removed)
+ * @since 0.85.9
+ */
+export async function teleportToTileCoords(coordsTile, coordsPixel) {
+  const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
+  await teleportToGeoCoords(geoCoords[0], geoCoords[1]);
+}
+
+/** Returns the real World coordinates
+ * @param {number[]} coordsTile
+ * @param {number[]} coordsPixel
+ * @returns {number[]} [latitude, longitude]
+ * @since 0.85.4
+ */
+export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
+  const relX = (coordsTile[0] * 1000 + coordsPixel[0] + 0.5) / (2048 * 1000); // Relative X
+  const relY = 1 - (coordsTile[1] * 1000 + coordsPixel[1] + 0.5) / (2048 * 1000); // Relative Y
+  return [
+    360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
+    relX * 360 - 180
+  ];
+}
+
+/** Returns the tile World coordinates
+ * @param {number} latitude
+ * @param {number} longitude
+ * @param {boolean} truncate
+ * @returns {number[][]} [coordsTile, coordsPixel]
+ * @since 0.85.4
+ */
+export function coordsGeoToTileCoords(latitude, longitude, truncate = true) {
+  const relX = (longitude + 180) / 360;
+  const relY = (Math.log(Math.tan((90 + latitude) * Math.PI / 360)) / Math.PI + 1) / 2;
+  const tileX = relX * 2048 * 1000;
+  const tileY = (1 - relY) * 2048 * 1000;
+  const coordsPixel = truncate ? [
+    Math.floor(tileX % 1000),
+    Math.floor(tileY % 1000)
+  ] : [
+    tileX % 1000,
+    tileY % 1000
+  ]
+  return [
+    [
+      Math.floor(tileX / 1000),
+      Math.floor(tileY / 1000)
+    ], coordsPixel
+  ];
+}
+
+/** Click the zoom in button
+ * @since 0.85.43
+ */
+export function zoomIn() {
+  document.querySelectorAll(".gap-1>.btn[title]")[0].click();
+}
+
+/** Click the zoom out button
+ * @since 0.85.43
+ */
+export function zoomOut() {
+  document.querySelectorAll(".gap-1>.btn[title]")[1].click();
 }

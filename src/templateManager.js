@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep } from "./utils";
 import { themeList } from './utilsMaptiler.js';
 
 /** Manages the template system.
@@ -415,6 +415,7 @@ export default class TemplateManager {
           // Assigns each pixel a color (if center pixel)
           // Optimized the inefficient loop
           for (let y = this.drawMultCenter; y < tempHeight; y += this.drawMult) {
+            // await sleep(0);
             for (let x = this.drawMultCenter; x < tempWidth; x += this.drawMult) {
               // Purpose: Count which pixels are painted correctly???
 
@@ -594,6 +595,7 @@ export default class TemplateManager {
               // Further reduce the number of iterations
               for (const [offsetX, offsetY] of templateTile.template.customMaskPoints(this.drawMult)) {
                 for (let y = offsetY; y < tempH; y += this.drawMult) {
+                  // await sleep(0);
                   for (let x = offsetX; x < tempW; x += this.drawMult) {
 
                     const idx = (y * tempW + x) * 4;

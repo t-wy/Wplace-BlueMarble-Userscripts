@@ -5,7 +5,8 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, coordsTileToGeoCoords, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
+import { coordsTileToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
 
@@ -555,6 +556,34 @@ export default class ApiManager {
             source: 'blue-marble',
             blobID: blobUUID,
             blobData: templateBlob,
+            blink: data['blink']
+          });
+          break;
+
+        case 'random': // Request to teleport to random location
+          const blobUUID_ = data['blobID'];
+          
+          const overrideCoords = overrideRandom["data"];
+          const jsonData = overrideCoords === null ? (
+            dataJSON // remain unchanged
+          ) : (
+            {
+              "pixel": {
+                "x": overrideCoords[1][0],
+                "y": overrideCoords[1][1],
+              },
+              "tile": {
+                "x": overrideCoords[0][0],
+                "y": overrideCoords[0][1],
+              }
+            }
+          );
+          overrideRandom["data"] = null;
+
+          window.postMessage({
+            source: 'blue-marble',
+            blobID: blobUUID_,
+            blobData: JSON.stringify(jsonData),
             blink: data['blink']
           });
           break;

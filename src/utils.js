@@ -248,45 +248,6 @@ try {
   rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
 } catch (ignored) {}
 
-
-/** Returns the real World coordinates
- * @param {number[]} coordsTile
- * @param {number[]} coordsPixel
- * @returns {number[]} [latitude, longitude]
- * @since 0.85.4
- */
-export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
-  const relX = (coordsTile[0] * 1000 + coordsPixel[0] + 0.5) / (2048 * 1000); // Relative X
-  const relY = 1 - (coordsTile[1] * 1000 + coordsPixel[1] + 0.5) / (2048 * 1000); // Relative Y
-  return [
-    360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
-    relX * 360 - 180
-  ];
-}
-
-/** Returns the tile World coordinates
- * @param {number} latitude
- * @param {number} longitude
- * @returns {number[][]} [coordsTile, coordsPixel]
- * @since 0.85.4
- */
-export function coordsGeoToTileCoords(latitude, longitude) {
-  const relX = (longitude + 180) / 360;
-  const relY = (Math.log(Math.tan((90 + latitude) * Math.PI / 360)) / Math.PI + 1) / 2;
-  const tileX = Math.floor(relX * 2048 * 1000);
-  const tileY = Math.floor((1 - relY) * 2048 * 1000);
-  return [
-    [
-      Math.floor(tileX / 1000),
-      Math.floor(tileY / 1000)
-    ],
-    [
-      tileX % 1000,
-      tileY % 1000
-    ]
-  ];
-}
-
 /** Releases the canvas content to free up memory.
  * @since 0.85.5
  */
@@ -335,94 +296,6 @@ function findGadget(condition, depth=10) {
     if (searchResult !== null) return searchResult;
   }
   return null;
-}
-
-/** Teleport user to coordinate
- * @param {*} lat - latitude
- * @param {*} lng - longitude
- * @param {boolean} smooth - smooth transition
- * @since 0.85.9
- */
-export function teleportToGeoCoords(lat, lng, smooth = true) {
-  // const myLocationButton = document.getElementsByClassName("right-3")[0]?.childNodes?.[0];
-  // const map = myLocationButton?.["__click"]?.[3]?.["v"];
-  // if(map !== null && typeof map["version"] == "string") { // Sanity Check
-  //   map["flyTo"]({
-  //       'center': [lng, lat],
-  //       'zoom': 16,
-  //   })
-  const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
-  let teleportFunc = null;
-  if ( allianceButton !== null && smooth ) {
-    if (allianceButton["__click"] !== undefined) {
-      const lastPixelFunc = allianceButton === null ? null : allianceButton["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"];
-      teleportFunc = (lat, lng) => lastPixelFunc({"lat": lat, "lng": lng});
-    } else {
-      // probably in some sandboxed environment like Userscripts
-      teleportFunc = (lat, lng) => {
-        const injectedFunc = () => {
-          const script = document.currentScript;
-          const lat = +script.getAttribute('bm-lat');
-          const lng = +script.getAttribute('bm-lng');
-          document.querySelector(".flex>.btn.btn-square.relative.shadow-md")["__click"][1]["reactions"][0]["ctx"]["s"]["onlastpixelclick"]({"lat": lat, "lng": lng});
-        };
-        const script = document.createElement('script');
-        script.setAttribute('bm-lat', lat);
-        script.setAttribute('bm-lng', lng);
-        script.textContent = `(${injectedFunc})();`;
-        document.documentElement?.appendChild(script);
-        script.remove();
-      }
-    }
-  } else {
-    // Fallback, without click feature
-    // Used when the user is logged out or painting (all side buttons removed)
-    const myLocationButton = document.querySelector(".right-3>button");
-    const funcName = smooth ? "flyTo" : "jumpTo";
-    if ( myLocationButton !== null ) {
-      if (myLocationButton["__click"] !== undefined) {
-        const map = myLocationButton["__click"][3]["v"];
-        if(map !== null && typeof map["version"] == "string") {// Sanity Check
-          teleportFunc = (lat, lng) => map[funcName]({'center': [lng, lat], 'zoom': 16});
-        }
-      } else {
-      // probably in some sandboxed environment like Userscripts
-        teleportFunc = (lat, lng) => {
-          const injectedFunc = () => {
-            const script = document.currentScript;
-            const lat = +script.getAttribute('bm-lat');
-            const lng = +script.getAttribute('bm-lng');
-            const funcName = script.getAttribute('bm-funcName');
-            document.querySelector(".right-3>button")["__click"][3]["v"][funcName]({'center': [lng, lat], 'zoom': 16});
-          };
-          const script = document.createElement('script');
-          script.setAttribute('bm-lat', lat);
-          script.setAttribute('bm-lng', lng);
-          script.setAttribute('bm-funcName', funcName);
-          script.textContent = `(${injectedFunc})();`;
-          document.documentElement?.appendChild(script);
-          script.remove();
-        }
-      }
-    }
-  }
-  if (teleportFunc !== null) {
-    teleportFunc(lat, lng);
-  } else { // fallback
-    const url = `https://wplace.live/?lat=${lat}&lng=${lng}&zoom=14`;
-    window.location.href = url;
-  }
-}
-
-/** Teleport user to coordinate
- * @param {number[]} coordsTile
- * @param {number[]} coordsPixel
- * @param {boolean} smooth - smooth transition
- * @since 0.85.9
- */
-export function teleportToTileCoords(coordsTile, coordsPixel, smooth = true) {
-  const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
-  teleportToGeoCoords(geoCoords[0], geoCoords[1], smooth);
 }
 
 /** Get raw coordinates from the BM overlay
@@ -564,6 +437,24 @@ export function testCanvasSize(width, height) {
   return result;
 }
 
+/** Test if the browser uses anti-fingerprinting mechanisms
+ * @since 0.85.43
+ */
+export function testAntiFingerprint() {
+  // Check if the browser support canvas size of the specified dimensions
+  const testSize = 100;
+  let canvas = new OffscreenCanvas(testSize, testSize);
+  const context = canvas.getContext('2d');
+  context.fillStyle = "rgba(255, 255, 255, 1)";
+  context.fillRect(0, 0, testSize, testSize);
+  const imageData = context.getImageData(0, 0, testSize, testSize);
+  const result = imageData.data.some(e => e !== 255);
+  // Release canvas
+  cleanUpCanvas(canvas);
+  canvas = null;
+  return result;
+}
+
 /** Fetch the tile image
  * @param {number} tx
  * @param {number} ty
@@ -592,4 +483,12 @@ export function getCurrentColor() {
   const currentColor = Number(localStorage.getItem("selected-color")) ?? 0;
   if (isNaN(currentColor) || !isFinite(currentColor) || currentColor < 0 || currentColor >= 64) return 0;
   return currentColor;
+}
+
+/** Do an async sleep to prevent UI blocking
+ * @param {number} delay
+ * @since 0.85.43
+ */
+export function sleep(delay = 0) {
+  return new Promise(resolve => setTimeout(resolve, delay));
 }
