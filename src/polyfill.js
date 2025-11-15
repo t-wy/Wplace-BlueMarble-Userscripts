@@ -14,3 +14,10 @@ if (!window.OffscreenCanvas) {
     return canvas;
   }
 }
+
+if (!Array.prototype.extend) {
+  // Just like .push(...x)
+  Array.prototype.extend = function (elements) {
+    elements.forEach(element => this.push(element));
+  }
+}
