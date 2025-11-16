@@ -506,12 +506,16 @@ export default class ApiManager {
           const lastModified = data["lastModified"];
           const fullKey = this.templateManager.getTileCacheKey(tileCoordsTile);
           // TODO: Simplify the key to only use (enabled templates, enabled colors)
+          const legacyDisplay = +this.templateManager.isLegacyDisplay();
+          const errorMap = +this.templateManager.isErrorMapShown();
 
           let templateBlob = null;
           if (this.tileCache[tileKey]) {
             if (
               this.tileCache[tileKey]["lastModified"] === lastModified &&
-              this.tileCache[tileKey]["fullKey"] === fullKey
+              this.tileCache[tileKey]["fullKey"] === fullKey &&
+              this.tileCache[tileKey]["legacyDisplay"] === legacyDisplay &&
+              this.tileCache[tileKey]["errorMap"] === errorMap
             ) {
               console.log(`Unchanged tile: "${tileKey}"`);
               templateBlob = this.tileCache[tileKey]["templateBlob"];
@@ -543,7 +547,9 @@ export default class ApiManager {
                 //   })
                 // } else {
                   // templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
-                this.tileCache[tileKey] = { lastModified, fullKey, templateBlob };
+                if (!this.templateManager.isMemorySavingModeOn()) {
+                  this.tileCache[tileKey] = { lastModified, fullKey, templateBlob, legacyDisplay, errorMap };
+                }
                   // cleanUpCanvas(templateCanvas);
                 // }
               // }

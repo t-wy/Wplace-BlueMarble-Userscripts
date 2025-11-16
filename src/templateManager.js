@@ -359,28 +359,51 @@ export default class TemplateManager {
     const allTemplatesDisabled = templatesTilesToDraw.length === 0; // No need to draw if all templates are disabled
     const needOverlay = !allTemplatesDisabled && !allColorsDisabled;
 
-    const drawSize = this.tileSize * this.drawMult; // Calculate draw multiplier for scaling
+    const allUsePixelAssign = false; // if true: abandon the previous template drawImage
+    const isLegacyDisplay = this.isLegacyDisplay();
+    const isErrorMapShown = this.isErrorMapShown();
+    const drawMultTemplate = this.drawMult;
+    const drawMultCenterTemplate = this.drawMultCenter;
+    const drawMultResult = isLegacyDisplay ? 3 : this.drawMult;
+    const drawMultCenterResult = isLegacyDisplay ? 1 : this.drawMultCenter;
+    const drawSizeResult = this.tileSize * drawMultResult; // Calculate draw multiplier for scaling
 
-    let canvas = new OffscreenCanvas(drawSize, drawSize);
+    let canvas = new OffscreenCanvas(drawSizeResult, drawSizeResult);
     const context = canvas.getContext('2d');
 
     context.imageSmoothingEnabled = false; // Nearest neighbor
 
     // Tells the canvas to ignore anything outside of this area
     context.beginPath();
-    context.rect(0, 0, drawSize, drawSize);
+    context.rect(0, 0, drawSizeResult, drawSizeResult);
     context.clip();
 
-    context.clearRect(0, 0, drawSize, drawSize); // Draws transparent background
-    context.drawImage(tileBitmap, 0, 0, drawSize, drawSize); // Enlarge the tile
+    context.clearRect(0, 0, drawSizeResult, drawSizeResult); // Draws transparent background
+    context.drawImage(tileBitmap, 0, 0, drawSizeResult, drawSizeResult); // Enlarge the tile
     tileBitmap.close(); // manually dispose
 
     // Grab a snapshot of the tile pixels BEFORE we draw any template overlays
-    let tilePixels = null;
-    try {
-      tilePixels = context.getImageData(0, 0, drawSize, drawSize).data;
-    } catch (_) {
-      // If reading fails for any reason, we will skip stats
+    const tilePixels = context.getImageData(0, 0, drawSizeResult, drawSizeResult).data;
+    const tilePixelsResultImg = (allUsePixelAssign || isLegacyDisplay || isErrorMapShown) ? context.getImageData(0, 0, drawSizeResult, drawSizeResult) : null;
+    const tilePixelsResultData = (allUsePixelAssign || isLegacyDisplay || isErrorMapShown) ? tilePixelsResultImg.data : null;
+
+    const fillErrorMap = function (x, y, color) {
+      const xr_left = x - drawMultCenterResult;
+      const yr_top = y - drawMultCenterResult;
+      const xr_right = xr_left + drawMultResult - 1;
+      const yr_bottom = yr_top + drawMultResult - 1;
+      [
+        [xr_left, yr_top],
+        [xr_right, yr_top],
+        [xr_left, yr_bottom],
+        [xr_right, yr_bottom],
+      ].forEach(([x, y]) => {
+        const realPixelCenter = (y * drawSizeResult + x) * 4;
+        tilePixelsResultData[realPixelCenter + 0] = color[0];
+        tilePixelsResultData[realPixelCenter + 1] = color[1];
+        tilePixelsResultData[realPixelCenter + 2] = color[2];
+        tilePixelsResultData[realPixelCenter + 3] = color[3];
+      })
     }
 
     // For each template in this tile, draw them.
@@ -390,238 +413,257 @@ export default class TemplateManager {
       console.log(`Template:`);
       console.log(templateTile);
       console.log(performance.now() - timeStart + ' ms');
+      
+      const templateWidth = templateTileBitmap.width;
+      const templateHeight = templateTileBitmap.height;
+      let templateCanvas = new OffscreenCanvas(templateWidth, templateHeight);
+      const templateContext = templateCanvas.getContext('2d', { willReadFrequently: true });
+      templateContext.imageSmoothingEnabled = false;
+      templateContext.clearRect(0, 0, templateWidth, templateHeight);
+      templateContext.drawImage(templateTileBitmap, 0, 0);
+      const templateImg = templateContext.getImageData(0, 0, templateWidth, templateHeight);
+      const templateData = templateImg.data;
+
+      const offsetXResult = templateTile.pixelCoords[0] * drawMultResult;
+      const offsetYResult = templateTile.pixelCoords[1] * drawMultResult;
 
       // Compute stats by sampling template center pixels against tile pixels,
       // honoring color enable/disable from the active template's palette
-      if (tilePixels) {
-        try {
-          
-          const tempWidth = templateTileBitmap.width;
-          const tempHeight = templateTileBitmap.height;
-          let tempCanvas = new OffscreenCanvas(tempWidth, tempHeight);
-          const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
-          tempContext.imageSmoothingEnabled = false;
-          tempContext.clearRect(0, 0, tempWidth, tempHeight);
-          tempContext.drawImage(templateTileBitmap, 0, 0);
-          const tImg = tempContext.getImageData(0, 0, tempWidth, tempHeight);
-          const tData = tImg.data; // Tile Data, Template Data, or Temp Data????
-          cleanUpCanvas(tempCanvas);
-          tempCanvas = null;
+      try {
 
-          const offsetX = templateTile.pixelCoords[0] * this.drawMult;
-          const offsetY = templateTile.pixelCoords[1] * this.drawMult;
+        // Loops over all pixels in the template
+        // Assigns each pixel a color (if center pixel)
+        // Optimized the inefficient loop
+        // t: template, r: result
+        for (
+          let yt = drawMultCenterTemplate, yr = drawMultCenterResult;
+          yt < templateHeight;
+          yt += drawMultTemplate, yr += drawMultResult
+        ) {
+          // await sleep(0);
+          for (
+            let xt = drawMultCenterTemplate, xr = drawMultCenterResult;
+            xt < templateWidth;
+            xt += drawMultTemplate, xr += drawMultResult
+          ) {
+            // Purpose: Count which pixels are painted correctly???
 
-          // Loops over all pixels in the template
-          // Assigns each pixel a color (if center pixel)
-          // Optimized the inefficient loop
-          for (let y = this.drawMultCenter; y < tempHeight; y += this.drawMult) {
-            // await sleep(0);
-            for (let x = this.drawMultCenter; x < tempWidth; x += this.drawMult) {
-              // Purpose: Count which pixels are painted correctly???
+            // Only evaluate the center pixel of each shread block
+            // Skip if not the center pixel of the shread block
 
-              // Only evaluate the center pixel of each shread block
-              // Skip if not the center pixel of the shread block
+            const gxr = xr + offsetXResult;
+            const gyr = yr + offsetYResult;
 
-              const gx = x + offsetX;
-              const gy = y + offsetY;
+            // IF the pixel is out of bounds of the template, OR if the pixel is outside of the tile, then skip the pixel
+            if (gxr < 0 || gyr < 0 || gxr >= drawSizeResult || gyr >= drawSizeResult) { continue; }
 
-              // IF the pixel is out of bounds of the template, OR if the pixel is outside of the tile, then skip the pixel
-              if (gx < 0 || gy < 0 || gx >= drawSize || gy >= drawSize) { continue; }
+            const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
+            const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
+            const templatePixelCenterGreen = templateData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
+            const templatePixelCenterBlue = templateData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
+            const templatePixelCenterAlpha = templateData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
 
-              const templatePixelCenter = (y * tempWidth + x) * 4; // Shread block center pixel
-              const templatePixelCenterRed = tData[templatePixelCenter]; // Shread block's center pixel's RED value
-              const templatePixelCenterGreen = tData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
-              const templatePixelCenterBlue = tData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
-              const templatePixelCenterAlpha = tData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
+            // Strict center-pixel matching. Treat transparent tile pixels as unpainted (not wrong)
+            const realPixelCenter = (gyr * drawSizeResult + gxr) * 4;
+            const realPixelRed = tilePixels[realPixelCenter];
+            const realPixelCenterGreen = tilePixels[realPixelCenter + 1];
+            const realPixelCenterBlue = tilePixels[realPixelCenter + 2];
+            const realPixelCenterAlpha = tilePixels[realPixelCenter + 3];
+            let isPainted = false;
 
-              // Possibly needs to be removed 
-              // Handle template transparent pixel (alpha < 64): wrong if board has any site palette color here
-              // If the alpha of the center pixel is less than 64...
-              if (templatePixelCenterAlpha < 64) {
-                try {
-                  const tileIdx = (gy * drawSize + gx) * 4;
-                  const pr = tilePixels[tileIdx];
-                  const pg = tilePixels[tileIdx + 1];
-                  const pb = tilePixels[tileIdx + 2];
-                  const pa = tilePixels[tileIdx + 3];
+            if (templatePixelCenterAlpha < 64) {
+              try {
+                const key = rgbToMeta.has(`${realPixelRed},${realPixelCenterGreen},${realPixelCenterBlue}`) ? `${realPixelRed},${realPixelCenterGreen},${realPixelCenterBlue}` : 'other';
+                
+                // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
+                if (realPixelCenterAlpha >= 64 && key !== "other") {
+                  wrongCount++;
+                  // if (isErrorMapShown) {
+                  //   fillErrorMap(gxr, gyr, [255, 0, 0, 255]); // red
+                  // }
+                }
+              } catch (ignored) {}
 
-                  const key = rgbToMeta.has(`${pr},${pg},${pb}`) ? `${pr},${pg},${pb}` : 'other';
+              continue; // Continue to the next pixel
+            } else {
+              requiredCount++;
+            }
 
-                  // const isSiteColor = rgbToMeta.has(key);
-                  
-                  // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
-                  if (pa >= 64) { // && isSiteColor) {
-                    wrongCount++;
-                  }
-                } catch (ignored) {}
-
-                continue; // Continue to the next pixel
+            // IF the alpha of the pixel is less than 64...
+            if (realPixelCenterAlpha < 64) {
+              // Unpainted -> neither painted nor wrong
+              if (templatePixelCenterAlpha !== 0) {
+                if (isErrorMapShown) {
+                  fillErrorMap(gxr, gyr, [255, 255, 0, 32]); // yellow
+                }
               }
 
-              // Treat #deface as Transparent palette color (required and paintable)
-              // Ignore non-palette colors (match against allowed set when available) for counting required template pixels
-              // try {
-
-              //   const activeTemplate = this.templatesArray?.[0]; // Get the first template
-
-              //   // IF the stored palette data exists, AND the pixel is not in the allowed palette
-              //   if (rgbToMeta && !rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) {
-
-              //     continue; // Skip this pixel if it is not in the allowed palette
-              //   }
-              // } catch (ignored) {}
-
-              requiredCount++;
-
-              // Strict center-pixel matching. Treat transparent tile pixels as unpainted (not wrong)
-              const realPixelCenter = (gy * drawSize + gx) * 4;
-              const realPixelRed = tilePixels[realPixelCenter];
-              const realPixelCenterGreen = tilePixels[realPixelCenter + 1];
-              const realPixelCenterBlue = tilePixels[realPixelCenter + 2];
-              const realPixelCenterAlpha = tilePixels[realPixelCenter + 3];
-
-              let isPainted = false;
-              // IF the alpha of the pixel is less than 64...
-              if (realPixelCenterAlpha < 64) {
-                // Unpainted -> neither painted nor wrong
-
-                // ELSE IF the pixel matches the template center pixel color
-              } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
-                paintedCount++; // ...the pixel is painted correctly
-                isPainted = true;
-                let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                if (!rgbToMeta.has(colorKey)) colorKey = 'other';
-                if (paletteStats[colorKey] === undefined) {
-                  paletteStats[colorKey] = {
-                    painted: 1,
-                    paintedAndEnabled: +(templateTile.template.enabled ?? true),
-                    missing: 0,
-                    examples: [ ],
-                    examplesEnabled: [ ],
-                  }
-                } else {
-                  paletteStats[colorKey].painted++;
-                  if (templateTile.template.enabled ?? true) {
-                    paletteStats[colorKey].paintedAndEnabled++;
-                  }
-                }
-                if (templateStats[templateKey] === undefined) {
-                  templateStats[templateKey] = {
-                    painted: 1,
-                  }
-                } else {
-                  templateStats[templateKey].painted++;
+              // ELSE IF the pixel matches the template center pixel color
+            } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
+              paintedCount++; // ...the pixel is painted correctly
+              isPainted = true;
+              let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+              if (!rgbToMeta.has(colorKey)) colorKey = 'other';
+              if (paletteStats[colorKey] === undefined) {
+                paletteStats[colorKey] = {
+                  painted: 1,
+                  paintedAndEnabled: +(templateTile.template.enabled ?? true),
+                  missing: 0,
+                  examples: [ ],
+                  examplesEnabled: [ ],
                 }
               } else {
-                wrongCount++; // ...the pixel is NOT painted correctly
+                paletteStats[colorKey].painted++;
+                if (templateTile.template.enabled ?? true) {
+                  paletteStats[colorKey].paintedAndEnabled++;
+                }
               }
-              if (!isPainted) {
-                // add to palette stat
-                let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                if (!rgbToMeta.has(key)) key = 'other';
-                const example = [ // use this tile as example
-                  tileCoords,
-                  [
-                    Math.floor(gx / this.drawMult),
-                    Math.floor(gy / this.drawMult)
-                  ]
-                ];
-                if (paletteStats[key] === undefined) {
-                  paletteStats[key] = {
-                    painted: 0,
-                    paintedAndEnabled: 0,
-                    missing: 1,
-                    examples: [ example ],
-                    examplesEnabled: [ ],
-                  }
-                  if (templateTile.template.enabled ?? true) {
+              if (templateStats[templateKey] === undefined) {
+                templateStats[templateKey] = {
+                  painted: 1,
+                }
+              } else {
+                templateStats[templateKey].painted++;
+              }
+              if (isErrorMapShown) {
+                fillErrorMap(gxr, gyr, [0, 128, 0, 128]); // green
+              }
+            } else {
+              wrongCount++; // ...the pixel is NOT painted correctly
+              if (isErrorMapShown) {
+                fillErrorMap(gxr, gyr, [255, 0, 0, 224]); // red
+              }
+            }
+            if (!isPainted) {
+              // add to palette stat
+              let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+              if (!rgbToMeta.has(key)) key = 'other';
+              const example = [ // use this tile as example
+                tileCoords,
+                [
+                  Math.floor(gxr / drawMultResult),
+                  Math.floor(gyr / drawMultResult)
+                ]
+              ];
+              if (paletteStats[key] === undefined) {
+                paletteStats[key] = {
+                  painted: 0,
+                  paintedAndEnabled: 0,
+                  missing: 1,
+                  examples: [ example ],
+                  examplesEnabled: [ ],
+                }
+                if (templateTile.template.enabled ?? true) {
+                  paletteStats[key].examplesEnabled.push(example);
+                }
+              } else {
+                const exampleMax = (this.userSettings?.smartPlace ?? false) ? 1 << 20 : 100;
+                // missing count >= 1
+                paletteStats[key].missing++;
+                if (paletteStats[key].examples.length < exampleMax) {
+                  paletteStats[key].examples.push(example);
+                } else if (Math.random() * paletteStats[key].examples.length < exampleMax) {
+                  // pick a random sample, so the new entry share the same weight
+                  const replaceIndex = Math.floor(Math.random() * exampleMax);
+                  paletteStats[key].examples[replaceIndex] = example;
+                }
+                if (templateTile.template.enabled ?? true) {
+                  if (paletteStats[key].examplesEnabled.length < exampleMax) {
                     paletteStats[key].examplesEnabled.push(example);
-                  }
-                } else {
-                  const exampleMax = (this.userSettings?.smartPlace ?? false) ? 1 << 20 : 100;
-                  // missing count >= 1
-                  paletteStats[key].missing++;
-                  if (paletteStats[key].examples.length < exampleMax) {
-                    paletteStats[key].examples.push(example);
-                  } else if (Math.random() * paletteStats[key].examples.length < exampleMax) {
+                  } else if (Math.random() * paletteStats[key].examplesEnabled.length < exampleMax) {
                     // pick a random sample, so the new entry share the same weight
                     const replaceIndex = Math.floor(Math.random() * exampleMax);
-                    paletteStats[key].examples[replaceIndex] = example;
-                  }
-                  if (templateTile.template.enabled ?? true) {
-                    if (paletteStats[key].examplesEnabled.length < exampleMax) {
-                      paletteStats[key].examplesEnabled.push(example);
-                    } else if (Math.random() * paletteStats[key].examplesEnabled.length < exampleMax) {
-                      // pick a random sample, so the new entry share the same weight
-                      const replaceIndex = Math.floor(Math.random() * exampleMax);
-                      paletteStats[key].examplesEnabled[replaceIndex] = example;
-                    }
+                    paletteStats[key].examplesEnabled[replaceIndex] = example;
                   }
                 }
               }
             }
           }
-        } catch (exception) {
-          console.warn('Failed to compute per-tile painted/wrong stats:', exception);
         }
+      } catch (exception) {
+        console.warn('Failed to compute per-tile painted/wrong stats:', exception);
       }
 
       // Draw the template overlay for visual guidance, honoring color filter
       if (templateTile.template.enabled ?? true) {
-        const offsetX = templateTile.pixelCoords[0] * this.drawMult;
-        const offsetY = templateTile.pixelCoords[1] * this.drawMult;
         try {
           // If none of the template colors are disabled, then draw the image normally
-          if (!hasColorDisabled) {
-            context.drawImage(templateTileBitmap, offsetX, offsetY);
-          } else {
+          if (!hasColorDisabled && !isLegacyDisplay) {
+            // the template has the same zoom as the tile
+            context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
+          } else if (!allColorsDisabled) {
             // ELSE we need to apply the color filter
-            if (!allColorsDisabled) {
+            console.log('Applying color filter...', performance.now() - timeStart + ' ms');
 
-              console.log('Applying color filter...', performance.now() - timeStart + ' ms');
+            if (isLegacyDisplay || allUsePixelAssign || isErrorMapShown) {
+              const maskPoints = isLegacyDisplay ? [[1, 1]] : templateTile.template.customMaskPoints(drawMultResult);
+              for (const [offsetX, offsetY] of maskPoints) {
+                for (
+                  let yt = drawMultCenterTemplate, yr = offsetY;
+                  yt < templateHeight;
+                  yt += drawMultTemplate, yr += drawMultResult
+                ) {
+                  // await sleep(0);
+                  for (
+                    let xt = drawMultCenterTemplate, xr = offsetX;
+                    xt < templateWidth;
+                    xt += drawMultTemplate, xr += drawMultResult
+                  ) {
 
-              const tempW = templateTileBitmap.width;
-              const tempH = templateTileBitmap.height;
+                    const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
+                    const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
+                    const templatePixelCenterGreen = templateData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
+                    const templatePixelCenterBlue = templateData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
+                    const templatePixelCenterAlpha = templateData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
 
-              let filterCanvas = new OffscreenCanvas(tempW, tempH);
-              const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
-              filterCtx.imageSmoothingEnabled = false; // Nearest neighbor
-              filterCtx.clearRect(0, 0, tempW, tempH);
-              filterCtx.drawImage(templateTileBitmap, 0, 0);
+                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
 
-              const img = filterCtx.getImageData(0, 0, tempW, tempH);
-              const data = img.data;
+                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
+                    if (displayedColorSet.has(key)) {
+                      const gxr = xr + offsetXResult;
+                      const gyr = yr + offsetYResult;
+                      const realPixelCenter = (gyr * drawSizeResult + gxr) * 4;
+
+                      // // show enabled color center pixel
+                      tilePixelsResultData[realPixelCenter] = templatePixelCenterRed;
+                      tilePixelsResultData[realPixelCenter + 1] = templatePixelCenterGreen;
+                      tilePixelsResultData[realPixelCenter + 2] = templatePixelCenterBlue;
+                      tilePixelsResultData[realPixelCenter + 3] = templatePixelCenterAlpha;
+                    };
+                  }
+                }
+              }
+            } else {
+              const maskPoints = templateTile.template.customMaskPoints(drawMultResult);
 
               // Further reduce the number of iterations
-              for (const [offsetX, offsetY] of templateTile.template.customMaskPoints(this.drawMult)) {
-                for (let y = offsetY; y < tempH; y += this.drawMult) {
+              for (const [offsetX, offsetY] of maskPoints) {
+                for (let y = offsetY; y < templateHeight; y += drawMultTemplate) {
                   // await sleep(0);
-                  for (let x = offsetX; x < tempW; x += this.drawMult) {
+                  for (let x = offsetX; x < templateWidth; x += drawMultTemplate) {
 
-                    const idx = (y * tempW + x) * 4;
-                    const r = data[idx];
-                    const g = data[idx + 1];
-                    const b = data[idx + 2];
-                    const a = data[idx + 3];
+                    const idx = (y * templateWidth + x) * 4;
+                    const templatePixelCenterRed = templateData[idx];
+                    const templatePixelCenterGreen = templateData[idx + 1];
+                    const templatePixelCenterBlue = templateData[idx + 2];
+                    const templatePixelCenterAlpha = templateData[idx + 3];
 
-                    if (a < 1) { continue; }
+                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
 
-                    let key = `${r},${g},${b}`;
-                    if (!rgbToMeta.has(`${r},${g},${b}`)) key = 'other';
+                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
                     if (!displayedColorSet.has(key)) {
-                      data[idx + 3] = 0; // hide disabled color center pixel
+                      templateData[idx + 3] = 0; // hide disabled color center pixel
                     }
                   }
                 }
               }
 
               // Draws the template with somes colors disabled
-              filterCtx.putImageData(img, 0, 0);
-              context.drawImage(filterCanvas, offsetX, offsetY);
-
-              cleanUpCanvas(filterCanvas);
-              filterCanvas = null;
-            } 
+              templateContext.putImageData(templateImg, 0, 0);
+              context.drawImage(templateCanvas, offsetXResult, offsetYResult);
+            }
           }
         } catch (exception) {
 
@@ -629,9 +671,16 @@ export default class TemplateManager {
           console.warn('Failed to apply color filter:', exception);
 
           // Fallback to drawing raw bitmap if filtering fails
-            context.drawImage(templateTileBitmap, offsetX, offsetY);
+          context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
         }
       }
+
+      if (allUsePixelAssign || isLegacyDisplay || isErrorMapShown) {
+        context.putImageData(tilePixelsResultImg, 0, 0);
+      }
+
+      cleanUpCanvas(templateCanvas);
+      templateCanvas = null;
 
       if (currentMemorySavingMode) {
         templateTileBitmap.close();
@@ -1258,6 +1307,40 @@ export default class TemplateManager {
    */
   async setStatusHidden(value) {
     this.userSettings.hideStatus = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to check if it uses the 3x3 template display
+   * @returns {boolean}
+   * @since 0.85.46
+   */
+  isLegacyDisplay() {
+    return this.userSettings?.legacyDisplay ?? false;
+  }
+
+  /** Sets the legacyDisplay to a value.
+   * @param {boolean} value - The value
+   * @since 0.85.46
+   */
+  async setLegacyDisplay(value) {
+    this.userSettings.legacyDisplay = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to check if it uses the 3x3 template display
+   * @returns {boolean}
+   * @since 0.85.46
+   */
+  isErrorMapShown() {
+    return this.userSettings?.showErrorMap ?? false;
+  }
+
+  /** Sets the legacyDisplay to a value.
+   * @param {boolean} value - The value
+   * @since 0.85.46
+   */
+  async setErrorMapShown(value) {
+    this.userSettings.showErrorMap = value;
     await this.storeUserSettings();
   }
 

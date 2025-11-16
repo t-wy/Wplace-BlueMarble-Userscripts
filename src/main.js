@@ -274,6 +274,8 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'themeOverridden': false,
       'currentTheme': '',
       'hideStatus': false,
+      'isLegacyDisplay': false,
+      'showErrorMap': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -920,6 +922,7 @@ async function buildOverlayMain() {
               templateManager.setMemorySavingMode(checkbox.checked);
               buildColorFilterList();
               if (checkbox.checked) {
+                apiManager.tileCache = {}; // clear cache
                 instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
               } else {
                 instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
@@ -1026,6 +1029,28 @@ async function buildOverlayMain() {
                 instance.handleDisplayStatus("Status Display Restored.");
                 document.getElementById(overlayMain.outputStatusId).style.display = '';
               }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-dot-template', 'textContent': 'Use Dot Template (Original ver.)', 'checked': templateManager.isLegacyDisplay()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setLegacyDisplay(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Switched to the Dot Template Display.");
+              } else {
+                instance.handleDisplayStatus("Switched to the Cross Template Display.");
+              };
+              forceRefreshTiles();
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map (Experimental)', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setErrorMapShown(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Error Map is now Displayed.");
+              } else {
+                instance.handleDisplayStatus("Error Map is now Hidden.");
+              };
+              forceRefreshTiles();
             });
           }).buildElement()
         .buildElement()
@@ -1594,17 +1619,21 @@ async function buildOverlayMain() {
       if (!forceClickCenter.clickCount) forceClickCenter.clickCount = 0;
       // Try at most 10 times
       if (forceClickCenter.clickCount < 10) {
-        const canvas = document.querySelector("canvas.maplibregl-canvas");
-        if (canvas) {
-          const ev = new MouseEvent("click", {
-            "bubbles": true, "cancelable": true,
-            "clientX": canvas.offsetWidth / 2,
-            "clientY": canvas.offsetHeight / 2,
-            "button": 0
-          });
-          canvas.dispatchEvent(ev);
-          ++forceClickCenter.clickCount;
-        };
+        const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+        if (allianceButton) {
+          // not in painting mode
+          const canvas = document.querySelector("canvas.maplibregl-canvas");
+          if (canvas) {
+            const ev = new MouseEvent("click", {
+              "bubbles": true, "cancelable": true,
+              "clientX": canvas.offsetWidth / 2,
+              "clientY": canvas.offsetHeight / 2,
+              "button": 0
+            });
+            canvas.dispatchEvent(ev);
+            ++forceClickCenter.clickCount;
+          };
+        }
       };
       setTimeout(forceClickCenter, 100);
     };
