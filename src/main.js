@@ -1503,8 +1503,8 @@ async function buildOverlayMain() {
 
       row.appendChild(toggle);
       row.appendChild(removeButton);
-      row.appendChild(label);
       row.appendChild(teleportButton);
+      row.appendChild(label);
       listContainer.appendChild(row);
     }
   };
