@@ -315,7 +315,7 @@ export default class TemplateManager {
     const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
 
     // Retrieves the relavent template tile blobs
-    const templatesTilesToDraw = involvedTemplates.map(template => {
+    const templatesTilesToHandle = involvedTemplates.map(template => {
         const matchingTiles = Object.keys(template.chunked).filter(
           tile => tile.startsWith(tileCoordsPadded)
         );
@@ -332,9 +332,9 @@ export default class TemplateManager {
         }
     }).filter(Boolean);
 
-    console.log(templatesTilesToDraw, performance.now() - timeStart + ' ms');
+    console.log(templatesTilesToHandle, performance.now() - timeStart + ' ms');
 
-    const templateCount = templatesTilesToDraw?.length || 0; // Number of templates to draw on this tile
+    const templateCount = templatesTilesToHandle?.length || 0; // Number of templates to draw on this tile
     console.log(`templateCount = ${templateCount}`);
     const enabledTemplateCount = this.templatesArray.filter(t => t.enabled).length;
 
@@ -356,12 +356,18 @@ export default class TemplateManager {
     const displayedColorSet = new Set(displayedColors);
     const hasColorDisabled = displayedColors.length !== Object.keys(this.getPaletteToggledStatus()).length;
     const allColorsDisabled = displayedColors.length === 0; // Check if every color is disabled
-    const allTemplatesDisabled = templatesTilesToDraw.length === 0; // No need to draw if all templates are disabled
-    const needOverlay = !allTemplatesDisabled && !allColorsDisabled;
+    // const noTemplatesToHandle = templatesTilesToHandle.length === 0; // No need to draw if all templates are disabled
+    const noTemplatesEnabled = templatesTilesToHandle.every(t => !t.template.enabled);
 
     const allUsePixelAssign = false; // if true: abandon the previous template drawImage
     const isLegacyDisplay = this.isLegacyDisplay();
     const isErrorMapShown = this.isErrorMapShown();
+  
+    // If false, just count and return the original tile
+    // True Condition 1: There exist some template
+    // True Condition 2: There are some color to draw on this tile
+    const needReplace = !noTemplatesEnabled && !allColorsDisabled;
+  
     const drawMultTemplate = this.drawMult;
     const drawMultCenterTemplate = this.drawMultCenter;
     const drawMultResult = isLegacyDisplay ? 3 : this.drawMult;
@@ -413,7 +419,7 @@ export default class TemplateManager {
     }
 
     // For each template in this tile, draw them.
-    for (const templateTile of templatesTilesToDraw) {
+    for (const templateTile of templatesTilesToHandle) {
       const templateKey = templateTile.template.storageKey;
       const templateTileBitmap = await templateTile.template.getChunked(templateTile.tileKey, currentMemorySavingMode);
       console.log(`Template:`);
@@ -429,13 +435,15 @@ export default class TemplateManager {
       templateContext.drawImage(templateTileBitmap, 0, 0);
       const templateDataRead = templateContext.getImageData(0, 0, templateWidth, templateHeight).data;
       const templateImg = templateContext.getImageData(0, 0, templateWidth, templateHeight);
-      const templateData = templateImg.data;;
+      const templateData = templateImg.data;
 
       const offsetXResult = templateTile.pixelCoords[0] * drawMultResult;
       const offsetYResult = templateTile.pixelCoords[1] * drawMultResult;
 
+      const templateTileEnabled = templateTile.template.enabled ?? true;
+
       // Draw the template overlay for visual guidance, honoring color filter
-      if (templateTile.template.enabled ?? true) {
+      if (templateTileEnabled) {
         try {
           // If none of the template colors are disabled, then draw the image normally
           if (!hasColorDisabled && !isLegacyDisplay) {
@@ -591,7 +599,7 @@ export default class TemplateManager {
             if (realPixelCenterAlpha < 64) {
               // Unpainted -> neither painted nor wrong
               if (templatePixelCenterAlpha !== 0) {
-                if (isErrorMapShown) {
+                if (isErrorMapShown && templateTileEnabled) {
                   fillErrorMap(gxr, gyr, [255, 255, 0, 16]); // yellow
                 }
               }
@@ -605,14 +613,14 @@ export default class TemplateManager {
               if (paletteStats[colorKey] === undefined) {
                 paletteStats[colorKey] = {
                   painted: 1,
-                  paintedAndEnabled: +(templateTile.template.enabled ?? true),
+                  paintedAndEnabled: +templateTileEnabled,
                   missing: 0,
                   examples: [ ],
                   examplesEnabled: [ ],
                 }
               } else {
                 paletteStats[colorKey].painted++;
-                if (templateTile.template.enabled ?? true) {
+                if (templateTileEnabled) {
                   paletteStats[colorKey].paintedAndEnabled++;
                 }
               }
@@ -623,12 +631,12 @@ export default class TemplateManager {
               } else {
                 templateStats[templateKey].painted++;
               }
-              if (isErrorMapShown) {
+              if (isErrorMapShown && templateTileEnabled) {
                 fillErrorMap(gxr, gyr, [0, 128, 0, 160]); // green
               }
             } else {
               wrongCount++; // ...the pixel is NOT painted correctly
-              if (isErrorMapShown) {
+              if (isErrorMapShown && templateTileEnabled) {
                 fillErrorMap(gxr, gyr, [255, 0, 0, 224]); // red
               }
             }
@@ -651,7 +659,7 @@ export default class TemplateManager {
                   examples: [ example ],
                   examplesEnabled: [ ],
                 }
-                if (templateTile.template.enabled ?? true) {
+                if (templateTileEnabled) {
                   paletteStats[key].examplesEnabled.push(example);
                 }
               } else {
@@ -665,7 +673,7 @@ export default class TemplateManager {
                   const replaceIndex = Math.floor(Math.random() * exampleMax);
                   paletteStats[key].examples[replaceIndex] = example;
                 }
-                if (templateTile.template.enabled ?? true) {
+                if (templateTileEnabled) {
                   if (paletteStats[key].examplesEnabled.length < exampleMax) {
                     paletteStats[key].examplesEnabled.push(example);
                   } else if (Math.random() * paletteStats[key].examplesEnabled.length < exampleMax) {
@@ -682,7 +690,8 @@ export default class TemplateManager {
         console.warn('Failed to compute per-tile painted/wrong stats:', exception);
       }
 
-      if (allUsePixelAssign || isLegacyDisplay || isErrorMapShown) {
+      // If we don't need replace, then no need to replace the tile canvas
+      if (needReplace && (allUsePixelAssign || isLegacyDisplay || isErrorMapShown)) {
         context.putImageData(tilePixelsResultImg, 0, 0);
       }
 
@@ -745,7 +754,7 @@ export default class TemplateManager {
     console.log('Exporting tile overlay...', performance.now() - timeStart + ' ms');
 
     // const resultBlob = typeof ImageBitmap !== 'undefined' ? createImageBitmap(canvas) : await canvas.convertToBlob({ type: 'image/png' });
-    const resultBlob = needOverlay ? await canvas.convertToBlob({ type: 'image/png' }) : tileBlob;
+    const resultBlob = needReplace ? await canvas.convertToBlob({ type: 'image/png' }) : tileBlob;
     cleanUpCanvas(canvas);
 
     console.log('Cleaning up...', performance.now() - timeStart + ' ms');
