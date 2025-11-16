@@ -392,18 +392,24 @@ export default class TemplateManager {
       const yr_top = y - drawMultCenterResult;
       const xr_right = xr_left + drawMultResult - 1;
       const yr_bottom = yr_top + drawMultResult - 1;
-      [
-        [xr_left, yr_top],
-        [xr_right, yr_top],
-        [xr_left, yr_bottom],
-        [xr_right, yr_bottom],
-      ].forEach(([x, y]) => {
-        const realPixelCenter = (y * drawSizeResult + x) * 4;
-        tilePixelsResultData[realPixelCenter + 0] = color[0];
-        tilePixelsResultData[realPixelCenter + 1] = color[1];
-        tilePixelsResultData[realPixelCenter + 2] = color[2];
-        tilePixelsResultData[realPixelCenter + 3] = color[3];
-      })
+      const [addR, addG, addB, addA] = color;
+      for (let x = xr_left; x <= xr_right; x++) {
+        for (let y = yr_top; y <= yr_bottom; y++) {
+          const realPixelCenter = (y * drawSizeResult + x) * 4;
+          const oriR = tilePixelsResultData[realPixelCenter + 0];
+          const oriG = tilePixelsResultData[realPixelCenter + 1];
+          const oriB = tilePixelsResultData[realPixelCenter + 2];
+          const oriA = tilePixelsResultData[realPixelCenter + 3];
+          // alpha composite
+          const resultA = (addA * 255 + oriA * (255 - addA)) / 255;
+          tilePixelsResultData[realPixelCenter + 3] = resultA;
+          if (resultA) {
+            tilePixelsResultData[realPixelCenter + 0] = (addR * addA * 255 + oriR * oriA * (255 - addA)) / 255 / resultA;
+            tilePixelsResultData[realPixelCenter + 1] = (addG * addA * 255 + oriG * oriA * (255 - addA)) / 255 / resultA;
+            tilePixelsResultData[realPixelCenter + 2] = (addB * addA * 255 + oriB * oriA * (255 - addA)) / 255 / resultA;
+          }
+        }
+      }
     }
 
     // For each template in this tile, draw them.
@@ -494,7 +500,7 @@ export default class TemplateManager {
               // Unpainted -> neither painted nor wrong
               if (templatePixelCenterAlpha !== 0) {
                 if (isErrorMapShown) {
-                  fillErrorMap(gxr, gyr, [255, 255, 0, 32]); // yellow
+                  fillErrorMap(gxr, gyr, [255, 255, 0, 16]); // yellow
                 }
               }
 
@@ -526,7 +532,7 @@ export default class TemplateManager {
                 templateStats[templateKey].painted++;
               }
               if (isErrorMapShown) {
-                fillErrorMap(gxr, gyr, [0, 128, 0, 128]); // green
+                fillErrorMap(gxr, gyr, [0, 128, 0, 160]); // green
               }
             } else {
               wrongCount++; // ...the pixel is NOT painted correctly
