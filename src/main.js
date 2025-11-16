@@ -1285,13 +1285,13 @@ async function buildOverlayMain() {
       Object.entries(stats.palette).forEach(([colorKey, content]) => {
         if (combinedProgress[colorKey] === undefined) {
           combinedProgress[colorKey] = Object.fromEntries(Object.entries(content));
-          combinedProgress[colorKey].examples = content.examples.slice();
+          // combinedProgress[colorKey].examples = content.examples.slice();
           combinedProgress[colorKey].examplesEnabled = content.examplesEnabled.slice();
         } else {
           combinedProgress[colorKey].painted += content.painted;
           combinedProgress[colorKey].paintedAndEnabled += content.paintedAndEnabled;
           combinedProgress[colorKey].missing += content.missing;
-          combinedProgress[colorKey].examples.extend(content.examples);
+          // combinedProgress[colorKey].examples.extend(content.examples);
           combinedProgress[colorKey].examplesEnabled.extend(content.examplesEnabled);
         }
       })
