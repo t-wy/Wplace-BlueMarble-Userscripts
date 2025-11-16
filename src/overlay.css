@@ -123,6 +123,7 @@ div#bm-overlay {
 /* Checkboxes in the automation container */
 #bm-contain-automation input[type="checkbox"] {
   vertical-align: middle;
+  flex: 0 0 auto; /* Prevents the checkbox from growing/shrinking */
 }
 
 #bm-contain-automation label > input[type="checkbox"] {
