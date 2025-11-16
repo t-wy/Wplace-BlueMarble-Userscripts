@@ -433,6 +433,97 @@ export default class TemplateManager {
       const offsetXResult = templateTile.pixelCoords[0] * drawMultResult;
       const offsetYResult = templateTile.pixelCoords[1] * drawMultResult;
 
+      // Draw the template overlay for visual guidance, honoring color filter
+      if (templateTile.template.enabled ?? true) {
+        try {
+          // If none of the template colors are disabled, then draw the image normally
+          if (!hasColorDisabled && !isLegacyDisplay) {
+            // the template has the same zoom as the tile
+            context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
+          } else if (!allColorsDisabled) {
+            // ELSE we need to apply the color filter
+            console.log('Applying color filter...', performance.now() - timeStart + ' ms');
+
+            if (isLegacyDisplay || allUsePixelAssign || isErrorMapShown) {
+              const maskPoints = isLegacyDisplay ? [[1, 1]] : templateTile.template.customMaskPoints(drawMultResult);
+              for (const [offsetX, offsetY] of maskPoints) {
+                for (
+                  let yt = drawMultCenterTemplate, yr = offsetY;
+                  yt < templateHeight;
+                  yt += drawMultTemplate, yr += drawMultResult
+                ) {
+                  // await sleep(0);
+                  for (
+                    let xt = drawMultCenterTemplate, xr = offsetX;
+                    xt < templateWidth;
+                    xt += drawMultTemplate, xr += drawMultResult
+                  ) {
+
+                    const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
+                    const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
+                    const templatePixelCenterGreen = templateData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
+                    const templatePixelCenterBlue = templateData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
+                    const templatePixelCenterAlpha = templateData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
+
+                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
+
+                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
+                    if (displayedColorSet.has(key)) {
+                      const gxr = xr + offsetXResult;
+                      const gyr = yr + offsetYResult;
+                      const realPixelCenter = (gyr * drawSizeResult + gxr) * 4;
+
+                      // // show enabled color center pixel
+                      tilePixelsResultData[realPixelCenter] = templatePixelCenterRed;
+                      tilePixelsResultData[realPixelCenter + 1] = templatePixelCenterGreen;
+                      tilePixelsResultData[realPixelCenter + 2] = templatePixelCenterBlue;
+                      tilePixelsResultData[realPixelCenter + 3] = templatePixelCenterAlpha;
+                    };
+                  }
+                }
+              }
+            } else {
+              const maskPoints = templateTile.template.customMaskPoints(drawMultResult);
+
+              // Further reduce the number of iterations
+              for (const [offsetX, offsetY] of maskPoints) {
+                for (let y = offsetY; y < templateHeight; y += drawMultTemplate) {
+                  // await sleep(0);
+                  for (let x = offsetX; x < templateWidth; x += drawMultTemplate) {
+
+                    const idx = (y * templateWidth + x) * 4;
+                    const templatePixelCenterRed = templateData[idx];
+                    const templatePixelCenterGreen = templateData[idx + 1];
+                    const templatePixelCenterBlue = templateData[idx + 2];
+                    const templatePixelCenterAlpha = templateData[idx + 3];
+
+                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
+
+                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
+                    if (!displayedColorSet.has(key)) {
+                      templateData[idx + 3] = 0; // hide disabled color center pixel
+                    }
+                  }
+                }
+              }
+
+              // Draws the template with somes colors disabled
+              templateContext.putImageData(templateImg, 0, 0);
+              context.drawImage(templateCanvas, offsetXResult, offsetYResult);
+            }
+          }
+        } catch (exception) {
+
+          // If filtering fails, we can log the error or handle it accordingly
+          console.warn('Failed to apply color filter:', exception);
+
+          // Fallback to drawing raw bitmap if filtering fails
+          context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
+        }
+      }
+
       // Compute stats by sampling template center pixels against tile pixels,
       // honoring color enable/disable from the active template's palette
       try {
@@ -588,97 +679,6 @@ export default class TemplateManager {
         }
       } catch (exception) {
         console.warn('Failed to compute per-tile painted/wrong stats:', exception);
-      }
-
-      // Draw the template overlay for visual guidance, honoring color filter
-      if (templateTile.template.enabled ?? true) {
-        try {
-          // If none of the template colors are disabled, then draw the image normally
-          if (!hasColorDisabled && !isLegacyDisplay) {
-            // the template has the same zoom as the tile
-            context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
-          } else if (!allColorsDisabled) {
-            // ELSE we need to apply the color filter
-            console.log('Applying color filter...', performance.now() - timeStart + ' ms');
-
-            if (isLegacyDisplay || allUsePixelAssign || isErrorMapShown) {
-              const maskPoints = isLegacyDisplay ? [[1, 1]] : templateTile.template.customMaskPoints(drawMultResult);
-              for (const [offsetX, offsetY] of maskPoints) {
-                for (
-                  let yt = drawMultCenterTemplate, yr = offsetY;
-                  yt < templateHeight;
-                  yt += drawMultTemplate, yr += drawMultResult
-                ) {
-                  // await sleep(0);
-                  for (
-                    let xt = drawMultCenterTemplate, xr = offsetX;
-                    xt < templateWidth;
-                    xt += drawMultTemplate, xr += drawMultResult
-                  ) {
-
-                    const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
-                    const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
-                    const templatePixelCenterGreen = templateData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
-                    const templatePixelCenterBlue = templateData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
-                    const templatePixelCenterAlpha = templateData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
-
-                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
-
-                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
-                    if (displayedColorSet.has(key)) {
-                      const gxr = xr + offsetXResult;
-                      const gyr = yr + offsetYResult;
-                      const realPixelCenter = (gyr * drawSizeResult + gxr) * 4;
-
-                      // // show enabled color center pixel
-                      tilePixelsResultData[realPixelCenter] = templatePixelCenterRed;
-                      tilePixelsResultData[realPixelCenter + 1] = templatePixelCenterGreen;
-                      tilePixelsResultData[realPixelCenter + 2] = templatePixelCenterBlue;
-                      tilePixelsResultData[realPixelCenter + 3] = templatePixelCenterAlpha;
-                    };
-                  }
-                }
-              }
-            } else {
-              const maskPoints = templateTile.template.customMaskPoints(drawMultResult);
-
-              // Further reduce the number of iterations
-              for (const [offsetX, offsetY] of maskPoints) {
-                for (let y = offsetY; y < templateHeight; y += drawMultTemplate) {
-                  // await sleep(0);
-                  for (let x = offsetX; x < templateWidth; x += drawMultTemplate) {
-
-                    const idx = (y * templateWidth + x) * 4;
-                    const templatePixelCenterRed = templateData[idx];
-                    const templatePixelCenterGreen = templateData[idx + 1];
-                    const templatePixelCenterBlue = templateData[idx + 2];
-                    const templatePixelCenterAlpha = templateData[idx + 3];
-
-                    if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
-
-                    let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                    if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
-                    if (!displayedColorSet.has(key)) {
-                      templateData[idx + 3] = 0; // hide disabled color center pixel
-                    }
-                  }
-                }
-              }
-
-              // Draws the template with somes colors disabled
-              templateContext.putImageData(templateImg, 0, 0);
-              context.drawImage(templateCanvas, offsetXResult, offsetYResult);
-            }
-          }
-        } catch (exception) {
-
-          // If filtering fails, we can log the error or handle it accordingly
-          console.warn('Failed to apply color filter:', exception);
-
-          // Fallback to drawing raw bitmap if filtering fails
-          context.drawImage(templateTileBitmap, offsetXResult, offsetYResult);
-        }
       }
 
       if (allUsePixelAssign || isLegacyDisplay || isErrorMapShown) {
