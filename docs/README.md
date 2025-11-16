@@ -104,6 +104,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Show Charges Count outside the Button that may be covered by Cloudflare Turnstile. (v0.85.3)</li>
     <li>Show Remaining Time to Full Charges. (v0.85.9)</li>
     <li>Display the palette hints as crosshair instead of a dot for better visibility. (v0.85.2)</li>
+    <li>(Can be restored to dot mode since v0.85.46)</li>
     <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
     <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged) (v0.85.4)</li>
     <li>Fixed the non-persistent palette toggle bug. (v0.85.1)</li>
@@ -131,6 +132,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Try to refresh the tiles when selected colors / templates changes as soon as possible. (v0.85.38)</li>
     <li>Try to refresh the tiles after pixel submission as soon as possible. (v0.85.39)</li>
     <li>Switching between Wplace's builtin themes. (v0.85.40)</li>
+    <li>Testing the error map feature (Red: Wrong, Yellow: Unfilled, Green: Correct). (v0.85.46)</li>
   </ul>
 </p>
 
