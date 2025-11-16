@@ -334,3 +334,7 @@ input[type="file"][id*="template"] {
 #bm-checkbox-container label {
   font-size: small;
 }
+
+#bm-templatefilter-list span {
+  word-break: break-word;
+}
