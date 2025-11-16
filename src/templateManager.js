@@ -427,8 +427,9 @@ export default class TemplateManager {
       templateContext.imageSmoothingEnabled = false;
       templateContext.clearRect(0, 0, templateWidth, templateHeight);
       templateContext.drawImage(templateTileBitmap, 0, 0);
+      const templateDataRead = templateContext.getImageData(0, 0, templateWidth, templateHeight).data;
       const templateImg = templateContext.getImageData(0, 0, templateWidth, templateHeight);
-      const templateData = templateImg.data;
+      const templateData = templateImg.data;;
 
       const offsetXResult = templateTile.pixelCoords[0] * drawMultResult;
       const offsetYResult = templateTile.pixelCoords[1] * drawMultResult;
@@ -555,10 +556,10 @@ export default class TemplateManager {
             if (gxr < 0 || gyr < 0 || gxr >= drawSizeResult || gyr >= drawSizeResult) { continue; }
 
             const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
-            const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
-            const templatePixelCenterGreen = templateData[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
-            const templatePixelCenterBlue = templateData[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
-            const templatePixelCenterAlpha = templateData[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
+            const templatePixelCenterRed = templateDataRead[templatePixelCenter]; // Shread block's center pixel's RED value
+            const templatePixelCenterGreen = templateDataRead[templatePixelCenter + 1]; // Shread block's center pixel's GREEN value
+            const templatePixelCenterBlue = templateDataRead[templatePixelCenter + 2]; // Shread block's center pixel's BLUE value
+            const templatePixelCenterAlpha = templateDataRead[templatePixelCenter + 3]; // Shread block's center pixel's ALPHA value
 
             // Strict center-pixel matching. Treat transparent tile pixels as unpainted (not wrong)
             const realPixelCenter = (gyr * drawSizeResult + gxr) * 4;
