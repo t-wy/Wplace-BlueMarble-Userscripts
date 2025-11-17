@@ -3,7 +3,7 @@
     "include": ["src"],
     "exclude": ["node_modules", "build", "dist"]
   },
-  "homepage": "https://bluemarble.camilledaguin.fr/",
+  "homepage": "https://bluemarble.lol/",
   "opts": {
     "destination": "docs",
     "template": "node_modules/minami",
