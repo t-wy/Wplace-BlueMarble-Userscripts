@@ -1462,7 +1462,31 @@ async function buildOverlayMain() {
       const templateName = template["displayName"];
       const filledCount = combinedTemplate[template.storageKey]?.painted ?? 0;
       const filledLabelText = `${filledCount.toLocaleString()}`;
-      label.textContent = `${templateName} • ${filledLabelText} / ${labelText}`;
+      const renameElement = document.createElement('span');
+      renameElement.textContent = templateName;
+      renameElement.addEventListener('click', () => {
+        const currentName = template["displayName"];
+        const newName = prompt("Rename template", currentName);
+        if (newName) {
+          const trimmedName = newName.trim();
+          if (trimmedName === currentName) {
+            return;
+          }
+          template["displayName"] = newName.trim();
+          try {
+            const templateJSON = templateManager.templatesJSON?.templates?.[template.storageKey];
+            if (templateJSON) {
+              templateJSON.name = newName.trim();
+              // persist immediately
+              templateManager.storeTemplates();
+            }
+          } catch (_) {};
+          buildTemplateFilterList();
+        }
+      });
+      renameElement.className = "bm-templatename";
+      label.appendChild(renameElement);
+      label.appendChild(document.createTextNode(` • ${filledLabelText} / ${labelText}`));
       // label.textContent = `${templateName} • ${labelText}`;
 
       const toggle = document.createElement('input');

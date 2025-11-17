@@ -338,3 +338,7 @@ input[type="file"][id*="template"] {
 #bm-templatefilter-list span {
   word-break: break-word;
 }
+
+span.bm-templatename:hover, a.bm-templatename:focus {
+  text-decoration: underline;
+}

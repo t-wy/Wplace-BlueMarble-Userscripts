@@ -135,6 +135,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Testing the error map feature (Red: Wrong, Yellow: Unfilled, Green: Correct). (v0.85.46)</li>
     <li>Separate the overlay and error layer from the artwork layer. (v0.86.1)</li>
     <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
+    <li>Allow templates to be renamed by clicking on the template name. (v0.86.1)</li>
   </ul>
 </p>
 
