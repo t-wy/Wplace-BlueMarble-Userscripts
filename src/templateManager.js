@@ -600,19 +600,24 @@ export default class TemplateManager {
 
     // Aggregate painted/wrong across tiles we've processed
     let aggPainted = 0;
-    let aggRequiredTiles = 0;
-    let aggWrong = 0;
+    // let aggRequiredTiles = 0;
+    // let aggWrong = 0;
+    const templateEnabledState = Object.fromEntries((this?.templatesArray ?? []).map(t => [t.storageKey, t.enabled]));
     for (const stats of this.tileProgress.values()) {
-      aggPainted += stats.painted || 0;
-      aggRequiredTiles += stats.required || 0;
-      aggWrong += stats.wrong || 0;
+      Object.entries(stats.template).forEach(([storageKey, content]) => {
+        if (!templateEnabledState[storageKey]) return;
+        aggPainted += content.painted || 0;
+      })
     }
 
     // Determine total required across all templates
     // Prefer precomputed per-template required counts; fall back to sum of processed tiles
-    const totalRequiredTemplates = this.templatesArray.reduce((sum, t) =>
-      sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
-    const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
+    // const totalRequiredTemplates = this.templatesArray.reduce((sum, t) =>
+    //   sum + (t.requiredPixelCount || t.pixelCount || 0), 0);
+    // const totalRequired = totalRequiredTemplates > 0 ? totalRequiredTemplates : aggRequiredTiles;
+    // Only include enabled templates
+    const totalRequired = this.templatesArray.reduce((sum, t) =>
+      sum + (t.enabled ? (t.requiredPixelCount || t.pixelCount || 0) : 0), 0);
 
     // Turns numbers into formatted number strings. E.g., 1234 -> 1,234 OR 1.234 based on location of user
     const paintedStr = new Intl.NumberFormat().format(aggPainted);
