@@ -1,10 +1,12 @@
 export function isMapTilerLoaded() {
+  if (isMapFound) return true;
   const myLocationButton = document.querySelector(".right-3>button");
   if ( myLocationButton === null ) {
     return false;
   }
   if (myLocationButton["__click"] !== undefined) {
-    return (
+    isMapFound = (
+      typeof myLocationButton["__click"] === "object" && // not a function yet
       myLocationButton["__click"][3] !== undefined &&
       myLocationButton["__click"][3]["v"] !== undefined &&
       myLocationButton["__click"][3]["v"]["addSource"] !== undefined
@@ -34,12 +36,17 @@ export function isMapTilerLoaded() {
     document.documentElement?.appendChild(script);
     const result = script.getAttribute('bm-result') === 'true';
     script.remove();
-    return result;
+    isMapFound = result;
   }
+  if (isMapFound) {
+    mapFoundHandlers.forEach(handler => handler());
+  }
+  return isMapFound;
 }
 
 /** Wplace like breaking things
  * @since 0.85.43
+ * @deprecated Not in use since 0.86.1
  */
 export function isWplaceDoingBadThing() {
   const myLocationButton = document.querySelector(".right-3>button");
@@ -83,8 +90,9 @@ export function isWplaceDoingBadThing() {
  * @since 0.85.27
  */
 function controlMapTiler(func, ...args) {
-  if (isWplaceDoingBadThing()) {
-    throw new Error("Wplace sucks. It disables maptiler access.");
+  if (!isMapTilerLoaded()) {
+    doAfterMapFound(() => controlMapTiler(func, ...args));
+    return;
   };
   const myLocationButton = document.querySelector(".right-3>button");
   if (document.head.__bmmap) {
@@ -138,46 +146,143 @@ export function getPixelPerWplacePixel() {
   });
 }
 
-/** Remove Template from Maptiler's Source
+export var bmCanvas = {
+
+}; // sourceID => coords
+
+/** add Template to Maptiler's Source
  * @since 0.85.27
  */
-export function addTemplate(sortID, tileName, base64, drawMult) {
-  const dataURL = `data:image/png;base64,${base64}`;
-  const sourceID = `source-${sortID}-${tileName}`;
+export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
+  // templateSize is for coordinate calculation only
   const tileCoords = tileName.split(',').map(Number);
-  const base64Decode = atob(base64);
-  const tileWidth = (base64Decode.charCodeAt(18) * 256 + base64Decode.charCodeAt(19)) / drawMult;
-  const tileHeight = (base64Decode.charCodeAt(22) * 256 + base64Decode.charCodeAt(23)) / drawMult;
-  const geoCoords1 = coordsTileToGeoCoords(
+  const [tileWidth, tileHeight] = templateSize;
+  const geoCoords1 = coordsTileCoordsToGeoCoords(
     [tileCoords[0], tileCoords[1]],
-    [tileCoords[2], tileCoords[3]]
-  )
-  const geoCoords2 = coordsTileToGeoCoords(
+    [tileCoords[2], tileCoords[3]],
+    false
+  );
+  const geoCoords2 = coordsTileCoordsToGeoCoords(
     [tileCoords[0], tileCoords[1]],
-    [tileCoords[2] + tileWidth, tileCoords[3] + tileHeight]
-  )
+    [tileCoords[2] + tileWidth, tileCoords[3] + tileHeight],
+    false
+  );
+  if (!bmCanvas[usage]) {
+    bmCanvas[usage] = {};
+  };
+  const sourceID = `bm-${usage}-${tileName}-${sortID}`; // tileName before sortID so startsWith() works
+  bmCanvas[usage][sourceID] = [geoCoords1, geoCoords2];
+  const blobUrl = URL.createObjectURL(blob);
 
-  return controlMapTiler((map, sourceID, dataURL, geoCoords1, geoCoords2) => {
-    if (map.getSource(sourceID)) {
+  return controlMapTiler(async (map, sourceID, tileName, templateSize, blobUrl, geoCoords1, geoCoords2, usage, bmCanvas) => {
+    document.head.__bmCanvas = bmCanvas; // sync bmCanvas to document
+    const overlayImg = document.createElement("img");
+    overlayImg.src = blobUrl;
+    await new Promise(resolve => overlayImg.addEventListener("load", () => resolve(overlayImg)));
+    const currentCanvas = document.getElementById(sourceID);
+    if (currentCanvas) {
+      currentCanvas.width = 0;
+      currentCanvas.height = 0;
+      currentCanvas.remove();
+    };
+    const canvas = document.createElement("canvas");
+    canvas.id = sourceID;
+    canvas.style.display = "none";
+    document.body.appendChild(canvas);
+    canvas.width = overlayImg.naturalWidth,
+    canvas.height = overlayImg.naturalHeight;
+    const overlayContext = canvas.getContext("2d");
+    overlayContext.drawImage(overlayImg, 0, 0);
+    URL.revokeObjectURL(blobUrl);
+    if (map["getLayer"](sourceID)) {
       map["removeLayer"](sourceID);
+    };
+    if (map["getSource"](sourceID)) {
       map["removeSource"](sourceID);
     };
     map["addSource"](sourceID, {
-      "type": "image",
-      "url": dataURL,
+      "type": "canvas",
+      "canvas": sourceID,
       "coordinates": [
-        [ geoCoords1[0], geoCoords1[1] ],
-        [ geoCoords2[0], geoCoords1[1] ],
-        [ geoCoords2[0], geoCoords2[1] ],
-        [ geoCoords1[0], geoCoords2[1] ],
+        [ geoCoords1[1], geoCoords1[0] ],
+        [ geoCoords2[1], geoCoords1[0] ],
+        [ geoCoords2[1], geoCoords2[0] ],
+        [ geoCoords1[1], geoCoords2[0] ],
       ],
     });
     map["addLayer"]({
       "id": sourceID,
       "source": sourceID,
-      "type": "raster"
+      "type": "raster",
+      "paint": {
+          "raster-resampling": "nearest",
+          "raster-opacity": 1
+      }
     });
-  }, sourceID, dataURL, geoCoords1, geoCoords2);
+    const layers = map["getLayersOrder"]();
+    const hoverLayerName = "pixel-hover";
+    const nextLayer = layers.find(layer => (
+      (usage === "overlay" && layer.startsWith("bm-error-")) ||
+      layer === hoverLayerName + "-ghost"
+    ));
+    console.log("moveLayer", sourceID, nextLayer);
+    map["moveLayer"](sourceID, nextLayer);
+    // add ghost layer to prevent wplace inserting paint-preview and paint-crosshair right before the hover layer
+    if (!map["getLayer"](hoverLayerName + "-ghost")) {
+      map["addLayer"]({
+        "id": hoverLayerName + "-ghost",
+        "type": "raster",
+        "source": hoverLayerName,
+        "paint": {
+            "raster-resampling": "nearest",
+            "raster-opacity": 0.4
+        }
+      });
+    } else {
+      const layers = map["getLayersOrder"]();
+      if (layers && layers.length && layers[layers.length - 1] !== hoverLayerName + "-ghost") {
+        console.log("moveLayer", hoverLayerName + "-ghost");
+        map["moveLayer"](hoverLayerName + "-ghost"); // move to top
+      }
+    }
+  }, sourceID, tileName, templateSize, blobUrl, geoCoords1, geoCoords2, usage, bmCanvas);
+}
+
+/** remove layers from a specified template from Maptiler's Source
+ * @param {string?} usage
+ * @param {string?} sortID
+ * @since 0.86.1
+ */
+export function removeLayer(usage = null, sortID = null) {
+  // sourceID = null: remove all
+  const matchSuffix = sortID ? "-" + sortID : "";
+  const toRemove = [];
+  const removeUsages = usage ? [usage] : ["overlay", "error"];
+  removeUsages.forEach(usage => {
+    Object.keys(bmCanvas[usage] ?? {}).forEach(sourceID => {
+      if (sourceID.endsWith(matchSuffix)) {
+        delete bmCanvas[usage][sourceID];
+        toRemove.push(sourceID);
+      }
+    });
+  })
+  return controlMapTiler((map, toRemove, bmCanvas) => {
+    document.head.__bmCanvas = bmCanvas; // sync bmCanvas to document
+    toRemove.forEach(sourceID => {
+      if (map["getLayer"](sourceID)) {
+        map["removeLayer"](sourceID);
+      };
+      if (map["getSource"](sourceID)) {
+        map["removeSource"](sourceID);
+      };
+      const canvas = document.getElementById(sourceID);
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+        canvas.remove();
+      };
+    })
+  }, toRemove, bmCanvas);
 }
 
 /** Try to force the on-screen tiles to be refreshed
@@ -210,7 +315,8 @@ export function setTheme(themeName) {
   if (!themeList[themeName]) return;
   const isDark = themeList[themeName][1];
   document.documentElement.dataset["theme"] = isDark ? "dark" : "";
-  return controlMapTiler((map, themeName) => {
+  return controlMapTiler((map, themeName, bmCanvas) => {
+    document.head.__bmCanvas = bmCanvas; // sync bmCanvas to document
     // The default pixel-hover styledata callback only triggers once that we cannot reset
     // May try to somehow get the current source / layer as reference, but that is also not reliable enough.
     const artLayerName = "pixel-art-layer";
@@ -282,20 +388,98 @@ export function setTheme(themeName) {
       } else {
         // check layer order
         const layers = map["getLayersOrder"]();
-        if (layers && layers.length > 0 && layers[layers.length - 1] !== hoverLayerName) {
-          // move to the end (i.e. top of other layers)
-          map["moveLayer"](hoverLayerName);
-        };
+        const nextLayer = layers.find(layer => (
+          layer.startsWith("bm-overlay-") ||
+          layer.startsWith("bm-error-") ||
+          layer === hoverLayerName + "-ghost"
+        ));
+        const thisIndex = layers.indexOf(hoverLayerName);
+        const nextIndex = nextLayer === undefined ? layers.length : layers.indexOf(nextLayer);
+        if (thisIndex + 1 !== nextIndex) {
+          console.log("moveLayer", hoverLayerName, nextLayer);
+          map["moveLayer"](hoverLayerName, nextLayer);
+        }
       };
+      // add ghost layer to prevent wplace inserting paint-preview and paint-crosshair right before the hover layer
+      if (!map["getLayer"](hoverLayerName + "-ghost")) {
+        map["addLayer"]({
+          "id": hoverLayerName + "-ghost",
+          "type": "raster",
+          "source": hoverLayerName,
+          "paint": {
+              "raster-resampling": "nearest",
+              "raster-opacity": 0.4
+          }
+        });
+      } else {
+        const layers = map["getLayersOrder"]();
+        if (layers && layers.length && layers[layers.length - 1] !== hoverLayerName + "-ghost") {
+          console.log("moveLayer", hoverLayerName + "-ghost");
+          map["moveLayer"](hoverLayerName + "-ghost"); // move to top
+        }
+      }
+      // fix layer order:
+      // art-layer -> preview -> crosshair -> hover -> bm-overlay -> bm-error -> hover-ghost
+      const bmCanvas = document.head.__bmCanvas;
+      if (bmCanvas) {
+        ["overlay", "error"].forEach(usage => {
+          if (bmCanvas[usage]) {
+            const layers = map["getLayersOrder"]();
+            const nextLayer = layers.find(layer => (
+              (usage === "overlay" && layer.startsWith("bm-error-")) ||
+              layer === hoverLayerName + "-ghost"
+            ));
+            console.log("nextLayer", nextLayer);
+            Object.entries(bmCanvas[usage]).forEach(([sourceID, [geoCoords1, geoCoords2]]) => {
+              if (!map["getSource"](sourceID)) {
+                map["addSource"](sourceID, {
+                  "type": "canvas",
+                  "canvas": sourceID,
+                  "coordinates": [
+                    [ geoCoords1[1], geoCoords1[0] ],
+                    [ geoCoords2[1], geoCoords1[0] ],
+                    [ geoCoords2[1], geoCoords2[0] ],
+                    [ geoCoords1[1], geoCoords2[0] ],
+                  ],
+                });
+              };
+              if (!map["getLayer"](sourceID)) {
+                map["addLayer"]({
+                  "id": sourceID,
+                  "type": "raster",
+                  "source": sourceID,
+                  "paint": {
+                      "raster-resampling": "nearest",
+                      "raster-opacity": 1
+                  }
+                });
+                // Notice that moveLayer itself also fires pixeldata event from _layerOrderChanged
+                console.log("moveLayer", sourceID, nextLayer);
+                map["moveLayer"](sourceID, nextLayer);
+              };
+            })
+          };
+        })
+      }
     }
-    restoreLayers.name = "restoreLayers";
-    if ((map["_listeners"]["styledata"] ?? []).every(listener => listener.name !== restoreLayers.name)) { // only need to register once
+    const restoreLayersName = "restoreLayers";
+    const existingRestoreLayers = (map["_listeners"]["styledata"] ?? []).find(listener => listener.name === restoreLayersName);
+    if (!existingRestoreLayers) { // only need to register once
       // map.once would not work, since there may be race condition stealing the event before pixel-data is removed
+      restoreLayers.name = restoreLayersName;
       map["on"]("styledata", restoreLayers);
     };
+    const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+    if (!allianceButton) {
+      // don't change style during drawing
+      const closeButton = document.querySelector(".gap-1+.btn-circle");
+      if (closeButton) {
+        closeButton.click();
+      }
+    }
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
-  }, themeName);
+  }, themeName, bmCanvas);
 }
 
 export var overrideRandom = {
@@ -311,7 +495,7 @@ export var overrideRandom = {
 export async function teleportToGeoCoords(lat, lng) {
   let smooth = false;
 
-  if (!isWplaceDoingBadThing()) {
+  if (isMapTilerLoaded()) {
     const funcName = smooth ? "flyTo" : "jumpTo";
     controlMapTiler((map, lat, lng, funcName) => {
       map[funcName]({'center': [lng, lat], 'zoom': 16});
@@ -332,7 +516,7 @@ export async function teleportToGeoCoords(lat, lng) {
     const randomTeleportBtn = document.querySelector(".mb-2>.btn-ghost");
     if (randomTeleportBtn !== undefined) {
       // Notice that it teleports to the .0 point instead of .5 (center) of the pixel, so we do not need to add an extra 0.5
-      overrideRandom["data"] = coordsGeoToTileCoords(lat, lng, false);
+      overrideRandom["data"] = coordsGeoCoordsToTileCoords(lat, lng, false);
       randomTeleportBtn.click();
     } else {
       // The final resort
@@ -350,19 +534,21 @@ export async function teleportToGeoCoords(lat, lng) {
  * @since 0.85.9
  */
 export async function teleportToTileCoords(coordsTile, coordsPixel) {
-  const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
+  const geoCoords = coordsTileCoordsToGeoCoords(coordsTile, coordsPixel);
   await teleportToGeoCoords(geoCoords[0], geoCoords[1]);
 }
 
 /** Returns the real World coordinates
  * @param {number[]} coordsTile
  * @param {number[]} coordsPixel
+ * @param {boolean} center
  * @returns {number[]} [latitude, longitude]
  * @since 0.85.4
  */
-export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
-  const relX = (coordsTile[0] * 1000 + coordsPixel[0] + 0.5) / (2048 * 1000); // Relative X
-  const relY = 1 - (coordsTile[1] * 1000 + coordsPixel[1] + 0.5) / (2048 * 1000); // Relative Y
+export function coordsTileCoordsToGeoCoords(coordsTile, coordsPixel, center = true) {
+  const offset = center ? 0.5 : 0;
+  const relX = (coordsTile[0] * 1000 + coordsPixel[0] + offset) / (2048 * 1000); // Relative X
+  const relY = 1 - (coordsTile[1] * 1000 + coordsPixel[1] + offset) / (2048 * 1000); // Relative Y
   return [
     360 * Math.atan(Math.exp((relY * 2 - 1) * Math.PI)) / Math.PI - 90,
     relX * 360 - 180
@@ -376,7 +562,7 @@ export function coordsTileToGeoCoords(coordsTile, coordsPixel) {
  * @returns {number[][]} [coordsTile, coordsPixel]
  * @since 0.85.4
  */
-export function coordsGeoToTileCoords(latitude, longitude, truncate = true) {
+export function coordsGeoCoordsToTileCoords(latitude, longitude, truncate = true) {
   const relX = (longitude + 180) / 360;
   const relY = (Math.log(Math.tan((90 + latitude) * Math.PI / 360)) / Math.PI + 1) / 2;
   const tileX = relX * 2048 * 1000;
@@ -408,4 +594,15 @@ export function zoomIn() {
  */
 export function zoomOut() {
   document.querySelectorAll(".gap-1>.btn[title]")[1].click();
+}
+
+var isMapFound = false;
+var mapFoundHandlers = [];
+
+/** Set up function to be called when map is found
+ * @since 0.86.1
+ */
+export function doAfterMapFound(func) {
+  if (isMapFound) return func();
+  mapFoundHandlers.push(func);
 }

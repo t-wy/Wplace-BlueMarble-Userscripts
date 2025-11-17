@@ -338,7 +338,13 @@ export default class Template {
       return undefined;
     }
     if (this.chunked[tileKey] !== null) {
-      return this.chunked[tileKey];
+      const result = this.chunked[tileKey];
+      if (memorySaving) {
+        // boundary case: setMemorySavingMode should have cleared this
+        // need to set to null since memorySaving would close the bitmap after use
+        this.chunked[tileKey] = null;
+      }
+      return result;
     }
     const templateBlob = new Blob([this.chunkedBuffer[tileKey]], { type: "image/png" }); // Uint8Array -> Blob
     const templateBitmap = await createImageBitmap(templateBlob); // Blob -> Bitmap

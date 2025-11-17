@@ -133,6 +133,8 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Try to refresh the tiles after pixel submission as soon as possible. (v0.85.39)</li>
     <li>Switching between Wplace's builtin themes. (v0.85.40)</li>
     <li>Testing the error map feature (Red: Wrong, Yellow: Unfilled, Green: Correct). (v0.85.46)</li>
+    <li>Separate the overlay and error layer from the artwork layer. (v0.86.1)</li>
+    <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
   </ul>
 </p>
 

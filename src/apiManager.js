@@ -6,7 +6,7 @@
 
 import TemplateManager from "./templateManager.js";
 import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
-import { coordsTileToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
+import { coordsTileCoordsToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
 
@@ -190,7 +190,7 @@ export default class ApiManager {
         let displayCoords1Copy = document.getElementById('bm-display-coords1-copy');
         let displayCoords2Copy = document.getElementById('bm-display-coords2-copy');
 
-        const geoCoords = coordsTileToGeoCoords(coordsTile, coordsPixel);
+        const geoCoords = coordsTileCoordsToGeoCoords(coordsTile, coordsPixel);
         const text1 = `(Tl X: ${coordsTile[0]}, Tl Y: ${coordsTile[1]}, Px X: ${coordsPixel[0]}, Px Y: ${coordsPixel[1]})`;
         const text2 = `(${geoCoords[0].toFixed(5)}, ${geoCoords[1].toFixed(5)})`;
         
@@ -500,70 +500,34 @@ export default class ApiManager {
           let tileCoordsTile = data['endpoint'].split('/');
           tileCoordsTile = [parseInt(tileCoordsTile[tileCoordsTile.length - 2]), parseInt(tileCoordsTile[tileCoordsTile.length - 1].replace('.png', ''))];
           
-          const blobUUID = data['blobID'];
           const blobData = data['blobData'];
           const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
           const lastModified = data["lastModified"];
+          // We need the list of enabled colors to generate the unpainted list
           const fullKey = this.templateManager.getTileCacheKey(tileCoordsTile);
-          // TODO: Simplify the key to only use (enabled templates, enabled colors)
-          const legacyDisplay = +this.templateManager.isLegacyDisplay();
           const errorMap = +this.templateManager.isErrorMapShown();
 
-          let templateBlob = null;
-          if (this.tileCache[tileKey]) {
-            if (
-              this.tileCache[tileKey]["lastModified"] === lastModified &&
-              this.tileCache[tileKey]["fullKey"] === fullKey &&
-              this.tileCache[tileKey]["legacyDisplay"] === legacyDisplay &&
-              this.tileCache[tileKey]["errorMap"] === errorMap
-            ) {
-              console.log(`Unchanged tile: "${tileKey}"`);
-              templateBlob = this.tileCache[tileKey]["templateBlob"];
-            }
-          }
-          
-          if (templateBlob === null) {
+          const fullKeyChanged = !this.tileCache[tileKey] || this.tileCache[tileKey]["fullKey"] !== fullKey;
+          const lastModifiedChanged = !this.tileCache[tileKey] || this.tileCache[tileKey]["lastModified"] !== lastModified;
+          const errorMapChanged = !this.tileCache[tileKey] || this.tileCache[tileKey]["errorMap"] !== errorMap;
+          console.log(this.tileCache[tileKey]);
+          console.log(fullKey, lastModified, errorMap);
+          console.log(fullKeyChanged, lastModifiedChanged, errorMapChanged);
+          if (!fullKeyChanged && !lastModifiedChanged && !errorMapChanged) {
+            console.log(`Unchanged tile: "${tileKey}"`);
+          } else {
             const involvedTemplates = this.templateManager.getInvolvedTemplates(tileCoordsTile);
-            if ( involvedTemplates.length > 0 ) {
-              templateBlob = await this.templateManager.drawTemplateOnTile(blobData, tileCoordsTile);
-              // if (
-              //   typeof ImageBitmap !== "undefined" &&
-              //   this.tileCache[tileKey] &&
-              //   this.tileCache[tileKey]["templateBlob"] instanceof ImageBitmap
-              // ) {
-              //   this.tileCache[tileKey]["templateBlob"].close();
-              // };
-              // if (
-              //   (templateBlob instanceof HTMLCanvasElement || templateBlob instanceof OffscreenCanvas) &&
-              //   templateBlob.convertToBlob !== undefined
-              // ) {
-                // Don't know why, the tile loading system may fail
-                // const templateCanvas = templateBlob;
-                // if (typeof ImageBitmap !== 'undefined' && navigator.deviceMemory === 8) { // Only Test This if we have at least 8GiB of RAM
-                //   templateBlob = await createImageBitmap(templateCanvas);  // Wplace seems to accept ImageBitmap so we can save expensive conversion to blob
-                //   templateCanvas.convertToBlob({ type: 'image/png' }).then(blob => {
-                //     this.tileCache[tileKey] = { lastModified, fullKey, blob };
-                //     cleanUpCanvas(templateCanvas);
-                //   })
-                // } else {
-                  // templateBlob = await templateCanvas.convertToBlob({ type: 'image/png' });
-                if (!this.templateManager.isMemorySavingModeOn()) {
-                  this.tileCache[tileKey] = { lastModified, fullKey, templateBlob, legacyDisplay, errorMap };
-                }
-                  // cleanUpCanvas(templateCanvas);
-                // }
-              // }
-            } else {
-              templateBlob = blobData;
+            if ( involvedTemplates.length > 0 && (
+              fullKeyChanged ||
+              lastModifiedChanged ||
+              (errorMapChanged && errorMap) // error map toggled on
+            )) {
+              await this.templateManager.countTemplateStatus(blobData, tileCoordsTile);
             }
+            this.tileCache[tileKey] = { lastModified, fullKey, errorMap };
           }
 
-          window.postMessage({
-            source: 'blue-marble',
-            blobID: blobUUID,
-            blobData: templateBlob,
-            blink: data['blink']
-          });
+          // no more need to respond
           break;
 
         case 'random': // Request to teleport to random location

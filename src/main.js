@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, rgbToMeta, getOverlayCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileToGeoCoords, coordsGeoToTileCoords, isWplaceDoingBadThing} from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound} from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -153,50 +153,13 @@ inject(() => {
       // Since this code does not run in the userscript, we can't use consoleLog().
       console.log(`%c${name}%c: ${fetchedBlobQueue.size} Sending IMAGE message about endpoint "${endpointName}"`, consoleStyle, '');
 
-      // Returns the manipulated blob
-      return new Promise((resolve) => {
-        const blobUUID = crypto.randomUUID(); // Generates a random UUID
-
-        // Store the blob while we wait for processing
-        fetchedBlobQueue.set(blobUUID, (blobProcessed) => {
-          // The response that triggers when the blob is finished processing
-
-          // Creates a new response
-          const newResponse = new Response(blobProcessed, {
-            headers: cloned.headers,
-            status: cloned.status,
-            statusText: cloned.statusText
-          });
-          if (blobProcessed instanceof ImageBitmap) {
-            // https://wplace.live/_app/immutable/nodes/4.DJNG-JQm.js
-            // It somehow supports the usage of ImageBitmap
-            // ae.data instanceof HTMLImageElement || s.b(ae.data) ? D(ae) : ae.data && ...
-            // s.b: return typeof ImageBitmap < "u" && n instanceof ImageBitmap
-            newResponse.arrayBuffer = () => {
-              return blobProcessed;
-            };
-          }
-          resolve(newResponse);
-
-          // Since this code does not run in the userscript, we can't use consoleLog().
-          console.log(`%c${name}%c: ${fetchedBlobQueue.size} Processed blob "${blobUUID}"`, consoleStyle, '');
-        });
-
-        window.postMessage({
-          source: 'blue-marble',
-          endpoint: endpointName,
-          lastModified: cloned.headers.get("Last-Modified"),
-          blobID: blobUUID,
-          blobData: blob,
-          blink: blink
-        });
-      }).catch(exception => {
-        const elapsed = Date.now();
-        console.error(`%c${name}%c: Failed to Promise blob!`, consoleStyle, '');
-        console.groupCollapsed(`%c${name}%c: Details of failed blob Promise:`, consoleStyle, '');
-        console.log(`Endpoint: ${endpointName}\nThere are ${fetchedBlobQueue.size} blobs processing...\nBlink: ${blink.toLocaleString()}\nTime Since Blink: ${String(Math.floor(elapsed/60000)).padStart(2,'0')}:${String(Math.floor(elapsed/1000) % 60).padStart(2,'0')}.${String(elapsed % 1000).padStart(3,'0')} MM:SS.mmm`);
-        console.error(`Exception stack:`, exception);
-        console.groupEnd();
+      // Send the received blob
+      window.postMessage({
+        source: 'blue-marble',
+        endpoint: endpointName,
+        lastModified: cloned.headers.get("Last-Modified"),
+        blobData: blob,
+        blink: blink
       });
     }
 
@@ -380,7 +343,7 @@ function observeBlack() {
           // } else {
           try {
             const geoCoords = getCenterGeoCoords();
-            const tileCoords = coordsGeoToTileCoords(geoCoords[0], geoCoords[1]);
+            const tileCoords = coordsGeoCoordsToTileCoords(geoCoords[0], geoCoords[1]);
             exampleCoord = [
               tileCoords[0][0] * templateManager.tileSize + tileCoords[1][0],
               tileCoords[0][1] * templateManager.tileSize + tileCoords[1][1],
@@ -448,7 +411,7 @@ function observeBlack() {
           // }
           // Get back to the first point to show where the painted pixels are based on
           teleportToTileCoords(examples[0][1][0], examples[0][1][1]);
-          const wplaceBad = isWplaceDoingBadThing();
+          const wplaceBad = !isMapTilerLoaded();
           setTimeout(() => {
             let currentColorId = examples[0][0];
             document.getElementById("color-" + currentColorId).click();
@@ -489,15 +452,22 @@ function observeBlack() {
 
     // Hook color change to force refresh
     Array.from(black.parentNode.parentNode.getElementsByTagName('button')).forEach((button) => {
-      if (button.classList.contains("bm-hooked")) {
+      // seems that the color selected button will remove all classes once clicked, so we hook the parent
+      if (button.parentElement.classList.contains("bm-hooked")) {
         return;
       }
-      button.addEventListener('click', () => {
+      button.addEventListener('click', function () {
         if (templateManager.isOnlyCurrentColorShown()) {
-          forceRefreshTiles();
+          // prevent lagging
+          setTimeout(() => {
+            templateManager.createOverlayOnMap()
+            // Need to rebuild remaining colors
+            forceRefreshTiles();
+            // buildColorFilterList();
+          }, 0);
         };
       });
-      button.classList.add("bm-hooked");
+      button.parentElement.classList.add("bm-hooked");
     })
   });
 
@@ -922,7 +892,6 @@ async function buildOverlayMain() {
               templateManager.setMemorySavingMode(checkbox.checked);
               buildColorFilterList();
               if (checkbox.checked) {
-                apiManager.tileCache = {}; // clear cache
                 instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
               } else {
                 instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
@@ -988,6 +957,8 @@ async function buildOverlayMain() {
                 instance.handleDisplayStatus("Color filter is restored.");
                 buildColorFilterList();
               };
+              templateManager.createOverlayOnMap();
+              // Need to rebuild remaining colors
               forceRefreshTiles();
             });
           }).buildElement()
@@ -1039,7 +1010,7 @@ async function buildOverlayMain() {
               } else {
                 instance.handleDisplayStatus("Switched to the Cross Template Display.");
               };
-              forceRefreshTiles();
+              templateManager.createOverlayOnMap();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map (Experimental)', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
@@ -1047,10 +1018,12 @@ async function buildOverlayMain() {
               templateManager.setErrorMapShown(checkbox.checked);
               if (checkbox.checked) {
                 instance.handleDisplayStatus("Error Map is now Displayed.");
+                apiManager.tileCache = {}; // reset to force update
+                forceRefreshTiles();
               } else {
                 instance.handleDisplayStatus("Error Map is now Hidden.");
+                removeLayer("error");
               };
-              forceRefreshTiles();
             });
           }).buildElement()
         .buildElement()
@@ -1092,8 +1065,10 @@ async function buildOverlayMain() {
                 Object.values(t.colorPalette).forEach(v => v.enabled = true);
               })
               syncToggleList();
+              templateManager.createOverlayOnMap();
               buildColorFilterList();
               instance.handleDisplayStatus('Enabled all colors');
+              // Need to rebuild remaining colors
               forceRefreshTiles();
             };
           }).buildElement()
@@ -1104,8 +1079,10 @@ async function buildOverlayMain() {
                 Object.values(t.colorPalette).forEach(v => v.enabled = false);
               })
               syncToggleList();
+              removeLayer("overlay");
               buildColorFilterList();
               instance.handleDisplayStatus('Disabled all colors');
+              // Need to rebuild remaining colors
               forceRefreshTiles();
             };
           }).buildElement()
@@ -1400,14 +1377,16 @@ async function buildOverlayMain() {
         toggle.checked = toggleStatus[rgb] ?? true;
       }
       toggle.addEventListener('change', () => {
-        (templateManager.templatesArray ?? []).forEach(t => {
-          if (!t?.colorPalette) return;
-          if (t.colorPalette[rgb] !== undefined) {
-            t.colorPalette[rgb].enabled = toggle.checked;
+        (templateManager.templatesArray ?? []).forEach(template => {
+          if (!template?.colorPalette) return;
+          if (template.colorPalette[rgb] !== undefined) {
+            template.colorPalette[rgb].enabled = toggle.checked;
           }
         })
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
         syncToggleList();
+        templateManager.createOverlayOnMap();
+        // Need to rebuild remaining colors
         forceRefreshTiles();
       });
 
@@ -1492,10 +1471,13 @@ async function buildOverlayMain() {
       toggle.addEventListener('change', () => {
         template.enabled = toggle.checked;
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
-        if (!toggle.checked) {
+        if (toggle.checked) {
+          templateManager.createOverlayOnMap(template.sortID);
+        } else {
           // reset related tiles if it is being toggled off
           // since the tile may not be involed in the template anymore
           templateManager.clearTileProgress(template);
+          removeLayer(null, template.sortID);
         }
         syncToggleList();
         forceRefreshTiles();
@@ -1550,7 +1532,7 @@ async function buildOverlayMain() {
             info['tileX'] !== undefined && info['offsetX'] !== undefined &&
             info['tileY'] !== undefined && info['offsetY'] !== undefined
           ) {
-            coords = coordsTileToGeoCoords(
+            coords = coordsTileCoordsToGeoCoords(
               [info['tileX'], info['tileY']],
               [info['offsetX'], info['offsetY']]
             )
@@ -1598,15 +1580,7 @@ async function buildOverlayMain() {
   };
 
   window.forceUpdateTheme = function forceUpdateTheme() {
-    if (!isMapTilerLoaded()) {
-      // prevent multiple calls
-      if (!forceUpdateTheme.timeout) {
-        forceUpdateTheme.timeout = setTimeout(() => {
-          forceUpdateTheme.timeout = null;
-          forceUpdateTheme();
-        }, 100);
-      }
-    } else if (templateManager.isThemeOverridden()) {
+    if (templateManager.isThemeOverridden()) {
       setTheme(templateManager.getCurrentTheme());
     } else {
       setTheme(Object.keys(themeList)[0]);
@@ -1670,7 +1644,7 @@ async function buildOverlayMain() {
     try {
       // this feature is currently broken by wplace
       if (templateManager.isThemeOverridden()) {
-        forceUpdateTheme();
+        doAfterMapFound(forceUpdateTheme);
       }
     } catch (_) {}
     try {
