@@ -1617,8 +1617,8 @@ async function buildOverlayMain() {
       if (!forceClickCenter.clickCount) forceClickCenter.clickCount = 0;
       // Try at most 10 times
       if (forceClickCenter.clickCount < 10) {
-        const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
-        if (allianceButton) {
+        const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+        if (allianceOrRankingButton) {
           // not in painting mode
           const canvas = document.querySelector("canvas.maplibregl-canvas");
           if (canvas) {

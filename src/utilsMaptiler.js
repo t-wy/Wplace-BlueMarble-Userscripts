@@ -473,8 +473,8 @@ export function setTheme(themeName) {
       restoreLayers.name = restoreLayersName;
       map["on"]("styledata", restoreLayers);
     };
-    const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
-    if (!allianceButton) {
+    const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+    if (!allianceOrRankingButton) {
       // don't change style during drawing
       const closeButton = document.querySelector(".gap-1+.btn-circle");
       if (closeButton) {
@@ -504,8 +504,8 @@ export async function teleportToGeoCoords(lat, lng) {
     controlMapTiler((map, lat, lng, funcName) => {
       map[funcName]({'center': [lng, lat], 'zoom': 16});
     }, lat, lng, funcName);
-    const allianceButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
-    if (allianceButton) {
+    const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+    if (allianceOrRankingButton) {
       // not in painting mode, click on center to show pixel info
       const canvas = document.querySelector("canvas.maplibregl-canvas");
       const ev = new MouseEvent("click", {

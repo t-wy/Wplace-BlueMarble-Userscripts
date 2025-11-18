@@ -24,14 +24,13 @@ export default class ApiManager {
     this.chargeInterval = null;
     this.tileCache = {};
     this.eventClaimed = null;
+    this.lastFetchedTime = null;
   }
 
   getCurrentCharges() {
     if (this.charges === null) {
-      this.#updateUserFromLocal();
-      if (this.charges === null) { // still not exist, maybe logged out
-        return 0;
-      }
+      this.#askServerForMe();
+      return 0;
     }
     const currentTime = Date.now();
     const timeDiff = currentTime - this.chargesUpdated;
@@ -78,10 +77,8 @@ export default class ApiManager {
   #updateCharges() {
     // Can check https://wplace.live/_app/immutable/chunks/OJISNkFj.js for the real implementation
     if (this.charges === null) {
-      this.#updateUserFromLocal();
-      if (this.charges === null) { // still not exist, maybe logged out
-        return;
-      }
+      this.#askServerForMe();
+      return;
     }
     const currentCharges = Math.floor(this.getCurrentCharges());
     const maxCharges = this.charges["max"];
@@ -98,39 +95,20 @@ export default class ApiManager {
     countElement.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
   }
 
-  #updateUserFromLocal() {
+  #askServerForMe() {
+    const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
     const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-    if (logoutButton === null) return null;
-    if (
-      logoutButton["__click"] !== undefined &&
-      logoutButton["__click"][2] !== undefined
-    ) {
-      const user = logoutButton["__click"][2]?.["user"];
-      const result = JSON.parse(JSON.stringify(user?.["data"] ?? null));
-      const lastFetch = user?.lastFetch ?? null;
-      this.#applyUserData(
-        result ?? null,
-        lastFetch ? +lastFetch : null
-      );
-    } else {
-      const injectedFunc = () => {
-        const script = document.currentScript;
-        const logoutButton = document.querySelector(".relative>.dropdown>.dropdown-content>section>button.btn");
-        const user = logoutButton["__click"]?.[2]?.["user"];
-        script.setAttribute('bm-result', JSON.stringify(user?.["data"] ?? null));
-        script.setAttribute('bm-lastFetch', JSON.stringify(user?.["lastFetch"] ?? null));
-      };
-      const script = document.createElement('script');
-      script.textContent = `(${injectedFunc})();`;
-      document.documentElement?.appendChild(script);
-      const result = JSON.parse(script.getAttribute('bm-result'));
-      const lastFetch = JSON.parse(script.getAttribute('bm-lastFetch'));
-      script.remove();
-      this.#applyUserData(
-        result ?? null,
-        lastFetch ? +lastFetch : null
-      );
-    };
+    if (allianceOrRankingButton !== undefined && logoutButton !== undefined) {
+      // logged in and not in painting mode
+      // knock at the @me endpoint (only once per 10 seconds)
+      const currentTime = Date.now();
+      if (this.lastFetchedTime === null || currentTime - this.lastFetchedTime > 10000) {
+        fetch("https://backend.wplace.live/me", {
+          credentials: "include",
+        });
+        this.lastFetchedTime = currentTime;
+      }
+    }
   }
 
   #applyUserData(dataJSON, fetchTime) {
