@@ -170,7 +170,8 @@ export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
   if (!bmCanvas[usage]) {
     bmCanvas[usage] = {};
   };
-  const sourceID = `bm-${usage}-${tileName}-${sortID}`; // tileName before sortID so startsWith() works
+  let prefix = "bm"; // avoid that mangleSelectors
+  const sourceID = `${prefix}-${usage}-${tileName}-${sortID}`; // tileName before sortID so startsWith() works
   bmCanvas[usage][sourceID] = [geoCoords1, geoCoords2];
   const blobUrl = URL.createObjectURL(blob);
 
@@ -221,8 +222,9 @@ export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
     });
     const layers = map["getLayersOrder"]();
     const hoverLayerName = "pixel-hover";
+    const prefix = "bm";
     const nextLayer = layers.find(layer => (
-      (usage === "overlay" && layer.startsWith("bm-error-")) ||
+      (usage === "overlay" && layer.startsWith(prefix + "-error-")) ||
       layer === hoverLayerName + "-ghost"
     ));
     console.log("moveLayer", sourceID, nextLayer);
@@ -387,10 +389,11 @@ export function setTheme(themeName) {
         });
       } else {
         // check layer order
+        let prefix = "bm"; // avoid that mangleSelectors
         const layers = map["getLayersOrder"]();
         const nextLayer = layers.find(layer => (
-          layer.startsWith("bm-overlay-") ||
-          layer.startsWith("bm-error-") ||
+          layer.startsWith(prefix + "-overlay-") ||
+          layer.startsWith(prefix + "-error-") ||
           layer === hoverLayerName + "-ghost"
         ));
         const thisIndex = layers.indexOf(hoverLayerName);
@@ -424,9 +427,10 @@ export function setTheme(themeName) {
       if (bmCanvas) {
         ["overlay", "error"].forEach(usage => {
           if (bmCanvas[usage]) {
+            let prefix = "bm"; // avoid that mangleSelectors
             const layers = map["getLayersOrder"]();
             const nextLayer = layers.find(layer => (
-              (usage === "overlay" && layer.startsWith("bm-error-")) ||
+              (usage === "overlay" && layer.startsWith(prefix + "-error-")) ||
               layer === hoverLayerName + "-ghost"
             ));
             console.log("nextLayer", nextLayer);
