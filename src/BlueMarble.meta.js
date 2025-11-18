@@ -8,7 +8,7 @@
 // @license      MPL-2.0
 // @supportURL   https://discord.gg/tpeBPy46hf
 // @homepageURL  https://bluemarble.camilledaguin.fr/
-// @icon         https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/a4384fa2ce25dd34e1ad2a6839e7e7fa114f9893/dist/assets/Favicon.png
+// @icon         https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/17512f691e5eb9f63f7f07a21667271325bb72f6/dist/assets/Favicon.png
 // @updateURL    https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js
 // @downloadURL  https://raw.githubusercontent.com/t-wy/Wplace-BlueMarble-Userscripts/custom-improve/dist/BlueMarble.user.js
 // @match        https://wplace.live/*
