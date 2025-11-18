@@ -297,7 +297,7 @@ export default class TemplateManager {
 
     // Early exit if none of the active templates touch this tile
     const involvedTemplates = this.getInvolvedTemplates(tileCoords);
-    if (involvedTemplates.length === 0) { return tileBlob; }
+    if (involvedTemplates.length === 0) return;
 
     const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
 
@@ -667,7 +667,7 @@ export default class TemplateManager {
       if (allColorsDisabled) {
         // make sure we removed all layers related to this template
         removeLayer("overlay", template.sortID);
-        return;
+        continue;
       };
       const isLegacyDisplay = this.isLegacyDisplay();
       for (const tileKey of Object.keys(template.chunked)) {

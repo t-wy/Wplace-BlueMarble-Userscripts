@@ -461,9 +461,9 @@ function observeBlack() {
           // prevent lagging
           setTimeout(() => {
             templateManager.createOverlayOnMap()
-            // Need to rebuild remaining colors
-            forceRefreshTiles();
-            // buildColorFilterList();
+            // forceRefreshTiles();
+            // Just build the list (with the selected color toggled) as nothing has changed
+            buildColorFilterList();
           }, 0);
         };
       });
@@ -958,8 +958,9 @@ async function buildOverlayMain() {
                 buildColorFilterList();
               };
               templateManager.createOverlayOnMap();
-              // Need to rebuild remaining colors
-              forceRefreshTiles();
+              // forceRefreshTiles();
+              // Release the checkboxes
+              buildColorFilterList();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-theme-override-enabled', 'textContent': 'Theme Override: ', 'checked': templateManager.isThemeOverridden()}, (instance, label, checkbox) => {
@@ -1068,8 +1069,7 @@ async function buildOverlayMain() {
               templateManager.createOverlayOnMap();
               buildColorFilterList();
               instance.handleDisplayStatus('Enabled all colors');
-              // Need to rebuild remaining colors
-              forceRefreshTiles();
+              // forceRefreshTiles();
             };
           }).buildElement()
           .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
@@ -1082,8 +1082,7 @@ async function buildOverlayMain() {
               removeLayer("overlay");
               buildColorFilterList();
               instance.handleDisplayStatus('Disabled all colors');
-              // Need to rebuild remaining colors
-              forceRefreshTiles();
+              // forceRefreshTiles();
             };
           }).buildElement()
         .buildElement()
@@ -1386,8 +1385,7 @@ async function buildOverlayMain() {
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
         syncToggleList();
         templateManager.createOverlayOnMap();
-        // Need to rebuild remaining colors
-        forceRefreshTiles();
+        // forceRefreshTiles();
       });
 
       row.appendChild(toggle);
@@ -1504,6 +1502,8 @@ async function buildOverlayMain() {
           removeLayer(null, template.sortID);
         }
         syncToggleList();
+        // The total count has changed from clearTileProgress, and that may be a template outside the current view, so we need to refresh
+        buildColorFilterList();
         forceRefreshTiles();
       });
 
