@@ -69,6 +69,8 @@ export default class TemplateManager {
     this.tileProgress = new Map(); // Tracks per-tile progress stats {painted, required, wrong}
     // this.tileOverlay = new Map(); // Cache tile overlay to save time
     this.extraColorsBitmap = 0; // List of unlocked colors, set by apiManager
+    this.completedColorsBitmapLo = 0; // 0 ~ 31
+    this.completedColorsBitmapHi = 0; // 32 ~ 63 List of completed colors, calculated when getOverallPerColorProgress is called
     this.userSettings = {}; // User settings
     this.hideLockedColors = false; 
     this.largestSeenSortID = 0; // Even a safer approach: recording the largest storage Keys that have been used in this session. Don't remove anything here.
@@ -979,22 +981,41 @@ export default class TemplateManager {
     const currentOnly = this.isOnlyCurrentColorShown();
     const hideLocked = this.areLockedColorsHidden();
     const toggledStatus = this.getPaletteToggledStatus();
+    const hideCompleted = this.areCompletedColorsHidden();
     const colors = [];
     if (currentOnly) {
       const currentColor = getCurrentColor();
       Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
-        if (rgbToMeta.get(rgb).id !== currentColor) return;
-        if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
+        const colorId = rgbToMeta.get(rgb).id;
+        if (colorId !== currentColor) return;
+        if (hideLocked && !this.isColorUnlocked(colorId)) return;
+        if (hideCompleted && this.isColorCompleted(colorId)) return;
         colors.push(rgb);
       });
     } else {
       Object.entries(toggledStatus).forEach(([rgb, enabled]) => {
+        const colorId = rgbToMeta.get(rgb).id;
         if (!enabled) return;
-        if (hideLocked && !this.isColorUnlocked(rgbToMeta.get(rgb).id)) return;
+        if (hideLocked && !this.isColorUnlocked(colorId)) return;
+        if (hideCompleted && this.isColorCompleted(colorId)) return;
         colors.push(rgb);
       });
     }
     return colors.sort();
+  }
+
+  /** Gets the list of ids of completed colors
+   * does not hide completed colors as that may become incomplete over time
+   * @returns {Set<number>}
+   * @since 0.86.4
+   */
+  getCompletedColors() {
+    this.getOverallPerColorProgress();
+    const result = new Set();
+    for (let colorId = 0, mask = 1; colorId < 64; colorId++, mask <<= 1) {
+      if (this.completedColorsBitmap & mask) result.add(colorId);
+    };
+    return result;
   }
 
   /** Gets the list of involved templates, sorted by sortID
@@ -1034,6 +1055,63 @@ export default class TemplateManager {
   getTileCacheKeyFromCalculated(displayedColors, involvedTemplates) {
     // we still need to check the enabled status since disabled templates should still have the painted count updated.
     return displayedColors.join(';') + '||' + involvedTemplates.map(t => t.storageKey + "," + t.storageTimeString + "," + (+(t.enabled ?? true))).join(';');
+  }
+
+  /** Gets the overall color progress in all template tiles
+   * @since 0.86.4
+   */
+  getOverallPerColorProgress() {
+    const paletteSum = {};
+    (this.templatesArray ?? []).forEach(t => {
+      if (!t.enabled) return; // only count enabled templates
+      if (!t?.colorPalette) return;
+      for (const [rgb, meta] of Object.entries(t.colorPalette)) {
+        paletteSum[rgb] = (paletteSum[rgb] ?? 0) + meta.count;
+      }
+    })
+
+    const combinedProgress = {};
+    for (const stats of this.tileProgress.values()) {
+      Object.entries(stats.palette).forEach(([colorKey, content]) => {
+        if (combinedProgress[colorKey] === undefined) {
+          combinedProgress[colorKey] = Object.fromEntries(Object.entries(content));
+          // combinedProgress[colorKey].examples = content.examples.slice();
+          combinedProgress[colorKey].examplesEnabled = content.examplesEnabled.slice();
+        } else {
+          combinedProgress[colorKey].painted += content.painted;
+          combinedProgress[colorKey].paintedAndEnabled += content.paintedAndEnabled;
+          combinedProgress[colorKey].missing += content.missing;
+          // combinedProgress[colorKey].examples.extend(content.examples);
+          combinedProgress[colorKey].examplesEnabled.extend(content.examplesEnabled);
+        }
+      })
+    };
+
+    var completedColorsBitmapLo = 0;
+    var completedColorsBitmapHi = 0;
+    Object.entries(paletteSum).forEach(([rgb, count]) => {
+      if ((combinedProgress[rgb]?.paintedAndEnabled ?? 0) >= count) {
+        const colorId = rgbToMeta.get(rgb)?.id ?? 0;
+        if (colorId < 32) {
+          completedColorsBitmapLo |= (1 << colorId);
+        } else {
+          completedColorsBitmapHi |= (1 << (colorId - 32));
+        }
+      }
+    })
+
+    if (
+      completedColorsBitmapLo !== this.completedColorsBitmapLo ||
+      completedColorsBitmapHi !== this.completedColorsBitmapHi
+    ) {
+      this.completedColorsBitmapLo = completedColorsBitmapLo;
+      this.completedColorsBitmapHi = completedColorsBitmapHi;
+      if (this.hideCompletedColors) {
+        this.createOverlayOnMap();
+      }
+    }
+  
+    return { paletteSum, combinedProgress };
   }
 
   /** Stores the JSON object of the user settings into TamperMonkey (GreaseMonkey) storage.
@@ -1382,8 +1460,10 @@ export default class TemplateManager {
    */
   updateExtraColorsBitmap(value) {
     if (this.extraColorsBitmap === value) return;
+    // the extra colors bitmap has changed
     this.extraColorsBitmap = value;
     window.buildColorFilterList();
+    this.createOverlayOnMap();
   }
 
   /** A utility to check if a color is unlocked.
@@ -1395,6 +1475,21 @@ export default class TemplateManager {
     if (color < 32) return true;
     const mask = 1 << (color - 32);
     return (this.extraColorsBitmap & mask) !== 0;
+  }
+
+  /** A utility to check if a color is unlocked.
+   * @param {number} color - The id of the color
+   * @returns {boolean}
+   * @since 0.86.4
+   */
+  isColorCompleted(color) {
+    if (color < 32) {
+      const mask = 1 << color;
+      return (this.completedColorsBitmapLo & mask) !== 0;
+    } else {
+      const mask = 1 << (color - 32);
+      return (this.completedColorsBitmapHi & mask) !== 0;
+    }
   }
 
   /** A utility clear all the tiles related to a template

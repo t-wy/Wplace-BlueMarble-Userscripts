@@ -1243,37 +1243,13 @@ async function buildOverlayMain() {
     const hideCompleted = templateManager.areCompletedColorsHidden();
     const hideLocked = templateManager.areLockedColorsHidden();
     listContainer.innerHTML = '';
-    let hasColorPalette = false;
-    const paletteSum = {};
-    (templateManager.templatesArray ?? []).forEach(t => {
-      if (!t.enabled) return; // only count enabled templates
-      if (!t?.colorPalette) return;
-      hasColorPalette = true;
-      for (const [rgb, meta] of Object.entries(t.colorPalette)) {
-        paletteSum[rgb] = (paletteSum[rgb] ?? 0) + meta.count;
-      }
-    })
-    if (!listContainer || !hasColorPalette) {
+
+    const { paletteSum, combinedProgress } = templateManager.getOverallPerColorProgress();
+
+    if (!listContainer || !(Object.keys(paletteSum).length)) {
       if (listContainer) { listContainer.innerHTML = '<small>No template colors to display.</small>'; }
       return;
     }
-
-    const combinedProgress = {};
-    for (const stats of templateManager.tileProgress.values()) {
-      Object.entries(stats.palette).forEach(([colorKey, content]) => {
-        if (combinedProgress[colorKey] === undefined) {
-          combinedProgress[colorKey] = Object.fromEntries(Object.entries(content));
-          // combinedProgress[colorKey].examples = content.examples.slice();
-          combinedProgress[colorKey].examplesEnabled = content.examplesEnabled.slice();
-        } else {
-          combinedProgress[colorKey].painted += content.painted;
-          combinedProgress[colorKey].paintedAndEnabled += content.paintedAndEnabled;
-          combinedProgress[colorKey].missing += content.missing;
-          // combinedProgress[colorKey].examples.extend(content.examples);
-          combinedProgress[colorKey].examplesEnabled.extend(content.examplesEnabled);
-        }
-      })
-    };
 
     const sortBy = templateManager.getSortBy();
     const sortByParts = sortBy.split('-');
