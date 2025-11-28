@@ -610,3 +610,15 @@ export function doAfterMapFound(func) {
   if (isMapFound) return func();
   mapFoundHandlers.push(func);
 }
+
+/** Pan the map by a given offset
+ * @param {number[]} offset - The offset to pan the map by, in pixels.
+ * @since 0.86.0
+ */
+export function panMap(offset) {
+  controlMapTiler(map => {
+    map.panBy(offset, {
+      duration: 0
+    });
+  });
+}
