@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, rgbToMeta, getOverlayCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound} from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound, panMap} from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -260,6 +260,64 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
 
   overlayMain.handleDrag('#bm-overlay', '#bm-bar-drag'); // Creates dragging capability on the drag bar for dragging the overlay
 
+  const keysPressed = new Set();
+  let animationFrameId = null;
+  const PAN_SPEED = 25; // pixels per frame
+
+  function panLoop() {
+    if (keysPressed.size === 0) {
+      animationFrameId = null;
+      return;
+    }
+
+    let dx = 0;
+    let dy = 0;
+
+    if (keysPressed.has('w') || keysPressed.has('arrowup')) dy -= 1;
+    if (keysPressed.has('s') || keysPressed.has('arrowdown')) dy += 1;
+    if (keysPressed.has('a') || keysPressed.has('arrowleft')) dx -= 1;
+    if (keysPressed.has('d') || keysPressed.has('arrowright')) dx += 1;
+
+    if (dx !== 0 || dy !== 0) {
+      if (dx !== 0 && dy !== 0) {
+        // Normalize diagonal movement speed
+        const length = Math.sqrt(dx * dx + dy * dy);
+        dx /= length;
+        dy /= length;
+      }
+      panMap([dx * PAN_SPEED, dy * PAN_SPEED]);
+    }
+
+    animationFrameId = requestAnimationFrame(panLoop);
+  }
+
+  document.addEventListener('keydown', (event) => {
+    // Don't pan if user is typing in an input
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
+        return;
+    }
+
+    const key = event.key.toLowerCase();
+    const validKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+
+    // Ignore invalid keys or repeated keydown events
+    if (!validKeys.includes(key) || keysPressed.has(key)) {
+        return;
+    }
+
+    keysPressed.add(key);
+
+    // Start the loop if it's not already running
+    if (!animationFrameId) {
+      animationFrameId = requestAnimationFrame(panLoop);
+    }
+  });
+
+  document.addEventListener('keyup', (event) => {
+    const key = event.key.toLowerCase();
+    keysPressed.delete(key);
+    // The loop will stop itself on the next frame if no keys are pressed
+  });
 
   apiManager.spontaneousResponseListener(overlayMain); // Reads spontaneous fetch responces
 
