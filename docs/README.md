@@ -136,6 +136,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Separate the overlay and error layer from the artwork layer. (v0.86.1)</li>
     <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
     <li>Allow templates to be renamed by clicking on the template name. (v0.86.1)</li>
+    <li>Allow map scrolling via keyboard using arrow keys (`↑` `←` `↓` `→` or `W` `A` `S` `D`) (Implemented by [@due2e](https://github.com/due2e) as per [PR #7](https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/7)). (v0.86.5)</li>
   </ul>
 </p>
 
