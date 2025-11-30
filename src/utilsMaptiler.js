@@ -613,12 +613,12 @@ export function doAfterMapFound(func) {
 
 /** Pan the map by a given offset
  * @param {number[]} offset - The offset to pan the map by, in pixels.
- * @since 0.86.0
+ * @since 0.86.5
  */
 export function panMap(offset) {
-  controlMapTiler(map => {
+  controlMapTiler((map, offset) => {
     map.panBy(offset, {
       duration: 0
     });
-  });
+  }, offset);
 }
