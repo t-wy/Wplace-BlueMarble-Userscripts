@@ -618,7 +618,7 @@ export function doAfterMapFound(func) {
 export function panMap(offset) {
   controlMapTiler((map, offset) => {
     map["panBy"](offset, {
-      duration: 0
+      "duration": 0
     });
   }, offset);
 }
