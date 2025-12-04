@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog } from "./utils.js";
 import { coordsTileCoordsToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
@@ -19,8 +19,8 @@ export default class ApiManager {
     this.disableAll = false; // Should the entire userscript be disabled?
     this.coordsTilePixel = []; // Contains the last detected tile/pixel coordinate pair requested
     this.templateCoordsTilePixel = []; // Contains the last "enabled" template coords
-    this.charges = null;
-    this.chargesUpdated = null;
+    this.lastMe = null;
+    this.lastMeUpdated = null;
     this.chargeInterval = null;
     this.tileCache = {};
     this.eventClaimed = null;
@@ -28,15 +28,16 @@ export default class ApiManager {
   }
 
   getCurrentCharges() {
-    if (this.charges === null) {
+    if (this.lastMe === null) {
       this.#askServerForMe();
       return 0;
     }
+    const charges = this.lastMe["charges"];
     const currentTime = Date.now();
-    const timeDiff = currentTime - this.chargesUpdated;
-    const chargesDelta = timeDiff / this.charges["cooldownMs"];
-    const currentCharges = this.charges["count"] + chargesDelta;
-    const trueMax = this.charges["count"] > this.charges["max"] ? this.charges["count"] : this.charges["max"];
+    const timeDiff = currentTime - this.lastMeUpdated;
+    const chargesDelta = timeDiff / charges["cooldownMs"];
+    const currentCharges = charges["count"] + chargesDelta;
+    const trueMax = charges["count"] > charges["max"] ? charges["count"] : charges["max"];
     if (currentCharges > trueMax) {
       return trueMax;
     }
@@ -45,15 +46,32 @@ export default class ApiManager {
 
   getFullRemainingTimeMs() {
     const currentCharges = this.getCurrentCharges();
-    if (currentCharges >= this.charges["max"]) {
+    const charges = this.lastMe?.["charges"] ?? ({ "max": 0, "cooldownMs": 30000 });
+    if (currentCharges >= charges["max"]) {
       return 0;
     }
-    return (this.charges["max"] - currentCharges) * this.charges["cooldownMs"];
+    return (charges["max"] - currentCharges) * charges["cooldownMs"];
   }
 
   getFullRemainingTimeFormatted() {
-    const remainingTimeMs = this.getFullRemainingTimeMs();
-    if (remainingTimeMs === 0) {
+    return this.getTimeFormatted(this.getFullRemainingTimeMs());
+  }
+
+  getSuspendTimeMs() {
+    const timeoutUntil = new Date(this.lastMe?.["timeoutUntil"] ?? 0).getTime();
+    return Math.max(0, timeoutUntil - Date.now());
+  }
+
+  isSuspended() {
+    return this.getSuspendTimeMs() > 0;
+  }
+
+  getSuspendTimeFormatted() {
+    return this.getTimeFormatted(this.getSuspendTimeMs());
+  }
+
+  getTimeFormatted(remainingTimeMs) {
+    if (remainingTimeMs <= 0) {
       return "00:00";
     }
     const remainingTimeSeconds = Math.floor(remainingTimeMs / 1000);
@@ -76,12 +94,13 @@ export default class ApiManager {
 
   #updateCharges() {
     // Can check https://wplace.live/_app/immutable/chunks/OJISNkFj.js for the real implementation
-    if (this.charges === null) {
+    if (this.lastMe === null) {
       this.#askServerForMe();
       return;
     }
+    const charges = this.lastMe["charges"];
     const currentCharges = Math.floor(this.getCurrentCharges());
-    const maxCharges = this.charges["max"];
+    const maxCharges = charges["max"];
     const currentChargesStr = new Intl.NumberFormat().format(currentCharges);
     const maxChargesStr = new Intl.NumberFormat().format(maxCharges);
 
@@ -89,10 +108,27 @@ export default class ApiManager {
     const countdownElement = container?.querySelector('[data-role="countdown"]');
     const countElement = container?.querySelector('[data-role="charge-count"]');
 
-    if (!container || !countdownElement || !countElement) {return;}
+    if (container && countdownElement && countElement) {
+      countdownElement.textContent = this.getFullRemainingTimeFormatted();
+      countElement.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
+    };
 
-    countdownElement.textContent = this.getFullRemainingTimeFormatted();
-    countElement.textContent = `(${currentChargesStr} / ${maxChargesStr})`;
+    const suspendContainer = document.getElementById('bm-user-suspend');
+    const suspendCountdownElement = suspendContainer?.querySelector('[data-role="suspend-countdown"]');
+    const suspendReasonContainer = document.getElementById('bm-user-suspend-reason');
+    const suspendReasonElement = document.getElementById('bm-suspend-reason');
+
+    if (suspendContainer && suspendCountdownElement && suspendReasonContainer && suspendReasonElement) {
+      const isSuspended = this.isSuspended();
+      suspendContainer.style.display = isSuspended ? "" : "none";
+      suspendReasonContainer.style.display = isSuspended ? "" : "none";
+      if (isSuspended) {
+        suspendCountdownElement.textContent = this.getSuspendTimeFormatted();
+        suspendReasonElement.textContent = (this.lastMe["suspensionReason"] ?? "Unknown").split("-").map(word => {
+          return word.charAt(0).toUpperCase() + word.slice(1); // charAt(0) returns empty string for empty string
+        }).join(" ");
+      }
+    };
   }
 
   #askServerForMe() {
@@ -102,9 +138,20 @@ export default class ApiManager {
       // logged in and not in painting mode
       // knock at the @me endpoint (only once per 10 seconds)
       const currentTime = Date.now();
-      if (this.lastFetchedTime === null || currentTime - this.lastFetchedTime > 10000) {
+      if (this.lastFetchedTime === null || currentTime - this.lastFetchedTime > 10000) { // 10 seconds
+        // fetch here is not intercepted (or can be if it is run as a bookmarklet)
         fetch("https://backend.wplace.live/me", {
-          credentials: "include",
+          "credentials": "include",
+        }).then((response) => {
+          return response.json();
+        }).then((dataJSON) => {
+          // If the game can not retrieve the userdata...
+          if (dataJSON['status'] && dataJSON['status']?.toString()[0] != '2') {
+            // The server is probably down (NOT a 2xx status)
+            return;
+          }
+          consoleLog("Fetched user data", dataJSON);
+          this.#applyUserData(dataJSON, Date.now());
         });
         this.lastFetchedTime = currentTime;
       }
@@ -123,8 +170,11 @@ export default class ApiManager {
       ));
     }
     this.templateManager.userID = dataJSON['id'];
-    this.charges = dataJSON['charges'];
-    this.chargesUpdated = fetchTime;
+    // For debugging
+    // dataJSON["suspensionReason"] = "inappropriate-content";
+    // dataJSON["timeoutUntil"] = "2026-01-01T00:00:00Z";
+    this.lastMe = dataJSON;
+    this.lastMeUpdated = fetchTime;
     this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
     
     const userNameElement = document.getElementById('bm-user-name');

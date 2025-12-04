@@ -263,7 +263,7 @@ input[type="file"][id*="template"] {
 }
 
 /* Keep the charges line stable to prevent layout jumps */
-#bm-user-charges {
+#bm-user-charges, #bm-user-suspend {
   display: flex;
   align-items: baseline;
   gap: 0.5ch;
@@ -271,16 +271,20 @@ input[type="file"][id*="template"] {
   min-height: 1.4em;
 }
 
-#bm-user-charges .bm-charge-countdown {
+#bm-user-charges .bm-charge-countdown, #bm-user-suspend .bm-suspend-countdown {
   color: orange;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-#bm-user-charges .bm-charge-count {
+#bm-user-charges .bm-charge-count, #bm-user-suspend-reason .bm-suspend-reason {
   color: lightgray;
   font-size: 0.8em;
+}
+
+#bm-user-suspend, #bm-user-suspend-reason {
+  color: salmon;
 }
 
 /* All overlay buttons */

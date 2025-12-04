@@ -25,6 +25,7 @@ function inject(callback) {
     script.setAttribute('bm-name', name); // Passes in the name value
     script.setAttribute('bm-cStyle', consoleStyle); // Passes in the console style value
     script.textContent = `(${callback})();`;
+    // script.textContent = `setTimeout(${callback}, 1000);`; // For debugging the case when there is delay when starting the script
     document.documentElement?.appendChild(script);
     script.remove();
 }
@@ -374,6 +375,7 @@ function observeBlack() {
         paint.className = 'btn btn-soft';
         paint.onclick = function() {
           const currentCharges = Math.floor(apiManager.getCurrentCharges());
+          if (currentCharges === 0) return;
           let examples = [];
           const toggleStatus = new Set(templateManager.getDisplayedColorsSorted());
           for (const stats of templateManager.tileProgress.values()) {
@@ -810,6 +812,17 @@ async function buildOverlayMain() {
         .addSpan({'className': 'bm-charge-count', 'textContent': '(0 / 0)'}, (_, element) => {
           element.dataset.role = 'charge-count';
         }).buildElement()
+      .buildElement()
+      .addP({'id': 'bm-user-suspend', 'style': 'display: none;'}, (_, element) => {
+        element.setAttribute('aria-live', 'polite');
+      })
+        .addText('Suspension Expires in ')
+        .addSpan({'className': 'bm-suspend-countdown', 'textContent': '--:--'}, (_, element) => {
+          element.dataset.role = 'suspend-countdown';
+        }).buildElement()
+      .buildElement()
+      .addP({'id': 'bm-user-suspend-reason', 'textContent': 'Reason: ', 'style': 'display: none;'})
+        .addB({'id': 'bm-suspend-reason', 'textContent': 'Unknown'}).buildElement()
       .buildElement()
       .addP({'textContent': 'Droplets: '})
         .addB({'id': 'bm-user-droplets'}).buildElement()
