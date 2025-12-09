@@ -203,6 +203,7 @@ export default class TemplateManager {
 
     // Ensure color filter UI is visible when a template is created
     this.requestListRebuild();
+    this.createOverlayOnMap(template.sortID);
 
     console.log(Object.keys(this.templatesJSON.templates).length);
     console.log(this.templatesJSON);
@@ -268,6 +269,7 @@ export default class TemplateManager {
 
     // reset related tiles
     this.clearTileProgress(targetTemplate);
+    removeLayer(null, targetTemplate.sortID);
 
     this.overlay.handleDisplayStatus(`Template ${targetTemplate.displayName} is deleted!`);
   
@@ -1501,6 +1503,9 @@ export default class TemplateManager {
     template.tilePrefixes.forEach(prefix => {
       this.tileProgress.delete(prefix);
       // this.tileOverlay.delete(prefix);
-    })
+    });
+    // should not be needed if color filter list (that calls getOverallPerColorProgress) is called after this. But just in case
+    this.completedColorsBitmapLo = 0;
+    this.completedColorsBitmapHi = 0;
   }
 }
