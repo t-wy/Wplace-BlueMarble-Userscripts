@@ -303,11 +303,12 @@ export function forceRefreshTiles() {
  * @since 0.85.40
  */
 export const themeList = {
-  "liberty": ["Liberty (Default)", false],
-  "bright": ["Bright", false],
-  "positron": ["Positron", false],
-  "dark": ["Dark", true],
-  "fiord": ["Fiord (Halloween)", true],
+  "liberty": ["Liberty (Default)", ""],
+  "bright": ["Bright", ""],
+  "positron": ["Positron", ""],
+  "dark": ["Dark", "dark"],
+  "fiord": ["Fiord (Dark)", "dark"],
+  "halloween": ["Fiord (Halloween)", "halloween"],
 };
 
 /** Override the map theme
@@ -315,8 +316,8 @@ export const themeList = {
  */
 export function setTheme(themeName) {
   if (!themeList[themeName]) return;
-  const isDark = themeList[themeName][1];
-  document.documentElement.dataset["theme"] = isDark ? "dark" : "";
+  const dataTheme = themeList[themeName][1];
+  document.documentElement.dataset["theme"] = dataTheme;
   return controlMapTiler((map, themeName, bmCanvas) => {
     document.head.__bmCanvas = bmCanvas; // sync bmCanvas to document
     // The default pixel-hover styledata callback only triggers once that we cannot reset
@@ -483,7 +484,7 @@ export function setTheme(themeName) {
     }
     map["setStyle"]("https://maps.wplace.live/styles/" + themeName, {});
     return null;
-  }, themeName, bmCanvas);
+  }, themeName === "halloween" ? "fiord" : themeName, bmCanvas);
 }
 
 export var overrideRandom = {
