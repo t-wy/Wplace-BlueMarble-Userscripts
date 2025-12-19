@@ -892,6 +892,7 @@ async function buildOverlayMain() {
             }
 
             apiManager.updateDownloadButton();
+            persistCoords();
 
             event.preventDefault(); //prevent the pasting of the original paste that would overide the split value
           })
