@@ -979,6 +979,7 @@ async function buildOverlayMain() {
                 document.getElementById('bm-contain-eventitem').style.display = '';
                 document.getElementById('bm-event-hide-claimed').parentElement.style.display = ''; // the label containing not the checkbox
                 document.getElementById('bm-event-hide-unavailable').parentElement.style.display = ''; // the label containing not the checkbox
+                apiManager.refreshEventData();
                 buildEventList();
               } else {
                 instance.handleDisplayStatus("Event Mode Disabled.");
@@ -1568,19 +1569,30 @@ async function buildOverlayMain() {
     const listContainer = document.querySelector('#bm-eventitem-list');
     const showClaimed = templateManager.isEventClaimedShown();
     const showUnavailable = templateManager.isEventUnavailableShown();
-    const provider = templateManager.getEventProvider();
-    if (provider === null || provider == "") {
-      listContainer.innerHTML = '<small>Event data provider is not set.</small>';
-      return;
-    };
+    const provider = apiManager.eventDataURL ?? templateManager.getEventProvider();
     if (apiManager.eventClaimed === null) {
       listContainer.innerHTML = '<small>The event claimed items list is not loaded. Make sure you have clicked the ongoing Event button from the top left corner.</small>';
+      return;
+    };
+    if (apiManager.eventData === null && (provider === null || provider == "")) {
+      // rely on external sources
+      listContainer.innerHTML = '<small>Event data provider is not set.</small>';
       return;
     };
     const eventClaimedList = new Set(apiManager.eventClaimed);
     consoleLog("eventClaimedList", eventClaimedList);
     // Format: e.g. https://wplace.samuelscheit.com/tiles/pumpkin.json
-    fetch(provider).then(response => response.json()).then(data => {
+    (
+      apiManager.eventData === null ?
+      fetch(provider, {
+        "credentials": "include",
+      }).then(response => response.json()) :
+      new Promise(resolve => {
+        const consumed = apiManager.eventData;
+        apiManager.eventData = null; // already consumed
+        resolve(consumed);
+      })
+    ).then(data => {
       consoleLog("event Location data", data);
       if (typeof data !== 'object') {
         listContainer.innerHTML = '<small>The event data provider does not provide a known format.</small>';
@@ -1588,7 +1600,11 @@ async function buildOverlayMain() {
       }
       listContainer.textContent = "";
       let hasEntries = false;
-      Object.entries(data).forEach(([itemId, info]) => {
+      (
+        Array.isArray(data) ?
+        data.map((entry, index) => [entry.id ?? index, entry]) :
+        Object.entries(data)
+      ).forEach(([itemId, info]) => {
         itemId = Number(itemId);
         if (eventClaimedList.has(itemId) && !showClaimed) return;
         const row = document.createElement('div');
@@ -1601,6 +1617,8 @@ async function buildOverlayMain() {
         if (typeof info === 'object') {
           if (info['lat'] !== undefined && info['lng'] !== undefined) {
             coords = [info['lat'], info['lng']];
+          } else if (info['latitude'] !== undefined && info['longitude'] !== undefined) {
+            coords = [info['latitude'], info['longitude']];
           } else if (
             info['tileX'] !== undefined && info['offsetX'] !== undefined &&
             info['tileY'] !== undefined && info['offsetY'] !== undefined

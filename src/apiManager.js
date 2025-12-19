@@ -25,6 +25,8 @@ export default class ApiManager {
     this.tileCache = {};
     this.eventClaimed = null;
     this.lastFetchedTime = null;
+    this.eventData = null;
+    this.eventDataURL = null;
   }
 
   getCurrentCharges() {
@@ -588,6 +590,18 @@ export default class ApiManager {
 
         case 'claimed': // Claimed # in event
           this.eventClaimed = dataJSON['claimed']??[];
+          this.templateManager.requestEventRebuild();
+          break;
+
+        case 'locations':
+          // Event item locations (e.g. https://backend.wplace.live/event/christmas/locations)
+          // This endpoint still works without the claimed key if not logged in
+          // The endpoint also seems to be called after claiming
+          this.eventClaimed = dataJSON.filter(entry => (
+            entry?.['claimed'] ?? false
+          )).map((entry, index) => (entry.id ?? index));
+          this.eventData = dataJSON;
+          this.eventDataURL = data['endpoint'];
           this.templateManager.requestEventRebuild();
           break;
 
