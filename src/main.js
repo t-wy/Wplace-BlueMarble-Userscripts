@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, rgbToMeta, getOverlayCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound, panMap} from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound, panMap, setZoom} from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -240,6 +240,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'hideStatus': false,
       'isLegacyDisplay': false,
       'showErrorMap': false,
+      'showIntegerZoom': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -332,6 +333,33 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
  */
 function observeBlack() {
   const observer = new MutationObserver((mutations, observer) => {
+    const zoom1 = document.getElementById('BM-zoom-1x'); // The 1x zoom button
+
+    // If the 1x zoom button does not exist, we make a new one
+    if (!zoom1) {
+      const ref = Array.from(document.querySelectorAll(".gap-1>.btn[title]")).slice(-1)[0];
+      const isShown = templateManager.areIntegerZoomButtonsShown();
+      if (ref) {
+        const container = ref.parentNode;
+        if (container) {
+          [1, 2, 3, 5, 10, 25, 50, 100].forEach(zoom => {
+            const zoomBtn = document.createElement('button');
+            zoomBtn.id = 'BM-zoom-' + zoom + 'x';
+            zoomBtn.textContent = zoom + 'x';
+            zoomBtn.className = ref.className;
+            zoomBtn.classList.add('bm-zoom-btn');
+            zoomBtn.onclick = function() {
+              setZoom(Math.log2(4000 * zoom / window['devicePixelRatio']));
+            }
+            if (!isShown) {
+              zoomBtn.style.display = "none";
+            }
+
+            container.appendChild(zoomBtn); // Adds the zoom 1x button
+          })
+        }
+      }
+    }
 
     const black = document.querySelector('#color-1'); // Attempt to retrieve the black color element for anchoring
 
@@ -1089,7 +1117,7 @@ async function buildOverlayMain() {
               templateManager.createOverlayOnMap();
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map (Experimental)', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setErrorMapShown(checkbox.checked);
               if (checkbox.checked) {
@@ -1099,6 +1127,19 @@ async function buildOverlayMain() {
               } else {
                 instance.handleDisplayStatus("Error Map is now Hidden.");
                 removeLayer("error");
+              };
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-show-zoom-buttons', 'textContent': 'Show Integer Zoom Buttons', 'checked': templateManager.areIntegerZoomButtonsShown()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setIntegerZoomButtonsShown(checkbox.checked);
+              const concernedElements = Array.from(document.getElementsByClassName('bm-zoom-btn'));
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Integer Zoom Buttons are now Displayed.");
+                concernedElements.forEach(button => button.style.display = '');
+              } else {
+                instance.handleDisplayStatus("Integer Zoom Buttons are now Hidden.");
+                concernedElements.forEach(button => button.style.display = 'none');
               };
             });
           }).buildElement()

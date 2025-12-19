@@ -170,7 +170,7 @@ export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
   if (!bmCanvas[usage]) {
     bmCanvas[usage] = {};
   };
-  let prefix = "bm"; // avoid that mangleSelectors
+  let prefix = "BM"; // avoid that mangleSelectors
   const sourceID = `${prefix}-${usage}-${tileName}-${sortID}`; // tileName before sortID so startsWith() works
   bmCanvas[usage][sourceID] = [geoCoords1, geoCoords2];
   const blobUrl = URL.createObjectURL(blob);
@@ -390,7 +390,7 @@ export function setTheme(themeName) {
         });
       } else {
         // check layer order
-        let prefix = "bm"; // avoid that mangleSelectors
+        let prefix = "BM"; // avoid that mangleSelectors
         const layers = map["getLayersOrder"]();
         const nextLayer = layers.find(layer => (
           layer.startsWith(prefix + "-overlay-") ||
@@ -428,7 +428,7 @@ export function setTheme(themeName) {
       if (bmCanvas) {
         ["overlay", "error"].forEach(usage => {
           if (bmCanvas[usage]) {
-            let prefix = "bm"; // avoid that mangleSelectors
+            let prefix = "BM"; // avoid that mangleSelectors
             const layers = map["getLayersOrder"]();
             const nextLayer = layers.find(layer => (
               (usage === "overlay" && layer.startsWith(prefix + "-error-")) ||
@@ -589,6 +589,7 @@ export function coordsGeoCoordsToTileCoords(latitude, longitude, truncate = true
 
 /** Click the zoom in button
  * @since 0.85.43
+ * @deprecated only for demo purpose
  */
 export function zoomIn() {
   document.querySelectorAll(".gap-1>.btn[title]")[0].click();
@@ -596,9 +597,20 @@ export function zoomIn() {
 
 /** Click the zoom out button
  * @since 0.85.43
+ * @deprecated only for demo purpose
  */
 export function zoomOut() {
   document.querySelectorAll(".gap-1>.btn[title]")[1].click();
+}
+
+/** Get the displacement in pixels per wplace pixel
+ * @param {number} zoom
+ * @since 0.86.10
+ */
+export function setZoom(zoom) {
+  return controlMapTiler((map, zoom) => {
+    return map["setZoom"](zoom);
+  }, zoom);
 }
 
 var isMapFound = false;

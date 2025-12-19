@@ -261,6 +261,7 @@ export function cleanUpCanvas(canvas) {
 /**
  * A browser helper function to find the gadget exposed in the DOM tree
  * @since 0.85.9
+ * @deprecated only for demo purpose
  */
 function findGadget(condition, depth=10) {
   const seen = new Set();
@@ -488,6 +489,7 @@ export function getCurrentColor() {
 /** Do an async sleep to prevent UI blocking
  * @param {number} delay
  * @since 0.85.43
+ * @deprecated currently does not feel the need to use so
  */
 export function sleep(delay = 0) {
   return new Promise(resolve => setTimeout(resolve, delay));

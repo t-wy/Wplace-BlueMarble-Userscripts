@@ -608,6 +608,10 @@ export default class ApiManager {
         case 'robots': // Request to retrieve what script types are allowed
           this.disableAll = dataJSON['userscript']?.toString().toLowerCase() == 'false'; // Disables Blue Marble if site owner wants userscripts disabled
           break;
+
+        // some interesting endpoints:
+        // https://backend.wplace.live/me/pixels-painted-today
+        // {"paintedToday":value}
       }
     });
   }

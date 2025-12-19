@@ -1456,6 +1456,23 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
+  /** A utility to check if zoom buttons are shown
+   * @returns {boolean}
+   * @since 0.86.10
+   */
+  areIntegerZoomButtonsShown() {
+    return this.userSettings?.showIntegerZoom ?? false;
+  }
+
+  /** Sets the showIntegerZoom to a value.
+   * @param {boolean} value - The value
+   * @since 0.86.10
+   */
+  async setIntegerZoomButtonsShown(value) {
+    this.userSettings.showIntegerZoom = value;
+    await this.storeUserSettings();
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17
