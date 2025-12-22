@@ -11,6 +11,8 @@
   transition: all 0.3s ease, transform 0s;
   max-width: 300px;
   width: auto;
+  /* Disable Pinch Zoom, just like wplace itself */
+  touch-action: pan-x pan-y;
   /* Performance optimizations for smooth dragging */
   will-change: transform;
   backface-visibility: hidden;

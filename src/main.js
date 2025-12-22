@@ -1202,7 +1202,7 @@ async function buildOverlayMain() {
             };
           }).buildElement()
         .buildElement()
-        .addDiv({'id': 'bm-colorfilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
+        .addDiv({'id': 'bm-colorfilter-list', 'style': 'max-height: 125px; overflow: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Template filter UI
       .addDetails({'id': 'bm-contain-templatefilter', 'textContent': 'Templates', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
@@ -1273,7 +1273,7 @@ async function buildOverlayMain() {
             })
           }).buildElement()
         .buildElement()
-        .addDiv({'id': 'bm-templatefilter-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
+        .addDiv({'id': 'bm-templatefilter-list', 'style': 'max-height: 125px; overflow: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Event UI
       .addDetails({'id': 'bm-contain-eventitem', 'textContent': 'Event', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; display: none; margin-top: 4px;'}, (instance, summary, details) => {
@@ -1302,7 +1302,7 @@ async function buildOverlayMain() {
         .addButton({'id': 'bm-button-refresh-event', 'textContent': 'Refresh Data', 'style': 'margin: 0 1ch;'}, (instance, button) => {
           button.onclick = () => buildEventList();
         }).buildElement()
-        .addDiv({'id': 'bm-eventitem-list', 'style': 'max-height: 125px; overflow: auto; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
+        .addDiv({'id': 'bm-eventitem-list', 'style': 'max-height: 125px; overflow: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px;'}).buildElement()
       .buildElement()
       // Status
       .addTextarea({'id': overlayMain.outputStatusId, 'placeholder': `Status: Sleeping...\nVersion: ${version}`, 'readOnly': true}, (instance, textarea) => {
