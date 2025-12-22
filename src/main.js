@@ -1642,13 +1642,15 @@ async function buildOverlayMain() {
       }
       listContainer.textContent = "";
       let hasEntries = false;
-      (
+      const dataSource = (
         Array.isArray(data) ?
         data.map((entry, index) => [entry.id ?? index, entry]) :
         Object.entries(data)
-      ).forEach(([itemId, info]) => {
+      );
+      dataSource.forEach(([itemId, info]) => {
         itemId = Number(itemId);
-        if (eventClaimedList.has(itemId) && !showClaimed) return;
+        const isClaimed = eventClaimedList.has(itemId)
+        if (isClaimed && !showClaimed) return;
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.alignItems = 'center';
@@ -1685,11 +1687,26 @@ async function buildOverlayMain() {
 
         if (coords !== null) {
           let teleportButton = document.createElement('a');
-          teleportButton.title = "Teleport to template";
+          teleportButton.title = "Teleport to event item";
           teleportButton.textContent = "✈️";
           teleportButton.style.fontSize = '12px';
           teleportButton.onclick = () => {
             teleportToGeoCoords(coords[0], coords[1]);
+            const mapMarkers = Array.from(
+              document.querySelectorAll(".cursor-pointer.z-10") // z-10: not the pin (z-20)
+            ).filter( x => {
+              if (x.style.opacity != 1) return false;
+              const rect = x.getBoundingClientRect();
+              const windowWidth = window.innerWidth || document.documentElement.clientWidth;
+              const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+              return (
+                rect.top >= 0 && rect.bottom <= windowWidth &&
+                rect.left >= 0 && rect.right <= windowHeight
+              );
+            });
+            if (mapMarkers.length === 1) { // only 1 opaque marker on screen
+              mapMarkers[0].click(); // safely click it  
+            };
           }
           row.appendChild(teleportButton);
         } else {
