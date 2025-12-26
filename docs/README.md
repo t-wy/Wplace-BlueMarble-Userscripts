@@ -136,7 +136,12 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Separate the overlay and error layer from the artwork layer. (v0.86.1)</li>
     <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
     <li>Allow templates to be renamed by clicking on the template name. (v0.86.1)</li>
-    <li>Allow map scrolling via keyboard using arrow keys (<kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>) (Implemented by <a href="https://github.com/due2e">@due2e</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/7">PR #7</a>). (v0.86.5)</li>
+    <li>
+    Allow smooth diagonal map scrolling via keyboard using arrow keys (<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>) (Implemented by <a href="https://github.com/due2e">@due2e</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/7">PR #7</a>). (v0.86.5)
+      <ul>
+        <li>Notice that wplace has its default key bindings for axis-aligned panning via <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> (and rotation / tilt with <kbd>Shift</kbd> key combined)</li>
+      </ul>
+    </li>
     <li>Show suspension countdown and reason if it exists. (v0.86.6)</li>
   </ul>
 </p>

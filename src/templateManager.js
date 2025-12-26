@@ -1473,6 +1473,23 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
+  /** A utility to enable / disable arrow key keybinds
+   * @returns {boolean}
+   * @since 0.86.12
+   */
+  areKeybindsEnabled() {
+    return this.userSettings?.enableKeybinds ?? false;
+  }
+
+  /** Sets the enableKeybinds to a value.
+   * @param {boolean} value - The value
+   * @since 0.86.12
+   */
+  async setKeybindsEnabled(value) {
+    this.userSettings.enableKeybinds = value;
+    await this.storeUserSettings();
+  }
+
   /** Sets the `extraColorsBitmap` to an updated mask, refresh the color filter if changed.
    * @param {number} value - The value to set the mask to
    * @since 0.85.17

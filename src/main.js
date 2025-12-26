@@ -241,6 +241,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'isLegacyDisplay': false,
       'showErrorMap': false,
       'showIntegerZoom': false,
+      'enableKeybinds': false,
     });
     templateManager.storeUserSettings();
   } else {
@@ -267,6 +268,10 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   const PAN_SPEED = 25; // pixels per frame
 
   function panLoop() {
+    if (!templateManager.areKeybindsEnabled()) {
+        keysPressed.clear();
+    }
+
     if (keysPressed.size === 0) {
       animationFrameId = null;
       return;
@@ -294,13 +299,17 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   }
 
   document.addEventListener('keydown', (event) => {
+    // Don't pan if disabled
+    if (!templateManager.areKeybindsEnabled()) {
+        return;
+    }
     // Don't pan if user is typing in an input
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') {
         return;
     }
 
     const key = event.key.toLowerCase();
-    const validKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+    const validKeys = ['w', 'a', 's', 'd']; //, 'arrowup', 'arrowdown', 'arrowleft', 'arrowright']; // also used by wplace to handle rotation, so not capturing these
 
     // Ignore invalid keys or repeated keydown events
     if (!validKeys.includes(key) || keysPressed.has(key)) {
@@ -1140,6 +1149,16 @@ async function buildOverlayMain() {
               } else {
                 instance.handleDisplayStatus("Integer Zoom Buttons are now Hidden.");
                 concernedElements.forEach(button => button.style.display = 'none');
+              };
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-enable-keybinds', 'textContent': 'Enable WASD Keybinds', 'checked': templateManager.areKeybindsEnabled()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setKeybindsEnabled(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("WASD Keybinds are now Enabled.");
+              } else {
+                instance.handleDisplayStatus("WASD Keybinds are now Disabled.");
               };
             });
           }).buildElement()
