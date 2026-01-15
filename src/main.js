@@ -962,7 +962,8 @@ async function buildOverlayMain() {
       .buildElement()
       .addDetails({'id': 'bm-checkbox-container', 'textContent': 'User Settings', 'style': 'max-width: 100%; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'})
         // Color filter UI
-        .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
+        // .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
+        .addDiv({'id': 'bm-user_setting-list', 'style': 'max-height: 125px; overflow-x: hidden; overflow-y: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px; margin-top: 3px;'})
           .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setHideLockedColors(checkbox.checked);
@@ -1193,7 +1194,7 @@ async function buildOverlayMain() {
           }).buildElement()
         .buildElement()
         // Color buttons
-        .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 0px;'})
+        .addDiv({'id': 'bm-button-colors-container', 'style': 'display: flex; gap: 6px; margin-top: 3px; margin-bottom: 3px;'})
           .addButton({'id': 'bm-button-colors-enable-all', 'textContent': 'Enable All'}, (instance, button) => {
             button.onclick = () => {
               templateManager.templatesArray.forEach(t => {
@@ -1228,7 +1229,7 @@ async function buildOverlayMain() {
         details.open = true;
       })
         // Template buttons
-        .addDiv({'id': 'bm-contain-buttons-template'})
+        .addDiv({'id': 'bm-contain-buttons-template', 'style': 'margin-bottom: 3px;'})
           .addInputFile({'id': 'bm-input-file-template', 'textContent': 'Select Image', 'accept': 'image/png, image/jpeg, image/webp, image/bmp, image/gif'}) // .buildElement()
           .addButton({'id': 'bm-button-create', 'textContent': 'Create Template', 'style': 'margin: 0 1ch;'}, (instance, button) => {
             button.onclick = async () => {
