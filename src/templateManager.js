@@ -330,6 +330,9 @@ export default class TemplateManager {
     console.log(`templateCount = ${templateCount}`);
     const enabledTemplateCount = this.templatesArray.filter(t => t.enabled).length;
 
+    const errorMapOnlyEnabledColors = this.isErrorMapShown() && this.isErrorMapOnlyEnabledColorsShown();
+    const displayedColors = errorMapOnlyEnabledColors ? new Set(this.getDisplayedColorsSorted()) : null; // Only used when the error map only show displayed colors
+
     // We'll compute per-tile painted/wrong/required counts when templates exist for this tile
     let paintedCount = 0;
     let wrongCount = 0;
@@ -462,15 +465,20 @@ export default class TemplateManager {
               requiredCount++;
             }
 
+            // errorMapOnlyEnabledColors
+            let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
+            if (!rgbToMeta.has(colorKey)) colorKey = 'other';
+            const shouldThisColorInvolvedInErrorMap = (!errorMapOnlyEnabledColors) || displayedColors.has(colorKey);
+
             // IF the alpha of the pixel is less than 64...
             if (realPixelCenterAlpha < 64) {
               // Unpainted -> neither painted nor wrong
               if (templatePixelCenterAlpha !== 0) {
-                if (isErrorMapShown && templateTileEnabled) {
-                  errorData[errorIndex] = 255; // yellow
-                  errorData[errorIndex + 1] = 255;
-                  errorData[errorIndex + 2] = 0;
-                  errorData[errorIndex + 3] = 16;
+                if (isErrorMapShown && templateTileEnabled && shouldThisColorInvolvedInErrorMap) {
+                  errorData[errorIndex] = 128; // gray
+                  errorData[errorIndex + 1] = 128;
+                  errorData[errorIndex + 2] = 128;
+                  errorData[errorIndex + 3] = 200;
                 }
               }
 
@@ -478,8 +486,6 @@ export default class TemplateManager {
             } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
               paintedCount++; // ...the pixel is painted correctly
               isPainted = true;
-              let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-              if (!rgbToMeta.has(colorKey)) colorKey = 'other';
               if (paletteStats[colorKey] === undefined) {
                 paletteStats[colorKey] = {
                   painted: 1,
@@ -501,7 +507,7 @@ export default class TemplateManager {
               } else {
                 templateStats[templateKey].painted++;
               }
-              if (isErrorMapShown && templateTileEnabled) {
+              if (isErrorMapShown && templateTileEnabled && shouldThisColorInvolvedInErrorMap) {
                 errorData[errorIndex] = 0; // green
                 errorData[errorIndex + 1] = 128;
                 errorData[errorIndex + 2] = 0;
@@ -509,7 +515,7 @@ export default class TemplateManager {
               }
             } else {
               wrongCount++; // ...the pixel is NOT painted correctly
-              if (isErrorMapShown && templateTileEnabled) {
+              if (isErrorMapShown && templateTileEnabled && shouldThisColorInvolvedInErrorMap) {
                 errorData[errorIndex] = 255; // red
                 errorData[errorIndex + 1] = 0;
                 errorData[errorIndex + 2] = 0;
@@ -1440,7 +1446,7 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
-  /** A utility to check if it uses the 3x3 template display
+  /** A utility to determine whether the error map should be shown
    * @returns {boolean}
    * @since 0.85.46
    */
@@ -1448,12 +1454,29 @@ export default class TemplateManager {
     return this.userSettings?.showErrorMap ?? false;
   }
 
-  /** Sets the legacyDisplay to a value.
+  /** Sets the showErrorMap to a value.
    * @param {boolean} value - The value
    * @since 0.85.46
    */
   async setErrorMapShown(value) {
     this.userSettings.showErrorMap = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to deterine whether the error map only covers the enabled colors
+   * @returns {boolean}
+   * @since 0.86.14
+   */
+  isErrorMapOnlyEnabledColorsShown() {
+    return this.userSettings?.showOnlyEnabledColorsErrorMap ?? false;
+  }
+
+  /** Sets the showOnlyEnabledColorsErrorMap to a value.
+   * @param {boolean} value - The value
+   * @since 0.86.14
+   */
+  async setErrorMapOnlyEnabledColorsShown(value) {
+    this.userSettings.showOnlyEnabledColorsErrorMap = value;
     await this.storeUserSettings();
   }
 

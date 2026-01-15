@@ -560,7 +560,9 @@ function observeBlack() {
           // prevent lagging
           setTimeout(() => {
             templateManager.createOverlayOnMap()
-            // forceRefreshTiles();
+            if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+              forceRefreshTiles();
+            };
             // Just build the list (with the selected color toggled) as nothing has changed
             buildColorFilterList();
           }, 0);
@@ -1074,7 +1076,9 @@ async function buildOverlayMain() {
                 buildColorFilterList();
               };
               templateManager.createOverlayOnMap();
-              // forceRefreshTiles();
+              if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+                forceRefreshTiles();
+              };
               // Release the checkboxes
               buildColorFilterList();
             });
@@ -1133,6 +1137,7 @@ async function buildOverlayMain() {
           .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setErrorMapShown(checkbox.checked);
+              document.getElementById('bm-show-only-enabled-colors-on-error-map').parentElement.style.display = checkbox.checked ? '' : 'none'; // the label containing not the checkbox
               if (checkbox.checked) {
                 instance.handleDisplayStatus("Error Map is now Displayed.");
                 apiManager.tileCache = {}; // reset to force update
@@ -1141,6 +1146,23 @@ async function buildOverlayMain() {
                 instance.handleDisplayStatus("Error Map is now Hidden.");
                 removeLayer("error");
               };
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-show-only-enabled-colors-on-error-map', 'textContent': 'Only Enabled Colors on Error Map', 'checked': templateManager.isErrorMapOnlyEnabledColorsShown()}, (instance, label, checkbox) => {
+            if (templateManager.isErrorMapShown()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
+            checkbox.addEventListener('change', () => {
+              templateManager.setErrorMapOnlyEnabledColorsShown(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Error Map now only shows enabled colors.");
+              } else {
+                instance.handleDisplayStatus("Error Map now shows every pixel involved in the template.");
+              };
+              apiManager.tileCache = {}; // reset to force update
+              forceRefreshTiles();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-show-zoom-buttons', 'textContent': 'Show Integer Zoom Buttons', 'checked': templateManager.areIntegerZoomButtonsShown()}, (instance, label, checkbox) => {
@@ -1223,7 +1245,9 @@ async function buildOverlayMain() {
               templateManager.createOverlayOnMap();
               buildColorFilterList();
               instance.handleDisplayStatus('Enabled all colors');
-              // forceRefreshTiles();
+              if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+                forceRefreshTiles();
+              };
             };
           }).buildElement()
           .addButton({'id': 'bm-button-colors-disable-all', 'textContent': 'Disable All'}, (instance, button) => {
@@ -1236,7 +1260,9 @@ async function buildOverlayMain() {
               removeLayer("overlay");
               buildColorFilterList();
               instance.handleDisplayStatus('Disabled all colors');
-              // forceRefreshTiles();
+              if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+                forceRefreshTiles();
+              };
             };
           }).buildElement()
         .buildElement()
@@ -1525,7 +1551,9 @@ async function buildOverlayMain() {
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${rgb}`);
         syncToggleList();
         templateManager.createOverlayOnMap();
-        // forceRefreshTiles();
+        if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+          forceRefreshTiles();
+        };
       });
 
       row.appendChild(toggle);
