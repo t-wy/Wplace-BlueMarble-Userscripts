@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog, lineBitmap, getCurrentColor, colorpalette } from "./utils.js";
 import { coordsTileCoordsToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
@@ -276,6 +276,74 @@ export default class ApiManager {
         }
         displayCoords1Copy.dataset.text = text1;
         displayCoords2Copy.dataset.text = text2;
+
+        this.updateAddLineTemplateButton();
+      }
+    }
+  }
+
+  /** Update the texts and related functions shown on the pixel info overlay
+   * 
+   * @since 0.86.13
+  */
+  updateAddLineTemplateButton() {
+    // Find the button container for the "Add Line Template" button
+    if (this.templateManager.isLineTemplateButtonShown()) {
+      let btnLineTemplate = document.getElementById('bm-create-line-template');
+      const that = this;
+      if (!btnLineTemplate) {
+        const anchorElement = document.querySelector(".flex.gap-2.px-3>button");
+        if (!anchorElement) return;
+        const buttonContainer = anchorElement.parentElement.parentElement.lastElementChild;
+        btnLineTemplate = document.createElement('span');
+        btnLineTemplate.id = 'bm-create-line-template';
+        btnLineTemplate.textContent = "Add Line Template";
+        btnLineTemplate.className = "btn btn-primary btn-soft";
+        buttonContainer.appendChild(btnLineTemplate);
+        btnLineTemplate.addEventListener('click', function () {
+          if (!areOverlayCoordsFilledAndValid()) {
+            alert(`Some coordinates textboxes are empty or invalid!`);
+            return;
+          };
+          if (that.coordsTilePixel.length !== 4) {
+            alert(`Coordinates are malformed! Did you try clicking on the canvas first?`);
+            return;
+          };
+          const overlayCoords = getOverlayCoords();
+          const coordsTile = [ that.coordsTilePixel[0], that.coordsTilePixel[1] ];
+          const coordsPixel = [ that.coordsTilePixel[2], that.coordsTilePixel[3] ];
+          const [[left, top], [width, height]] = calculateTopLeftAndSize(
+            [coordsTile, coordsPixel],
+            overlayCoords
+          );
+          const defaultDrawMult = that.templateManager.drawMult;
+          if (!testCanvasSize(width * defaultDrawMult, height * defaultDrawMult)) {
+            alert(`The line is too large for the browser to handle.`);
+            return;
+          }
+          const x0 = (coordsTile[0] % 2048) * 1000 + (coordsPixel[0] % 1000);
+          const y0 = (coordsTile[1] % 2048) * 1000 + (coordsPixel[1] % 1000);
+          const isTopLeft = ((x0 == left) ^ (y0 == top)) == 0;
+          const currentColor = getCurrentColor();
+          const currentColorInfo = colorpalette[currentColor];
+          const {
+            imageData, offsetX, offsetY
+          } = isTopLeft ? lineBitmap(
+            [left, top], [left + width - 1, top + height - 1], currentColorInfo.rgb
+          ) : lineBitmap(
+            [left, top + height - 1], [left + width - 1, top], currentColorInfo.rgb
+          );
+          const tx1 = Math.floor(left / 1000);
+          const ty1 = Math.floor(top / 1000);
+          const px1 = left % 1000;
+          const py1 = top % 1000;
+          that.templateManager.createTemplate(
+            imageData,
+            `${currentColorInfo?.name ?? 'Unknown Color'} Line`,
+            [tx1, ty1, px1, py1],
+            "lt",
+          )
+        });
       }
     }
   }

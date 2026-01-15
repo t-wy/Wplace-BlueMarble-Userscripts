@@ -494,3 +494,63 @@ export function getCurrentColor() {
 export function sleep(delay = 0) {
   return new Promise(resolve => setTimeout(resolve, delay));
 }
+
+/** Use Bresenham's line algorithm to join two points
+ * @since 0.86.13
+ */
+export function* plotLine([x0, y0], [x1, y1]) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+
+  while (true) {
+    yield [x0, y0];
+    if (x0 === x1 && y0 === y1) break;
+
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+}
+
+/** Use Bresenham's line algorithm to create a bitmap that joins two points
+ * @since 0.86.13
+ */
+export function lineBitmap([x0, y0], [x1, y1], [r, g, b]) {
+  const minX = Math.min(x0, x1);
+  const minY = Math.min(y0, y1);
+  const maxX = Math.max(x0, x1);
+  const maxY = Math.max(y0, y1);
+
+  const width  = maxX - minX + 1;
+  const height = maxY - minY + 1;
+
+  const data = new Uint8ClampedArray(width * height * 4);
+  const image = new ImageData(data, width, height);
+
+  // draw line
+  for (const [x, y] of plotLine([x0, y0], [x1, y1])) {
+    const bx = x - minX;
+    const by = y - minY;
+    const idx = (by * width + bx) * 4;
+
+    data[idx + 0] = r;
+    data[idx + 1] = g;
+    data[idx + 2] = b;
+    data[idx + 3] = 255;
+  }
+
+  return {
+    imageData: image,
+    offsetX: minX,
+    offsetY: minY
+  };
+}

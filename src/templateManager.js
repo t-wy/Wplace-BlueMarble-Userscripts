@@ -130,12 +130,13 @@ export default class TemplateManager {
   }
 
   /** Creates the template from the inputed file blob
-   * @param {File} blob - The file blob to create a template from
+   * @param {File | ImageBitmap | ImageData} file - The file blob to create a template from
    * @param {string} name - The display name of the template
    * @param {Array<number, number, number, number>} coords - The coordinates of the top left corner of the template
+   * @param {string} anchor - The anchor of the template
    * @since 0.65.77
    */
-  async createTemplate(blob, name, coords) {
+  async createTemplate(file, name, coords, anchor) {
 
     // Creates the JSON object if it does not already exist
     if (!this.templatesJSON) {this.templatesJSON = await this.createJSON(); console.log(`Creating JSON...`);}
@@ -148,14 +149,14 @@ export default class TemplateManager {
       displayName: name,
       sortID: this.largestSeenSortID + 1, // Uncomment this to enable multiple templates (1/2)
       authorID: authorID,
-      file: blob,
+      file: file,
       coords: coords,
       tileSize: this.tileSize,
     });
     this.largestSeenSortID++;
     template.shreadSize = this.drawMult; // Copy to template's shread Size
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
-    const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(this.getAnchor()); // Chunks the tiles
+    const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(anchor || this.getAnchor()); // Chunks the tiles
     // Modify palette enabled status using the honored one
     const toggleStatus = this.getPaletteToggledStatus();
     for (const key of Object.keys(template.colorPalette)) {
@@ -1487,6 +1488,23 @@ export default class TemplateManager {
    */
   async setKeybindsEnabled(value) {
     this.userSettings.enableKeybinds = value;
+    await this.storeUserSettings();
+  }
+
+  /** Whether the "Add Line Template" button is displayed
+   * @returns {boolean}
+   * @since 0.86.13
+   */
+  isLineTemplateButtonShown() {
+    return this.userSettings?.lineTemplateButton ?? false;
+  }
+
+  /** Sets the lineTemplateButton to a value.
+   * @param {boolean} value - The value
+   * @since 0.86.13
+   */
+  async setLineTemplateButtonEnabled(value) {
+    this.userSettings.lineTemplateButton = value;
     await this.storeUserSettings();
   }
 

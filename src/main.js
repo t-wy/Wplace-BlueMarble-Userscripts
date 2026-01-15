@@ -228,7 +228,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'hideCompletedColors': false,
       'sortBy': 'total-desc',
       'anchor': 'lt', // Top left
-      'smartPlace': false,
+      'smartPlace': false, // Hidden in settings
       'memorySavingMode': false,
       'eventEnabled': false,
       'eventProvider': '',
@@ -240,8 +240,10 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'hideStatus': false,
       'isLegacyDisplay': false,
       'showErrorMap': false,
+      'showOnlyEnabledColorsErrorMap': false, // Hidden in settings
       'showIntegerZoom': false,
       'enableKeybinds': false,
+      'lineTemplateButton': false, // Hidden in settings
     });
     templateManager.storeUserSettings();
   } else {
@@ -887,14 +889,15 @@ async function buildOverlayMain() {
           (instance, button) => {
             button.onclick = () => {
               const coords = instance.apiManager?.coordsTilePixel; // Retrieves the coords from the API manager
-              if (!coords?.[0]) {
+              const emptyIfUndefined = value => value ?? "";
+              if (coords?.[0] === undefined) {
                 instance.handleDisplayError('Coordinates are malformed! Did you try clicking on the canvas first?');
                 return;
               }
-              instance.updateInnerHTML('bm-input-tx', coords?.[0] || '');
-              instance.updateInnerHTML('bm-input-ty', coords?.[1] || '');
-              instance.updateInnerHTML('bm-input-px', coords?.[2] || '');
-              instance.updateInnerHTML('bm-input-py', coords?.[3] || '');
+              instance.updateInnerHTML('bm-input-tx', emptyIfUndefined(coords?.[0]));
+              instance.updateInnerHTML('bm-input-ty', emptyIfUndefined(coords?.[1]));
+              instance.updateInnerHTML('bm-input-px', emptyIfUndefined(coords?.[2]));
+              instance.updateInnerHTML('bm-input-py', emptyIfUndefined(coords?.[3]));
               apiManager.updateDownloadButton();
               persistCoords();
             }
@@ -1163,6 +1166,21 @@ async function buildOverlayMain() {
               };
             });
           }).buildElement()
+          .addCheckbox({'id': 'bm-enable-line-template', 'textContent':  'Line Template (Experimental)', 'checked': templateManager.isLineTemplateButtonShown()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setLineTemplateButtonEnabled(checkbox.checked);
+              if (checkbox.checked) {
+                apiManager.updateAddLineTemplateButton();
+                instance.handleDisplayStatus("The \"Add Line Template\" Button is now Shown in Pixel Info.");
+              } else {
+                const btnLineTemplate = document.getElementById('bm-create-line-template');
+                if (btnLineTemplate) {
+                  btnLineTemplate.remove();
+                }
+                instance.handleDisplayStatus("The \"Add Line Template\" Button is now Hidden from Pixel Info.");
+              };
+            });
+          }).buildElement()
         .buildElement()
       .buildElement()
       .addDetails({'id': 'bm-contain-colorfilter', 'textContent': 'Colors', 'style': 'border: 1px solid rgba(255,255,255,0.1); padding: 4px; border-radius: 4px; margin-top: 4px;'}, (instance, summary, details) => {
@@ -1247,7 +1265,17 @@ async function buildOverlayMain() {
               // Kills itself if there is no file
               if (!input?.files[0]) {instance.handleDisplayError(`No file selected!`); return;}
 
-              await templateManager.createTemplate(input.files[0], input.files[0]?.name.replace(/\.[^/.]+$/, ''), [Number(coordTlX.value), Number(coordTlY.value), Number(coordPxX.value), Number(coordPxY.value)]);
+              await templateManager.createTemplate(
+                input.files[0],
+                input.files[0]?.name.replace(/\.[^/.]+$/, ''),
+                [
+                  Number(coordTlX.value),
+                  Number(coordTlY.value),
+                  Number(coordPxX.value),
+                  Number(coordPxY.value),
+                ],
+                templateManager.getAnchor()
+              );
 
               // console.log(`TCoords: ${apiManager.templateCoordsTilePixel}\nCoords: ${apiManager.coordsTilePixel}`);
               // apiManager.templateCoordsTilePixel = apiManager.coordsTilePixel; // Update template coords

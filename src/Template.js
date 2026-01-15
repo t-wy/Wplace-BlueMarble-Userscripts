@@ -13,7 +13,7 @@ export default class Template {
    * @param {number} [params.sortID=0] - The sort number of the template for rendering priority
    * @param {string} [params.authorID=''] - The user ID of the person who exported the template (prevents sort ID collisions)
    * @param {string} [params.url=''] - The URL to the source image
-   * @param {File} [params.file=null] - The template file (pre-processed File or processed bitmap)
+   * @param {File | ImageBitmap | ImageData} [params.file=null] - The template file (pre-processed File or processed bitmap)
    * @param {Array<number>} [params.coords=null] - The coordinates of the top left corner as (tileX, tileY, pixelX, pixelY)
    * @param {Object} [params.chunked=null] - The affected chunks of the template, and their template for each chunk
    * @param {number} [params.tileSize=1000] - The size of a tile in pixels (assumes square tiles)
@@ -100,7 +100,7 @@ export default class Template {
       this.shreadSize = testCanvasSize(5000, 5000) ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
     }
     const shreadSize = this.shreadSize;
-    const bitmap = await createImageBitmap(this.file, { "colorSpaceConversion": "none" }); // Create efficient bitmap from uploaded file
+    const bitmap = this.file instanceof ImageBitmap ? this.file : await createImageBitmap(this.file, { "colorSpaceConversion": "none" }); // Create efficient bitmap from uploaded file
     const imageWidth = bitmap.width;
     const imageHeight = bitmap.height;
   

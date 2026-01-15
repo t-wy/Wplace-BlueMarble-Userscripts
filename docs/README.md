@@ -143,6 +143,8 @@ To use it, copy the content and paste it in the URL field when creating a bookma
       </ul>
     </li>
     <li>Show suspension countdown and reason if it exists. (v0.86.6)</li>
+    <li>Display Integer Zoom Ratio Buttons to allow screenshots to have exactly the same pixel size for each painted pixel (In response to <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/8">#8</a>). (v0.86.10)</li>
+    <li>Allow creating a line template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)</li>
   </ul>
 </p>
 
