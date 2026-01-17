@@ -414,7 +414,7 @@ export default class ApiManager {
           const py1 = offsetY % 1000;
           that.templateManager.createTemplate(
             imageData,
-            `${currentColorInfo?.name ?? 'Unknown Color'} Line`,
+            `${currentColorInfo?.name ?? 'Unknown Color'} Circle`,
             [tx1, ty1, px1, py1],
             "lt",
           )
