@@ -355,22 +355,28 @@ function observeBlack() {
 
       const isShown = templateManager.areIntegerZoomButtonsShown();
 
-      function createZoomButton(zoom) {
+      function createZoomButton(zoomLevel, zoomLabel) {
         const zoomBtn = document.createElement('button');
-        zoomBtn.id = 'BM-zoom-' + zoom + 'x';
-        zoomBtn.textContent = zoom + 'x';
+
+        const label = zoomLabel || (zoomLevel + 'x');
+        zoomBtn.id = 'BM-zoom-' + label;
+        zoomBtn.textContent = label;
+
         zoomBtn.className = ref.className;
         zoomBtn.classList.add('bm-zoom-btn');
-        zoomBtn.onclick = function() {
-          setZoom(Math.log2(4000 * zoom / window['devicePixelRatio']));
-        }
         if (!isShown) {
           zoomBtn.style.display = "none";
-        }
+        };
+
+        zoomBtn.onclick = function() {
+          setZoom(Math.log2(4000 * zoomLevel / window['devicePixelRatio']));
+        };
 
         container.appendChild(zoomBtn); // Adds the zoom level button
-      }
-      [1, 2, 3, 5, 10, 25, 50, 100].forEach(createZoomButton);
+      };
+
+      createZoomButton(0.38890873, "Min");
+      [1, 2, 3, 4, 5, 10, 25].forEach( zoom => createZoomButton(zoom) );
     }
 
     const black = document.querySelector('#color-1'); // Attempt to retrieve the black color element for anchoring
