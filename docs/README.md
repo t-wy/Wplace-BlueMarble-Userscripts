@@ -149,7 +149,10 @@ To use it, copy the content and paste it in the URL field when creating a bookma
         <li>Extended by <a href="https://github.com/Commenter25">@Commenter25</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/13">PR #13</a>. (v0.86.15)</li>
       </ul>
     </li>
-    <li>Allow creating a line template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)</li>
+    <li>Allow creating a line / circle template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)</li>
+      <ul>
+        <li>For circles, the textbox coordinates refer to the center, and the currently selected point refers to a point on the circle that defines the radius. (v0.86.16)</li>
+      </ul>
     <li>Add an option to allow only currently enabled colors to be included in the error map. (Addresses <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/11">#11</a>). (v0.86.14)</li>
   </ul>
 </p>

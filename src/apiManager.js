@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog, lineBitmap, getCurrentColor, colorpalette } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog, lineBitmap, getCurrentColor, colorpalette, midPointDistance, circleBitmap } from "./utils.js";
 import { coordsTileCoordsToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
@@ -278,6 +278,7 @@ export default class ApiManager {
         displayCoords2Copy.dataset.text = text2;
 
         this.updateAddLineTemplateButton();
+        this.updateAddCircleTemplateButton();
       }
     }
   }
@@ -297,7 +298,7 @@ export default class ApiManager {
         const buttonContainer = anchorElement.parentElement.parentElement.lastElementChild;
         btnLineTemplate = document.createElement('span');
         btnLineTemplate.id = 'bm-create-line-template';
-        btnLineTemplate.textContent = "Add Line Template";
+        btnLineTemplate.textContent = "+ Line";
         btnLineTemplate.className = "btn btn-primary btn-soft";
         buttonContainer.appendChild(btnLineTemplate);
         btnLineTemplate.addEventListener('click', function () {
@@ -337,6 +338,74 @@ export default class ApiManager {
           const ty1 = Math.floor(top / 1000);
           const px1 = left % 1000;
           const py1 = top % 1000;
+          that.templateManager.createTemplate(
+            imageData,
+            `${currentColorInfo?.name ?? 'Unknown Color'} Line`,
+            [tx1, ty1, px1, py1],
+            "lt",
+          )
+        });
+      }
+    }
+  }
+
+  /** Update the texts and related functions shown on the pixel info overlay
+   * 
+   * @since 0.86.16
+  */
+  updateAddCircleTemplateButton() {
+    // Find the button container for the "Add Line Template" button
+    if (this.templateManager.isLineTemplateButtonShown()) {
+      let btnCircleTemplate = document.getElementById('bm-create-circle-template');
+      const that = this;
+      if (!btnCircleTemplate) {
+        const anchorElement = document.querySelector(".flex.gap-2.px-3>button");
+        if (!anchorElement) return;
+        const buttonContainer = anchorElement.parentElement.parentElement.lastElementChild;
+        btnCircleTemplate = document.createElement('span');
+        btnCircleTemplate.id = 'bm-create-circle-template';
+        btnCircleTemplate.textContent = "+ Circle";
+        btnCircleTemplate.className = "btn btn-primary btn-soft";
+        buttonContainer.appendChild(btnCircleTemplate);
+        btnCircleTemplate.addEventListener('click', function () {
+          if (!areOverlayCoordsFilledAndValid()) {
+            alert(`Some coordinates textboxes are empty or invalid!`);
+            return;
+          };
+          if (that.coordsTilePixel.length !== 4) {
+            alert(`Coordinates are malformed! Did you try clicking on the canvas first?`);
+            return;
+          };
+          const overlayCoords = getOverlayCoords();
+          const coordsTile = [ that.coordsTilePixel[0], that.coordsTilePixel[1] ];
+          const coordsPixel = [ that.coordsTilePixel[2], that.coordsTilePixel[3] ];
+          const [[left, top], [width, height]] = calculateTopLeftAndSize(
+            [coordsTile, coordsPixel],
+            overlayCoords
+          );
+          const {d, y} = midPointDistance([0, 0], [width - 1,  height - 1]);
+          const diameter = y * 2 + 1;
+          const defaultDrawMult = that.templateManager.drawMult;
+          if (!testCanvasSize(diameter * defaultDrawMult, diameter * defaultDrawMult)) {
+            alert(`The line is too large for the browser to handle.`);
+            return;
+          }
+          const x0 = (overlayCoords[0][0] % 2048) * 1000 + (overlayCoords[1][0] % 1000);
+          const y0 = (overlayCoords[0][1] % 2048) * 1000 + (overlayCoords[1][1] % 1000);
+          const x1 = (coordsTile[0] % 2048) * 1000 + (coordsPixel[0] % 1000);
+          const y1 = (coordsTile[1] % 2048) * 1000 + (coordsPixel[1] % 1000);
+          const currentColor = getCurrentColor();
+          const currentColorInfo = colorpalette[currentColor];
+          const {
+            imageData, offsetX, offsetY
+          } = circleBitmap(
+            [x0, y0], [x1, y1], currentColorInfo.rgb
+          );
+
+          const tx1 = Math.floor(offsetX / 1000);
+          const ty1 = Math.floor(offsetY / 1000);
+          const px1 = offsetX % 1000;
+          const py1 = offsetY % 1000;
           that.templateManager.createTemplate(
             imageData,
             `${currentColorInfo?.name ?? 'Unknown Color'} Line`,

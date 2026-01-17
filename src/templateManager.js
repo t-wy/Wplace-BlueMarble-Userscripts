@@ -209,7 +209,7 @@ export default class TemplateManager {
     console.log(Object.keys(this.templatesJSON.templates).length);
     console.log(this.templatesJSON);
     console.log(this.templatesArray);
-    console.log(JSON.stringify(this.templatesJSON));
+    // console.log(JSON.stringify(this.templatesJSON));
 
     await this.storeTemplates();
   }
@@ -1514,7 +1514,7 @@ export default class TemplateManager {
     await this.storeUserSettings();
   }
 
-  /** Whether the "Add Line Template" button is displayed
+  /** Whether the "+ Line" and "+ Circle" buttons are displayed
    * @returns {boolean}
    * @since 0.86.13
    */

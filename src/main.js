@@ -1206,18 +1206,23 @@ async function buildOverlayMain() {
               };
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-enable-line-template', 'textContent':  'Line Template (Experimental)', 'checked': templateManager.isLineTemplateButtonShown()}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-enable-line-template', 'textContent':  'Shape Template (Experimental)', 'checked': templateManager.isLineTemplateButtonShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setLineTemplateButtonEnabled(checkbox.checked);
               if (checkbox.checked) {
                 apiManager.updateAddLineTemplateButton();
-                instance.handleDisplayStatus("The \"Add Line Template\" Button is now Shown in Pixel Info.");
+                apiManager.updateAddCircleTemplateButton();
+                instance.handleDisplayStatus("The Line and Circle Template Buttons are now Shown in Pixel Info.");
               } else {
                 const btnLineTemplate = document.getElementById('bm-create-line-template');
                 if (btnLineTemplate) {
                   btnLineTemplate.remove();
                 }
-                instance.handleDisplayStatus("The \"Add Line Template\" Button is now Hidden from Pixel Info.");
+                const btnCircleTemplate = document.getElementById('bm-create-circle-template');
+                if (btnCircleTemplate) {
+                  btnCircleTemplate.remove();
+                }
+                instance.handleDisplayStatus("The Line and Circle Template Buttons are now Hidden from Pixel Info.");
               };
             });
           }).buildElement()

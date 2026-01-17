@@ -401,6 +401,7 @@ export function copyToClipboard(text) {
 }
 
 /** Calculate the top left and size of the image to export
+ * The dimensions are inclusive (e.g. 11 for x: [0, 10])
  * @since 0.85.28
  */
 export function calculateTopLeftAndSize(coords1, coords2) {
@@ -525,6 +526,13 @@ export function* plotLine([x0, y0], [x1, y1]) {
  * @since 0.86.13
  */
 export function lineBitmap([x0, y0], [x1, y1], [r, g, b]) {
+  if (Math.abs(x1 - x0) * 2 > 2048000) {
+    if (x1 > x0) {
+      x0 += 2048000;
+    } else {
+      x1 += 2048000;
+    }
+  }
   const minX = Math.min(x0, x1);
   const minY = Math.min(y0, y1);
   const maxX = Math.max(x0, x1);
@@ -540,6 +548,101 @@ export function lineBitmap([x0, y0], [x1, y1], [r, g, b]) {
   for (const [x, y] of plotLine([x0, y0], [x1, y1])) {
     const bx = x - minX;
     const by = y - minY;
+    const idx = (by * width + bx) * 4;
+
+    data[idx + 0] = r;
+    data[idx + 1] = g;
+    data[idx + 2] = b;
+    data[idx + 3] = 255;
+  }
+
+  return {
+    imageData: image,
+    offsetX: minX,
+    offsetY: minY
+  };
+}
+
+/** Determine the rounded distance between two points
+ * @since 0.86.16
+ */
+export function midPointDistance([x0, y0], [x1, y1]) {
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const r2 = dx * dx + dy * dy;
+  let y = Math.ceil(Math.sqrt(r2));
+  let d = (y + y - 1) * (y + y - 1) - 4 * r2; // (2x)^2 + (2y - 1)^2 - r^2
+  if (d >= 0) { // midpoint is outside the circle
+    --y;
+    d -= 8 * y; // (2y - 1)^2 - (2y + 1)^2
+  }
+  return {
+    "d": d,
+    "y": y
+  }
+}
+
+/** Use Midpoint circle algorithm to create a circle centered at [x0, y0]
+ * @since 0.86.16
+ */
+export function* plotCircle([x0, y0], [x1, y1]) {
+  let {d, y} = midPointDistance([x0, y0], [x1, y1]);
+  yield [x0, y0 + y];
+  if (y === 0) return;
+  yield [x0, y0 - y];
+  yield [x0 + y, y0];
+  yield [x0 - y, y0];
+  let x = 1;
+  while (x < y) {
+    d += 8 * x - 4 // 2x^2 - (2(x - 1))^2
+    if (d >= 0) {
+      --y;
+      d -= 8 * y;
+    }
+    yield [x0 + x, y0 + y];
+    yield [x0 + x, y0 - y];
+    yield [x0 - x, y0 + y];
+    yield [x0 - x, y0 - y];
+    if (x == y) break;
+    yield [x0 + y, y0 + x];
+    yield [x0 + y, y0 - x];
+    yield [x0 - y, y0 + x];
+    yield [x0 - y, y0 - x];
+    ++x;
+  }
+}
+
+/** Use Midpoint circle algorithm to create a bitmap that joins two points
+ Math.min（y0, y1）
+ */
+export function circleBitmap([x0, y0], [x1, y1], [r, g, b]) {
+  if (Math.abs(x1 - x0) * 2 > 2048000) {
+    if (x1 > x0) {
+      x0 += 2048000;
+    } else {
+      x1 += 2048000;
+    }
+  }
+  let {d, y} = midPointDistance([x0, y0], [x1, y1]);
+  const minX = (x0 + 2048000 - y) % 2048000;
+  const minY = Math.max(0, y0 - y);
+  const actualX = minX + y;
+  const actualX1 = x1 + (actualX - x0);
+  const maxX = actualX + y;
+  const maxY = Math.min(y0 + y, 2048000 - 1);
+
+  const width  = maxX - minX + 1;
+  const height = maxY - minY + 1;
+
+  const data = new Uint8ClampedArray(width * height * 4);
+  const image = new ImageData(data, width, height);
+
+  // draw line
+  for (const [x, y] of plotCircle([actualX, y0], [actualX1, y1])) {
+    const bx = x - minX;
+    const by = y - minY;
+    if (bx < 0 || bx >= width) continue;
+    if (by < 0 || by >= height) continue;
     const idx = (by * width + bx) * 4;
 
     data[idx + 0] = r;
