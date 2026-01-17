@@ -137,15 +137,20 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
     <li>Allow templates to be renamed by clicking on the template name. (v0.86.1)</li>
     <li>
-    Allow smooth diagonal map scrolling via keyboard using arrow keys (<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>) (Implemented by <a href="https://github.com/due2e">@due2e</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/7">PR #7</a>). (v0.86.5)
+    Allow smooth diagonal map scrolling via keyboard using arrow keys (<kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd>). (v0.86.5)
       <ul>
+        <li>Implemented by <a href="https://github.com/due2e">@due2e</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/7">PR #7</a>.</li>
         <li>Notice that wplace has its default key bindings for axis-aligned panning via <kbd>↑</kbd> <kbd>←</kbd> <kbd>↓</kbd> <kbd>→</kbd> (and rotation / tilt with <kbd>Shift</kbd> key combined)</li>
       </ul>
     </li>
     <li>Show suspension countdown and reason if it exists. (v0.86.6)</li>
-    <li>Display Integer Zoom Ratio Buttons to allow screenshots to have exactly the same pixel size for each painted pixel (Address <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/8">#8</a>). (v0.86.10)</li>
+    <li>Display extra zoom ratio Buttons to allow screenshots to have exactly the same pixel size for each painted pixel, or the minimum zoom possible before the artwork disappears (Addresses <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/8">#8</a>). (v0.86.10)
+      <ul>
+        <li>Extended by <a href="https://github.com/Commenter25">@Commenter25</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/13">PR #13</a>. (v0.86.15)</li>
+      </ul>
+    </li>
     <li>Allow creating a line template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)</li>
-    <li>Add an option to allow only currently enabled colors to be included in the error map. (Address <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/11">#11</a>). (v0.86.14)</li>
+    <li>Add an option to allow only currently enabled colors to be included in the error map. (Addresses <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/11">#11</a>). (v0.86.14)</li>
   </ul>
 </p>
 
