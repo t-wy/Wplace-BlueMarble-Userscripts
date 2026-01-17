@@ -635,3 +635,20 @@ export function panMap(offset) {
     });
   }, offset);
 }
+
+
+/** Check the current tileSize
+ * @since 0.86.15
+ */
+export function getCurrentTileSize() {
+  var tileSize = controlMapTiler((map) => {
+    var source = map.getSource("pixel-art-layer");
+    if (!source) return;
+    return source.tileSize;
+  });
+  // fallback
+  if (tileSize === null) {
+    return window.innerWidth > 640 ? 550 : 400;
+  }
+  return tileSize;
+}

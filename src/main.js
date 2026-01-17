@@ -7,7 +7,7 @@ import Overlay from './Overlay.js';
 import ApiManager from './apiManager.js';
 import TemplateManager from './templateManager.js';
 import { consoleLog, consoleWarn, selectAllCoordinateInputs, rgbToMeta, getOverlayCoords, sortByOptions, getCurrentColor } from './utils.js';
-import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound, panMap, setZoom} from './utilsMaptiler.js';
+import { getCenterGeoCoords, getPixelPerWplacePixel, forceRefreshTiles, removeLayer, themeList, setTheme, isMapTilerLoaded, teleportToTileCoords, teleportToGeoCoords, coordsTileCoordsToGeoCoords, coordsGeoCoordsToTileCoords, doAfterMapFound, panMap, setZoom, getCurrentTileSize} from './utilsMaptiler.js';
 // import { getCenterGeoCoords, addTemplate } from './utilsMaptiler.js';
 
 const name = GM_info.script.name.toString(); // Name of userscript
@@ -339,38 +339,56 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
   consoleLog(`%c${name}%c (${version}) userscript has loaded!`, 'color: cornflowerblue;', '');
 });
 
+/** Add the zoom level buttons if they do not exist.
+ * @since 0.86.15
+ */
+function createZoomButtons() {
+  // If the 1x zoom button does not exist, we make new zoom level buttons
+  const zoom1 = document.getElementById('BM-zoom-1x');
+  if (zoom1) return;
+  const ref = Array.from(document.querySelectorAll(".gap-1>.btn[title]")).slice(-1)[0];
+  if (!ref) return;
+  const container = ref.parentNode;
+  if (!container) return;
+
+  const isShown = templateManager.areIntegerZoomButtonsShown();
+
+  function createZoomButton(zoomLevel) {
+    const zoomBtn = document.createElement('button');
+
+    const label = zoomLevel === 0 ? "Min" : (zoomLevel + 'x');
+    zoomBtn.id = `BM-zoom-${label}`;
+    zoomBtn.textContent = label;
+
+    zoomBtn.className = ref.className;
+    zoomBtn.classList.add('bm-zoom-btn');
+    if (!isShown) {
+      zoomBtn.style.display = "none";
+    };
+
+    zoomBtn.onclick = function() {
+      var actualZoomLevel = zoomLevel;
+      if (zoomLevel === 0) {
+        var currentTileSize = getCurrentTileSize();
+        var epsilon = 1e-7; // Ensure no rounding issue but remain negligible
+        setZoom(Math.log2(8 * currentTileSize * currentTileSize) / 2 + epsilon);
+        return;
+      }
+      setZoom(Math.log2(4000 * actualZoomLevel / window['devicePixelRatio']));
+    };
+
+    container.appendChild(zoomBtn); // Adds the zoom level button
+  };
+
+  [0, 1, 2, 3, 4, 5, 10, 25].forEach( zoom => createZoomButton(zoom) );
+}
+
 /** Observe the black color, and add the "Move" button.
  * @since 0.66.3
  */
 function observeBlack() {
   const observer = new MutationObserver((mutations, observer) => {
-    const zoom1 = document.getElementById('BM-zoom-1x'); // The 1x zoom button
-
-    // If the 1x zoom button does not exist, we make a new one
-    if (!zoom1) {
-      const ref = Array.from(document.querySelectorAll(".gap-1>.btn[title]")).slice(-1)[0];
-      const isShown = templateManager.areIntegerZoomButtonsShown();
-      if (ref) {
-        const container = ref.parentNode;
-        if (container) {
-          [1, 2, 3, 5, 10, 25, 50, 100].forEach(zoom => {
-            const zoomBtn = document.createElement('button');
-            zoomBtn.id = 'BM-zoom-' + zoom + 'x';
-            zoomBtn.textContent = zoom + 'x';
-            zoomBtn.className = ref.className;
-            zoomBtn.classList.add('bm-zoom-btn');
-            zoomBtn.onclick = function() {
-              setZoom(Math.log2(4000 * zoom / window['devicePixelRatio']));
-            }
-            if (!isShown) {
-              zoomBtn.style.display = "none";
-            }
-
-            container.appendChild(zoomBtn); // Adds the zoom 1x button
-          })
-        }
-      }
-    }
+    createZoomButtons();
 
     const black = document.querySelector('#color-1'); // Attempt to retrieve the black color element for anchoring
 
