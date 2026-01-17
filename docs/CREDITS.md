@@ -19,6 +19,8 @@
 
 "Blue Marble" is made by SwingTheVine
 
+This fork is made by TWY (@t-wy)
+
 The [Blue Marble Website](https://bluemarble.lol/) is made by [crqch](https://github.com/crqch).
 
 The [Blue Marble Website](https://bluemarble.camilledaguin.fr/) used until Aug/24/2025 was made by Camille Daguin.

@@ -67,7 +67,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
 <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/releases" target="_blank" rel="noopener noreferrer"><img alt="Latest Release" src="https://img.shields.io/github/v/release/t-wy/Wplace-BlueMarble-Userscripts?sort=semver&style=flat&label=Latest%20Release&color=blue"></a>
 <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/LICENSE.txt" target="_blank" rel="noopener noreferrer"><img alt="Software License: MPL-2.0" src="https://img.shields.io/badge/Software_License-MPL--2.0-slateblue?style=flat"></a>
 <a href="https://discord.gg/tpeBPy46hf" target="_blank" rel="noopener noreferrer"><img alt="Contact Me" src="https://img.shields.io/badge/Contact_Me-gray?style=flat&logo=Discord&logoColor=white&logoSize=auto&labelColor=cornflowerblue"></a>
-<a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer"><img alt="Blue Marble Website" src="https://img.shields.io/badge/Blue_Marble_Website-Camille_Daguin-blue?style=flat&logo=globe&logoColor=white"></a>
+<a href="https://bluemarble.lol/" target="_blank" rel="noopener noreferrer"><img alt="Blue Marble Website" src="https://img.shields.io/badge/Blue_Marble_Website-Camille_Daguin-blue?style=flat&logo=globe&logoColor=white"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="WakaTime" src="https://img.shields.io/badge/Coding_Time-124hrs_4mins-blue?style=flat&logo=wakatime&logoColor=black&logoSize=auto&labelColor=white"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Patches" src="https://img.shields.io/badge/Total_Patches-503-black?style=flat"></a>
 <a href="" target="_blank" rel="noopener noreferrer"><img alt="Total Lines of Code" src="https://tokei.rs/b1/github/t-wy/Wplace-BlueMarble-Userscripts?category=code"></a>
@@ -202,7 +202,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <summary>
       <b>I want to visit the website.</b> <sup>(Click to Expand)</sup>
     </summary>
-    <a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer">Click here</a> to visit the official Blue Marble website.
+    <a href="https://bluemarble.lol/" target="_blank" rel="noopener noreferrer">Click here</a> to visit the official Blue Marble website.
   </details>
 </p>
 
@@ -216,7 +216,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Allowing you to use the eyedropper on the template image, provided the colors are correct</li>
     <li>...and more!</li>
   </ul>
-  If you like this userscript, please ⭐ the repository! For more information and updates, visit the <a href="https://bluemarble.camilledaguin.fr/" target="_blank" rel="noopener noreferrer">Blue Marble website</a>. If you wish to contribute to Blue Marble, check out the <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a> file in <code>docs/</code>.
+  If you like this userscript, please ⭐ the repository! For more information and updates, visit the <a href="https://bluemarble.lol/" target="_blank" rel="noopener noreferrer">Blue Marble website</a>. If you wish to contribute to Blue Marble, check out the <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/blob/main/docs/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">CONTRIBUTING.md</a> file in <code>docs/</code>.
 
   <img alt="Showcase image of Blue Marble template" src="./assets/Showcase1.png">
 
