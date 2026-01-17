@@ -671,6 +671,8 @@ export default class ApiManager {
             // i.e. x is negative, it returns floor(x / 2048) and (x % 2048), which are both negative
             coordsTile[0] += 2048;
             coordsPixel[0] += 1000;
+          } else if (coordsTile[0] >= 2048) {
+            coordsTile[0] -= 2048;
           }
           
           this.coordsTilePixel = [...coordsTile, ...coordsPixel]; // Combines the two arrays such that [x, y, x, y]
