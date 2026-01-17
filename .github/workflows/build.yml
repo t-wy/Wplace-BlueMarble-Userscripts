@@ -3,7 +3,7 @@ name: Bump, Build, Release
 on:
   push:
     branches:
-      - main
+      # - main
       - custom-improve
 
 
@@ -189,7 +189,7 @@ jobs:
 
   update-wiki:
 
-    if: github.ref == 'refs/heads/main'
+    if: false # github.ref == 'refs/heads/main'
     
     permissions:
       contents: write
