@@ -149,11 +149,20 @@ To use it, copy the content and paste it in the URL field when creating a bookma
         <li>Extended by <a href="https://github.com/Commenter25">@Commenter25</a> as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/13">PR #13</a>. (v0.86.15)</li>
       </ul>
     </li>
-    <li>Allow creating a line / circle template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)</li>
+    <li>Allow creating a line / circle template of the currently selected color by picking two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.86.13)
       <ul>
         <li>For circles, the textbox coordinates refer to the center, and the currently selected point refers to a point on the circle that defines the radius. (v0.86.16)</li>
       </ul>
+    </li>
     <li>Add an option to allow only currently enabled colors to be included in the error map. (Addresses <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/11">#11</a>). (v0.86.14)</li>
+    <li>Fix some boundaries issues from Blue Marble upstream and Wplace. (v0.86.16)
+      <ul>
+        <li>Blue Marble: Template creation that crosses the Tl X: 2047 - 0 boundary not displaying from Tile X = 0.</li>
+        <li>Blue Marble: The (Tl X, Tl Y, Px X, Px Y) not updating when picking a pixel from Tile X = 2047 while the Map Center is at Tile X = 0.</li>
+        <li>Blue Marble & Wplace: The Pin button copies the faulty (Tl X, Tl Y, Px X, Px Y) from the pixel info request (i.e. Tl X and Px X being negative) when picking a pixel from Tile X = 2047 while the Map Center is at Tile X = 0.</li>
+        <li>Wplace: Pixel Info not displaying when picking a pixel from Tile X = 0 when the Map Center is at Tile X = 2047.</li>
+      </ul>
+    </li>
   </ul>
 </p>
 
