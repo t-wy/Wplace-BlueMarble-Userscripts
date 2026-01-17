@@ -132,6 +132,46 @@ inject(() => {
             console.error(`%c${name}%c: Failed to parse JSON: `, consoleStyle, '', err);
           });
         });
+      } if (endpointName.includes("/s0/pixel/") && endpointName.includes("?x=") && endpointName.includes("&y=") && cloned.status === 400) {
+        // try to fix the JSON response
+        return new Promise((resolve, reject) => {
+          const cloned2 = response.clone();
+          cloned2.text().then(text => {
+            const errorPrefix = '{"error":"Invalid x","status":400}';
+            if (text.startsWith(errorPrefix)) {
+              const fixedPayload = text.slice(errorPrefix.length);
+              console.error("Fixed", fixedPayload);
+              try {
+                const actualPayload = JSON.parse(fixedPayload);
+                console.error("actualPayload", actualPayload);
+                window.postMessage({
+                  source: 'blue-marble',
+                  endpoint: endpointName,
+                  jsonData: actualPayload,
+                  blink: blink
+                }, '*');
+
+                // Creates a new response
+                resolve(new Response(fixedPayload, {
+                  headers: cloned.headers,
+                  status: 200,
+                  statusText: 'OK'
+                }));
+              } catch (err) {
+                console.error(`%c${name}%c: Failed to parse JSON: `, consoleStyle, '', err);
+                // Return the original 400 response
+                resolve(response);
+              }
+            } else {
+              // Return the original 400 response
+              resolve(response);
+            }
+          }).catch(err => {
+            console.error(`%c${name}%c: Failed to get Content: `, consoleStyle, '', err);
+            // Return the original 400 response
+            resolve(response);
+          });
+        });
       } else {
         cloned.json()
         .then(jsonData => {

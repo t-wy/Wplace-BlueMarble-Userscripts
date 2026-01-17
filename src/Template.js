@@ -295,13 +295,23 @@ export default class Template {
         context.putImageData(imageData, 0, 0);
 
         // Creates the "0000,0000,000,000" key name
-        const templateTileName = `${(this.coords[0] + Math.floor(pixelX / this.tileSize))
+        const templateTileName = `${
+          ((this.coords[0] + Math.floor(pixelX / this.tileSize)) % 2048) // wrap
           .toString()
-          .padStart(4, '0')},${(this.coords[1] + Math.floor(pixelY / this.tileSize))
+          .padStart(4, '0')
+        },${
+          (this.coords[1] + Math.floor(pixelY / this.tileSize))
           .toString()
-          .padStart(4, '0')},${(pixelX % this.tileSize)
+          .padStart(4, '0')
+        },${
+          (pixelX % this.tileSize)
           .toString()
-          .padStart(3, '0')},${(pixelY % this.tileSize).toString().padStart(3, '0')}`;
+          .padStart(3, '0')
+        },${
+          (pixelY % this.tileSize)
+          .toString()
+          .padStart(3, '0')
+        }`;
           
         templateTiles[templateTileName] = await createImageBitmap(canvas); // Creates the bitmap
         // Record tile prefix for fast lookup later

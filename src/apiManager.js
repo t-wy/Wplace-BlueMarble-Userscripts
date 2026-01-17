@@ -208,27 +208,30 @@ export default class ApiManager {
     const coordsTile = [ this.coordsTilePixel[0], this.coordsTilePixel[1] ];
     const coordsPixel = [ this.coordsTilePixel[2], this.coordsTilePixel[3] ];
     const displayTP = serverTPtoDisplayTP(coordsTile, coordsPixel);
-    
-    const spanElements = document.querySelectorAll('span'); // Retrieves all span elements
 
-    // For every span element, find the one we want (pixel numbers when canvas clicked)
-    for (const element of spanElements) {
-      if (element.textContent.trim().includes(`${displayTP[0]}, ${displayTP[1]}`)) {
-        // Find the additional pixel coords span
-        let displayCoords1 = document.getElementById('bm-display-coords1');
-        let displayCoords2 = document.getElementById('bm-display-coords2');
-        let displayCoords1Copy = document.getElementById('bm-display-coords1-copy');
-        let displayCoords2Copy = document.getElementById('bm-display-coords2-copy');
+    let displayCoords1 = document.getElementById('bm-display-coords1');
+    let displayCoords2 = document.getElementById('bm-display-coords2');
+    let displayCoords1Copy = document.getElementById('bm-display-coords1-copy');
+    let displayCoords2Copy = document.getElementById('bm-display-coords2-copy');
 
-        const geoCoords = coordsTileCoordsToGeoCoords(coordsTile, coordsPixel);
-        const text1 = `(Tl X: ${coordsTile[0]}, Tl Y: ${coordsTile[1]}, Px X: ${coordsPixel[0]}, Px Y: ${coordsPixel[1]})`;
-        const text2 = `(${geoCoords[0].toFixed(5)}, ${geoCoords[1].toFixed(5)})`;
-        
-        // If we could not find the addition coord span, we make it then update the textContent with the new coords
-        if (!displayCoords1) {
+    // Find the additional pixel coords span
+    const geoCoords = coordsTileCoordsToGeoCoords(coordsTile, coordsPixel);
+    const text1 = `(Tl X: ${coordsTile[0]}, Tl Y: ${coordsTile[1]}, Px X: ${coordsPixel[0]}, Px Y: ${coordsPixel[1]})`;
+    const text2 = `(${geoCoords[0].toFixed(5)}, ${geoCoords[1].toFixed(5)})`;
+  
+    // If we could not find the addition coord span, we make it then update the textContent with the new coords
+    if (!displayCoords1) {
+      // For every span element, find the one we want (pixel numbers when canvas clicked)
+      const spanElements = document.querySelectorAll('span'); // Retrieves all span elements
+      const searchSalt1 = `${displayTP[0]}, ${displayTP[1]}`;
+      const searchSalt2 = `${displayTP[0] - 4000}, ${displayTP[1]}`; // Their JS negative mod issue
+      for (const element of spanElements) {
+        if (
+          element.textContent.trim().includes(searchSalt1) ||
+          element.textContent.trim().includes(searchSalt2)
+        ) {
           displayCoords1 = document.createElement('span');
           displayCoords1.id = 'bm-display-coords1';
-          displayCoords1.textContent = text1;
           displayCoords1.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
           element.parentNode.parentNode.parentNode.insertAdjacentElement('afterend', displayCoords1);
 
@@ -255,7 +258,6 @@ export default class ApiManager {
 
           displayCoords2 = document.createElement('span');
           displayCoords2.id = 'bm-display-coords2';
-          displayCoords2.textContent = text2;
           displayCoords2.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
           br.insertAdjacentElement('afterend', displayCoords2);
 
@@ -270,17 +272,21 @@ export default class ApiManager {
 
           // Space between coords and copy
           displayCoords2.insertAdjacentText('afterend', ' ');
-        } else {
-          displayCoords1.textContent = text1;
-          displayCoords2.textContent = text2;
+  
+          break;
         }
-        displayCoords1Copy.dataset.text = text1;
-        displayCoords2Copy.dataset.text = text2;
-
-        this.updateAddLineTemplateButton();
-        this.updateAddCircleTemplateButton();
       }
     }
+
+    if (displayCoords1) {
+      displayCoords1.textContent = text1;
+      displayCoords2.textContent = text2;
+      displayCoords1Copy.dataset.text = text1;
+      displayCoords2Copy.dataset.text = text2;
+    }
+
+    this.updateAddLineTemplateButton();
+    this.updateAddCircleTemplateButton();
   }
 
   /** Update the texts and related functions shown on the pixel info overlay
@@ -648,12 +654,23 @@ export default class ApiManager {
             break;
           }
           const payloadExtractor = new URLSearchParams(data['endpoint'].split('?')[1]); // Declares a new payload deconstructor and passes in the fetch request payload
-          const coordsPixel = [+payloadExtractor.get('x'), +payloadExtractor.get('y')]; // Retrieves the deconstructed pixel coords from the payload
+          const coordsPixel = [
+            +payloadExtractor.get('x'),
+            +payloadExtractor.get('y')
+          ]; // Retrieves the deconstructed pixel coords from the payload
           
           // Don't save the coords if there are previous coords that could be used
           if (this.coordsTilePixel.length && (!coordsTile.length || !coordsPixel.length)) {
             overlay.handleDisplayError(`Coordinates are malformed!\nDid you try clicking the canvas first?`);
             return; // Kills itself
+          }
+
+          // Fix boundary cases
+          if (coordsTile[0] < 0 && coordsPixel[0] < 0) {
+            // Probably some JS rounding issues
+            // i.e. x is negative, it returns floor(x / 2048) and (x % 2048), which are both negative
+            coordsTile[0] += 2048;
+            coordsPixel[0] += 1000;
           }
           
           this.coordsTilePixel = [...coordsTile, ...coordsPixel]; // Combines the two arrays such that [x, y, x, y]
