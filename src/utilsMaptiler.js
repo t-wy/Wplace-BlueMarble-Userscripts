@@ -243,7 +243,7 @@ export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
     } else {
       const layers = map["getLayersOrder"]();
       if (layers && layers.length && layers[layers.length - 1] !== hoverLayerName + "-ghost") {
-        console.log("moveLayer", hoverLayerName + "-ghost");
+        console.log("moveLayer-1", hoverLayerName + "-ghost");
         map["moveLayer"](hoverLayerName + "-ghost"); // move to top
       }
     }
@@ -448,6 +448,7 @@ export function setTheme(themeName) {
                   ],
                 });
               };
+              console.log("layers", layers.slice(-5));
               if (!map["getLayer"](sourceID)) {
                 map["addLayer"]({
                   "id": sourceID,
@@ -461,6 +462,14 @@ export function setTheme(themeName) {
                 // Notice that moveLayer itself also fires pixeldata event from _layerOrderChanged
                 console.log("moveLayer", sourceID, nextLayer);
                 map["moveLayer"](sourceID, nextLayer);
+              } else {
+                // check index order
+                const thisIndex = layers.indexOf(sourceID);
+                const nextIndex = nextLayer === undefined ? layers.length : layers.indexOf(nextLayer);
+                if (thisIndex > nextIndex) {
+                  console.log("moveLayer", sourceID, nextLayer);
+                  map["moveLayer"](sourceID, nextLayer);
+                }
               };
             })
           };

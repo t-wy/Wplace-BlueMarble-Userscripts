@@ -1,6 +1,6 @@
 import Template from "./Template";
 import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep } from "./utils";
-import { themeList, addTemplateCanvas, removeLayer, doAfterMapFound } from './utilsMaptiler.js';
+import { themeList, addTemplateCanvas, removeLayer, doAfterMapFound, forceRefreshTiles } from './utilsMaptiler.js';
 
 /** Manages the template system.
  * This class handles all external requests for template modification, creation, and analysis.
@@ -1115,8 +1115,14 @@ export default class TemplateManager {
     ) {
       this.completedColorsBitmapLo = completedColorsBitmapLo;
       this.completedColorsBitmapHi = completedColorsBitmapHi;
-      if (this.hideCompletedColors) {
+      if (this.areCompletedColorsHidden()) {
         this.createOverlayOnMap();
+        if (this.isErrorMapShown() && this.isErrorMapOnlyEnabledColorsShown()) {
+          // Change to completed color -> Change to Enabled color
+          // Change to enabled color -> Change to error map
+          // Force refresh to prevent the delay before the normal scheduled tile update
+          forceRefreshTiles();
+        }
       }
     }
   
