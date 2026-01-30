@@ -16,6 +16,7 @@
 // @grant        GM.getValue
 // @grant        GM_xmlhttpRequest
 // @connect      telemetry.thebluecorner.net
+// @noframes
 // ==/UserScript==
 
 // Wplace  --> https://wplace.live

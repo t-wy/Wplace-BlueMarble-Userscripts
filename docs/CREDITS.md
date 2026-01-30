@@ -18,8 +18,12 @@
 ---------------------------------------------------
 
 "Blue Marble" is made by SwingTheVine
-The [Blue Marble Website](https://bluemarble.camilledaguin.fr/) is made by Camille Daguin
-The favicon "Blue Marble" is owned by NASA
+
+The [Blue Marble Website](https://bluemarble.lol/) is made by [crqch](https://github.com/crqch).
+
+The [Blue Marble Website](https://bluemarble.camilledaguin.fr/) used until Aug/24/2025 was made by Camille Daguin.
+
+The favicon "Blue Marble" is owned by NASA.
 
 Special Thanks:
 * nof, [darkness](https://github.com/TouchedByDarkness) for creating similar userscripts!
