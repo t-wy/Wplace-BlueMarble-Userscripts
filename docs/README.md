@@ -118,7 +118,11 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Optimize the for-loop for faster response. (v0.85.7)</li>
     <li>Allow multiple templates to be used at the same time. (v0.85.11)</li>
     <li>A button to teleport to the top-left corner of the selected template. (v0.85.12)</li>
-    <li>Option to hide locked colors (colors that are not unlocked) from the color list. (v0.85.17)</li>
+    <li>Option to hide locked colors (colors that are not unlocked) from the color list. (v0.85.17)
+      <ul>
+        <li>This option is hidden if all colors have been unlocked as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/14">PR #14 (<a href="https://github.com/Commenter25">@Commenter25</a>)</a>. (v0.87.1)</li>
+      </ul>
+    </li>
     <li>Provide the bookmarklet version. (v0.85.22)</li>
     <li>Allow completed colors to be hidden from the color list. (v0.85.23)</li>
     <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance. (v0.85.23)</li>

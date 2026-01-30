@@ -988,7 +988,7 @@ export default class TemplateManager {
    */
   getDisplayedColorsSorted() {
     const currentOnly = this.isOnlyCurrentColorShown();
-    const hideLocked = this.areLockedColorsHidden();
+    const hideLocked = this.extraColorsBitmap !== -1 && this.areLockedColorsHidden(); // If -1 then all colors are unlocked, skip the hide color check
     const toggledStatus = this.getPaletteToggledStatus();
     const hideCompleted = this.areCompletedColorsHidden();
     const colors = [];
@@ -1549,6 +1549,7 @@ export default class TemplateManager {
    * @since 0.85.17
    */
   isColorUnlocked(color) {
+    if (this.extraColorsBitmap === -1) return true; // all colors unlocked
     if (color < 32) return true;
     const mask = 1 << (color - 32);
     return (this.extraColorsBitmap & mask) !== 0;

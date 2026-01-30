@@ -1028,6 +1028,7 @@ async function buildOverlayMain() {
         // .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
         .addDiv({'id': 'bm-user_setting-list', 'style': 'max-height: 125px; overflow-x: hidden; overflow-y: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px; margin-top: 3px;'})
           .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
+            label.style.display = 'none';
             checkbox.addEventListener('change', () => {
               templateManager.setHideLockedColors(checkbox.checked);
               buildColorFilterList();

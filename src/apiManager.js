@@ -177,7 +177,13 @@ export default class ApiManager {
     // dataJSON["timeoutUntil"] = "2026-01-01T00:00:00Z";
     this.lastMe = dataJSON;
     this.lastMeUpdated = fetchTime;
+
     this.templateManager.updateExtraColorsBitmap(dataJSON['extraColorsBitmap'] ?? 0);
+    // Check if all colors are unlocked, and if so, remove the option to hide locked colors
+    const unlockedColorsElement = document.getElementById('bm-checkbox-colors-unlocked')?.parentElement;
+    if (unlockedColorsElement) {
+      unlockedColorsElement.style.display = this.templateManager.extraColorsBitmap === -1 ? 'none' : '';
+    }
     
     const userNameElement = document.getElementById('bm-user-name');
     if (userNameElement) {
