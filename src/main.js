@@ -1027,6 +1027,24 @@ async function buildOverlayMain() {
         // Color filter UI
         // .addDiv({'style': 'display: flex; flex-direction: column; gap: 4px;'})
         .addDiv({'id': 'bm-user_setting-list', 'style': 'max-height: 125px; overflow-x: hidden; overflow-y: auto; touch-action: pan-x pan-y; display: flex; flex-direction: column; gap: 4px; margin-top: 3px;'})
+          .addCheckbox({'id': 'bm-only-current-color-enabled', 'textContent': 'Show Current Color Only', 'checked': templateManager.isOnlyCurrentColorShown()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setOnlyCurrentColorShown(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Only the currently selected color will be shown.");
+                buildColorFilterList();
+              } else {
+                instance.handleDisplayStatus("Color filter is restored.");
+                buildColorFilterList();
+              };
+              templateManager.createOverlayOnMap();
+              if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+                forceRefreshTiles();
+              };
+              // Release the checkboxes
+              buildColorFilterList();
+            });
+          }).buildElement()
           .addCheckbox({'id': 'bm-checkbox-colors-unlocked', 'textContent': 'Hide Locked Colors', 'checked': templateManager.areLockedColorsHidden()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setHideLockedColors(checkbox.checked);
@@ -1051,94 +1069,36 @@ async function buildOverlayMain() {
               }
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
-              templateManager.setProgressBarEnabled(checkbox.checked);
-              buildColorFilterList();
+              templateManager.setErrorMapShown(checkbox.checked);
+              document.getElementById('bm-show-only-enabled-colors-on-error-map').parentElement.style.display = checkbox.checked ? '' : 'none'; // the label containing not the checkbox
               if (checkbox.checked) {
-                instance.handleDisplayStatus("Progress Bar Enabled.");
-              } else {
-                instance.handleDisplayStatus("Progress Bar Disabled.");
-              }
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
-            checkbox.addEventListener('change', () => {
-              templateManager.setMemorySavingMode(checkbox.checked);
-              buildColorFilterList();
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
-              } else {
-                instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
-              }
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-event-enabled', 'textContent': 'Enable Event', 'checked': templateManager.isEventEnabled()}, (instance, label, checkbox) => {
-            checkbox.addEventListener('change', () => {
-              templateManager.setEventEnabled(checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Event Mode Enabled.");
-                document.getElementById('bm-contain-eventitem').style.display = '';
-                document.getElementById('bm-event-hide-claimed').parentElement.style.display = ''; // the label containing not the checkbox
-                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = ''; // the label containing not the checkbox
-                apiManager.refreshEventData();
-                buildEventList();
-              } else {
-                instance.handleDisplayStatus("Event Mode Disabled.");
-                document.getElementById('bm-contain-eventitem').style.display = 'none';
-                document.getElementById('bm-event-hide-claimed').parentElement.style.display = 'none'; // the label containing not the checkbox
-                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = 'none'; // the label containing not the checkbox
-              }
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-event-hide-claimed', 'textContent': 'Hide Claimed Event Items', 'checked': !templateManager.isEventClaimedShown()}, (instance, label, checkbox) => {
-            if (templateManager.isEventEnabled()) {
-              label.style.display = '';
-            } else {
-              label.style.display = 'none';
-            }
-            checkbox.addEventListener('change', () => {
-              templateManager.setEventClaimedShown(!checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Hidden All Event Claimed Items.");
-              } else {
-                instance.handleDisplayStatus("Restored All Event Claimed Items.");
-              }
-              buildEventList();
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-event-hide-unavailable', 'textContent': 'Hide Unavailable Event Items', 'checked': !templateManager.isEventUnavailableShown()}, (instance, label, checkbox) => {
-            if (templateManager.isEventEnabled()) {
-              label.style.display = '';
-            } else {
-              label.style.display = 'none';
-            }
-            checkbox.addEventListener('change', () => {
-              templateManager.setEventUnavailableShown(!checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Hidden All Unavailable Event Items.");
-              } else {
-                instance.handleDisplayStatus("Restored All Unavailable Event Items.");
-              }
-              buildEventList();
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-only-current-color-enabled', 'textContent': 'Show Current Color Only', 'checked': templateManager.isOnlyCurrentColorShown()}, (instance, label, checkbox) => {
-            checkbox.addEventListener('change', () => {
-              templateManager.setOnlyCurrentColorShown(checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Only the currently selected color will be shown.");
-                buildColorFilterList();
-              } else {
-                instance.handleDisplayStatus("Color filter is restored.");
-                buildColorFilterList();
-              };
-              templateManager.createOverlayOnMap();
-              if (templateManager.isErrorMapOnlyEnabledColorsShown()) {
+                instance.handleDisplayStatus("Error Map is now Displayed.");
+                apiManager.tileCache = {}; // reset to force update
                 forceRefreshTiles();
+              } else {
+                instance.handleDisplayStatus("Error Map is now Hidden.");
+                removeLayer("error");
               };
-              // Release the checkboxes
-              buildColorFilterList();
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-show-only-enabled-colors-on-error-map', 'textContent': 'Only Enabled Colors on Error Map', 'checked': templateManager.isErrorMapOnlyEnabledColorsShown()}, (instance, label, checkbox) => {
+            label.style.paddingLeft = '1em';
+            if (templateManager.isErrorMapShown()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
+            checkbox.addEventListener('change', () => {
+              templateManager.setErrorMapOnlyEnabledColorsShown(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Error Map now only shows enabled colors.");
+              } else {
+                instance.handleDisplayStatus("Error Map now shows every pixel involved in the template.");
+              };
+              apiManager.tileCache = {}; // reset to force update
+              forceRefreshTiles();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-theme-override-enabled', 'textContent': 'Theme Override: ', 'checked': templateManager.isThemeOverridden()}, (instance, label, checkbox) => {
@@ -1169,16 +1129,56 @@ async function buildOverlayMain() {
               })
             }).buildElement()
           .buildElement()
-          .addCheckbox({'id': 'bm-status-hidden', 'textContent': 'Hide Status Display', 'checked': templateManager.isStatusHidden()}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-event-enabled', 'textContent': 'Enable Event', 'checked': templateManager.isEventEnabled()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
-              templateManager.setStatusHidden(checkbox.checked);
+              templateManager.setEventEnabled(checkbox.checked);
               if (checkbox.checked) {
-                instance.handleDisplayStatus("Status Display Hidden.");
-                document.getElementById(overlayMain.outputStatusId).style.display = 'none';
+                instance.handleDisplayStatus("Event Mode Enabled.");
+                document.getElementById('bm-contain-eventitem').style.display = '';
+                document.getElementById('bm-event-hide-claimed').parentElement.style.display = ''; // the label containing not the checkbox
+                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = ''; // the label containing not the checkbox
+                apiManager.refreshEventData();
+                buildEventList();
               } else {
-                instance.handleDisplayStatus("Status Display Restored.");
-                document.getElementById(overlayMain.outputStatusId).style.display = '';
+                instance.handleDisplayStatus("Event Mode Disabled.");
+                document.getElementById('bm-contain-eventitem').style.display = 'none';
+                document.getElementById('bm-event-hide-claimed').parentElement.style.display = 'none'; // the label containing not the checkbox
+                document.getElementById('bm-event-hide-unavailable').parentElement.style.display = 'none'; // the label containing not the checkbox
               }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-event-hide-claimed', 'textContent': 'Hide Claimed Event Items', 'checked': !templateManager.isEventClaimedShown()}, (instance, label, checkbox) => {
+            label.style.paddingLeft = '1em';
+            if (templateManager.isEventEnabled()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
+            checkbox.addEventListener('change', () => {
+              templateManager.setEventClaimedShown(!checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden All Event Claimed Items.");
+              } else {
+                instance.handleDisplayStatus("Restored All Event Claimed Items.");
+              }
+              buildEventList();
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-event-hide-unavailable', 'textContent': 'Hide Unavailable Event Items', 'checked': !templateManager.isEventUnavailableShown()}, (instance, label, checkbox) => {
+            label.style.paddingLeft = '1em';
+            if (templateManager.isEventEnabled()) {
+              label.style.display = '';
+            } else {
+              label.style.display = 'none';
+            }
+            checkbox.addEventListener('change', () => {
+              templateManager.setEventUnavailableShown(!checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Hidden All Unavailable Event Items.");
+              } else {
+                instance.handleDisplayStatus("Restored All Unavailable Event Items.");
+              }
+              buildEventList();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-dot-template', 'textContent': 'Use Dot Template (Original ver.)', 'checked': templateManager.isLegacyDisplay()}, (instance, label, checkbox) => {
@@ -1190,37 +1190,6 @@ async function buildOverlayMain() {
                 instance.handleDisplayStatus("Switched to the Cross Template Display.");
               };
               templateManager.createOverlayOnMap();
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-show-error-map', 'textContent': 'Show Error Map', 'checked': templateManager.isErrorMapShown()}, (instance, label, checkbox) => {
-            checkbox.addEventListener('change', () => {
-              templateManager.setErrorMapShown(checkbox.checked);
-              document.getElementById('bm-show-only-enabled-colors-on-error-map').parentElement.style.display = checkbox.checked ? '' : 'none'; // the label containing not the checkbox
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Error Map is now Displayed.");
-                apiManager.tileCache = {}; // reset to force update
-                forceRefreshTiles();
-              } else {
-                instance.handleDisplayStatus("Error Map is now Hidden.");
-                removeLayer("error");
-              };
-            });
-          }).buildElement()
-          .addCheckbox({'id': 'bm-show-only-enabled-colors-on-error-map', 'textContent': 'Only Enabled Colors on Error Map', 'checked': templateManager.isErrorMapOnlyEnabledColorsShown()}, (instance, label, checkbox) => {
-            if (templateManager.isErrorMapShown()) {
-              label.style.display = '';
-            } else {
-              label.style.display = 'none';
-            }
-            checkbox.addEventListener('change', () => {
-              templateManager.setErrorMapOnlyEnabledColorsShown(checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Error Map now only shows enabled colors.");
-              } else {
-                instance.handleDisplayStatus("Error Map now shows every pixel involved in the template.");
-              };
-              apiManager.tileCache = {}; // reset to force update
-              forceRefreshTiles();
             });
           }).buildElement()
           .addCheckbox({'id': 'bm-show-zoom-buttons', 'textContent': 'Show Integer Zoom Buttons', 'checked': templateManager.areIntegerZoomButtonsShown()}, (instance, label, checkbox) => {
@@ -1246,7 +1215,7 @@ async function buildOverlayMain() {
               };
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-enable-line-template', 'textContent':  'Shape Template (Experimental)', 'checked': templateManager.isLineTemplateButtonShown()}, (instance, label, checkbox) => {
+          .addCheckbox({'id': 'bm-enable-line-template', 'textContent':  'Shape Templates (Experimental)', 'checked': templateManager.isLineTemplateButtonShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setLineTemplateButtonEnabled(checkbox.checked);
               if (checkbox.checked) {
@@ -1264,6 +1233,40 @@ async function buildOverlayMain() {
                 }
                 instance.handleDisplayStatus("The Line and Circle Template Buttons are now Hidden from Pixel Info.");
               };
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-progress-bar-enabled', 'textContent': 'Show Progress Bar', 'checked': templateManager.isProgressBarEnabled()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setProgressBarEnabled(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Progress Bar Enabled.");
+              } else {
+                instance.handleDisplayStatus("Progress Bar Disabled.");
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-status-hidden', 'textContent': 'Hide Status Display', 'checked': templateManager.isStatusHidden()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setStatusHidden(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Status Display Hidden.");
+                document.getElementById(overlayMain.outputStatusId).style.display = 'none';
+              } else {
+                instance.handleDisplayStatus("Status Display Restored.");
+                document.getElementById(overlayMain.outputStatusId).style.display = '';
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-memory-saving-enabled', 'textContent': 'Memory-Saving Mode (Experimental)', 'checked': templateManager.isMemorySavingModeOn()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setMemorySavingMode(checkbox.checked);
+              buildColorFilterList();
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Memory Saving Mode Enabled. The Effect will be Fully Active After a Page Refresh.");
+              } else {
+                instance.handleDisplayStatus("Memory Saving Mode Disabled. The Effect will be Fully Active After a Page Refresh.");
+              }
             });
           }).buildElement()
         .buildElement()

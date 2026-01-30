@@ -120,7 +120,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>A button to teleport to the top-left corner of the selected template. (v0.85.12)</li>
     <li>Option to hide locked colors (colors that are not unlocked) from the color list. (v0.85.17)
       <ul>
-        <li>This option is hidden if all colors have been unlocked as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/14">PR #14 (<a href="https://github.com/Commenter25">@Commenter25</a>)</a>. (v0.87.1)</li>
+        <li>This option is hidden if all colors have been unlocked as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/pull/14">PR #14</a> (<a href="https://github.com/Commenter25">@Commenter25</a>). (v0.87.1)</li>
       </ul>
     </li>
     <li>Provide the bookmarklet version. (v0.85.22)</li>
@@ -136,7 +136,12 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     <li>Try to refresh the tiles when selected colors / templates changes as soon as possible. (v0.85.38)</li>
     <li>Try to refresh the tiles after pixel submission as soon as possible. (v0.85.39)</li>
     <li>Switching between Wplace's builtin themes. (v0.85.40)</li>
-    <li>Testing the error map feature (Red: Wrong, Yellow: Unfilled, Green: Correct). (v0.85.46)</li>
+    <li>Testing the error map feature (Red: Wrong, Gray: Unfilled, Green: Correct). (v0.85.46)
+      <ul>
+        <li>Allow only to show enabled colors on the error map as per <a href="https://github.com/t-wy/Wplace-BlueMarble-Userscripts/issues/11">Issue #11</a> (<a href="https://github.com/ajbjc">@ajbjc</a>). (v0.86.14)</li>
+        <li>Make use of the opacity toggle to increase the contrast between the error map and the disabled colors.</li>
+      </ul>
+    </li>
     <li>Separate the overlay and error layer from the artwork layer. (v0.86.1)</li>
     <li>Overlay no longer wait for fetch to update. (v0.86.1)</li>
     <li>Allow templates to be renamed by clicking on the template name. (v0.86.1)</li>
