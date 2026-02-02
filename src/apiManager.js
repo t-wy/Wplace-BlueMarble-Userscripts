@@ -206,6 +206,47 @@ export default class ApiManager {
     }
   }
 
+  /** Get the close button inside the pixel info view for anchoring
+   * 
+   * @since 0.87.4
+  */
+  getCloseButton() {
+    /*
+    Old .gap-2 UI:
+    (Y) Pixel: 1337, 337 ([Flag] Region #No)      (x)
+            < Coords to be added here
+    Painted by: (Icon) Username #ID (Alliance) (:)
+    ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
+    Button Class List: btn btn-primary btn-soft
+
+    New .gap-2 UI:
+    (Icon) Username #ID  (Alliance)               (:)
+    -------------------------------------------------
+    (Y) 1337, 337 ([Flag] Region #No)             (x)
+            < Coords to be added here
+    ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
+    Button Class List: btn btn-sm btn-primary btn-soft
+    */
+
+    return document.querySelector(
+      ".flex.gap-2.px-3>button.btn-circle," + 
+      ".flex.gap-1\\.5.px-3>button.btn-circle"
+    ); // close button
+  }
+
+  /** Get the container containing the three button, namely Paint, Favorite, and Share, for anchoring
+   * 
+   * @since 0.87.4
+  */
+  getPaintButtonContainer() {
+    const anchorElement = this.getCloseButton();
+    if (!anchorElement) return;
+    // .parentElement: The row containing the pixel
+    // .parentElement: The whole container
+    // .lastElementChild: The button container
+    return anchorElement.parentElement.parentElement.lastElementChild;
+  }
+
   /** Update the texts and related functions shown on the pixel info overlay
    * 
    * @since 0.85.28
@@ -213,7 +254,6 @@ export default class ApiManager {
   updateDisplayCoords() {
     const coordsTile = [ this.coordsTilePixel[0], this.coordsTilePixel[1] ];
     const coordsPixel = [ this.coordsTilePixel[2], this.coordsTilePixel[3] ];
-    const displayTP = serverTPtoDisplayTP(coordsTile, coordsPixel);
 
     let displayCoords1 = document.getElementById('bm-display-coords1');
     let displayCoords2 = document.getElementById('bm-display-coords2');
@@ -227,61 +267,52 @@ export default class ApiManager {
   
     // If we could not find the addition coord span, we make it then update the textContent with the new coords
     if (!displayCoords1) {
+      const closeButton = this.getCloseButton();
+      if (!closeButton) return;
+      const coordRow = closeButton.parentElement;
       // For every span element, find the one we want (pixel numbers when canvas clicked)
-      const spanElements = document.querySelectorAll('span'); // Retrieves all span elements
-      const searchSalt1 = `${displayTP[0]}, ${displayTP[1]}`;
-      const searchSalt2 = `${displayTP[0] - 4000}, ${displayTP[1]}`; // Their JS negative mod issue
-      for (const element of spanElements) {
-        if (
-          element.textContent.trim().includes(searchSalt1) ||
-          element.textContent.trim().includes(searchSalt2)
-        ) {
-          displayCoords1 = document.createElement('span');
-          displayCoords1.id = 'bm-display-coords1';
-          displayCoords1.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
-          element.parentNode.parentNode.parentNode.insertAdjacentElement('afterend', displayCoords1);
+      displayCoords1 = document.createElement('span');
+      displayCoords1.id = 'bm-display-coords1';
+      displayCoords1.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
+      coordRow.insertAdjacentElement('afterend', displayCoords1);
 
-          const buttonCopy = function () {
-            const content = this.dataset.text;
-            copyToClipboard(content);
-            alert('Copied to clipboard: ' + content);
-          }
-
-          displayCoords1Copy = document.createElement('a');
-          displayCoords1Copy.href = '#';
-          displayCoords1Copy.id = 'bm-display-coords1-copy';
-          displayCoords1Copy.textContent = 'Copy';
-          displayCoords1Copy.style = 'font-size: small; text-decoration: underline;';
-          displayCoords1Copy.className = "text-nowrap";
-          displayCoords1Copy.addEventListener('click', buttonCopy);
-          displayCoords1.insertAdjacentElement('afterend', displayCoords1Copy);
-
-          // Space between coords and copy
-          displayCoords1.insertAdjacentText('afterend', ' ');
-          
-          const br = document.createElement('br');
-          displayCoords1Copy.insertAdjacentElement('afterend', br);
-
-          displayCoords2 = document.createElement('span');
-          displayCoords2.id = 'bm-display-coords2';
-          displayCoords2.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
-          br.insertAdjacentElement('afterend', displayCoords2);
-
-          displayCoords2Copy = document.createElement('a');
-          displayCoords2Copy.href = '#';
-          displayCoords2Copy.id = 'bm-display-coords2-copy';
-          displayCoords2Copy.textContent = 'Copy';
-          displayCoords2Copy.style = 'font-size: small; text-decoration: underline;';
-          displayCoords2Copy.className = "text-nowrap";
-          displayCoords2Copy.addEventListener('click', buttonCopy);
-          displayCoords2.insertAdjacentElement('afterend', displayCoords2Copy);
-
-          // Space between coords and copy
-          displayCoords2.insertAdjacentText('afterend', ' ');
-  
-          break;
-        }
+      const buttonCopy = function () {
+        const content = this.dataset.text;
+        copyToClipboard(content);
+        alert('Copied to clipboard: ' + content);
       }
+
+      displayCoords1Copy = document.createElement('a');
+      displayCoords1Copy.href = '#';
+      displayCoords1Copy.id = 'bm-display-coords1-copy';
+      displayCoords1Copy.textContent = 'Copy';
+      displayCoords1Copy.style = 'font-size: small; text-decoration: underline;';
+      displayCoords1Copy.className = "text-nowrap";
+      displayCoords1Copy.addEventListener('click', buttonCopy);
+      displayCoords1.insertAdjacentElement('afterend', displayCoords1Copy);
+
+      // Space between coords and copy
+      displayCoords1.insertAdjacentText('afterend', ' ');
+      
+      const br = document.createElement('br');
+      displayCoords1Copy.insertAdjacentElement('afterend', br);
+
+      displayCoords2 = document.createElement('span');
+      displayCoords2.id = 'bm-display-coords2';
+      displayCoords2.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
+      br.insertAdjacentElement('afterend', displayCoords2);
+
+      displayCoords2Copy = document.createElement('a');
+      displayCoords2Copy.href = '#';
+      displayCoords2Copy.id = 'bm-display-coords2-copy';
+      displayCoords2Copy.textContent = 'Copy';
+      displayCoords2Copy.style = 'font-size: small; text-decoration: underline;';
+      displayCoords2Copy.className = "text-nowrap";
+      displayCoords2Copy.addEventListener('click', buttonCopy);
+      displayCoords2.insertAdjacentElement('afterend', displayCoords2Copy);
+
+      // Space between coords and copy
+      displayCoords2.insertAdjacentText('afterend', ' ');
     }
 
     if (displayCoords1) {
@@ -305,13 +336,13 @@ export default class ApiManager {
       let btnLineTemplate = document.getElementById('bm-create-line-template');
       const that = this;
       if (!btnLineTemplate) {
-        const anchorElement = document.querySelector(".flex.gap-2.px-3>button");
-        if (!anchorElement) return;
-        const buttonContainer = anchorElement.parentElement.parentElement.lastElementChild;
+        const buttonContainer = this.getPaintButtonContainer();
+        if (!buttonContainer) return;
         btnLineTemplate = document.createElement('span');
         btnLineTemplate.id = 'bm-create-line-template';
         btnLineTemplate.textContent = "+ Line";
-        btnLineTemplate.className = "btn btn-primary btn-soft";
+        btnLineTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
+        btnLineTemplate.classList.add("btn-soft"); // not the primary button
         buttonContainer.appendChild(btnLineTemplate);
         btnLineTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
@@ -371,13 +402,13 @@ export default class ApiManager {
       let btnCircleTemplate = document.getElementById('bm-create-circle-template');
       const that = this;
       if (!btnCircleTemplate) {
-        const anchorElement = document.querySelector(".flex.gap-2.px-3>button");
-        if (!anchorElement) return;
-        const buttonContainer = anchorElement.parentElement.parentElement.lastElementChild;
+        const buttonContainer = this.getPaintButtonContainer();
+        if (!buttonContainer) return;
         btnCircleTemplate = document.createElement('span');
         btnCircleTemplate.id = 'bm-create-circle-template';
         btnCircleTemplate.textContent = "+ Circle";
-        btnCircleTemplate.className = "btn btn-primary btn-soft";
+        btnCircleTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
+        btnCircleTemplate.classList.add("btn-soft"); // not the primary button
         buttonContainer.appendChild(btnCircleTemplate);
         btnCircleTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
