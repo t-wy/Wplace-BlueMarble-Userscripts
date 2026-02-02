@@ -108,7 +108,7 @@ export default class ApiManager {
                 displayCoords.id = 'bm-display-coords';
                 displayCoords.textContent = text;
                 displayCoords.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
-                element.parentNode.parentNode.parentNode.insertAdjacentElement('afterend', displayCoords);
+                element.parentNode.parentNode.insertAdjacentElement('afterend', displayCoords);
               } else {
                 displayCoords.textContent = text;
               }
