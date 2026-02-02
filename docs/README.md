@@ -6,7 +6,7 @@ Preview Images of the [Custom-Improve Branch](https://github.com/t-wy/Wplace-Blu
 
 | Pixel Info | Map Export (From the Share Dialog) |
 |-|-|
-| ![Pixel Info](assets/PixelInfo.png) | ![Map Export](assets/ExportMap.png)
+|Wplace 1.1.1 ~ Now:<br>![Pixel Info](assets/PixelInfo111.png)<br>Wplace 1.1.0:<br>![Pixel Info](assets/PixelInfo110.png)<br>Wplace 1.0.0:<br>![Pixel Info](assets/PixelInfo100.png) | ![Map Export](assets/ExportMap.png)
 
 More Information Regarding this Fork **[Here](#regarding-this-fork)**.
 
