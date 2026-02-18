@@ -108,7 +108,7 @@ To use it, copy the content and paste it in the URL field when creating a bookma
         <li>Display the palette hints as crosshair instead of a dot for better visibility by default. (v0.85.2)</li>
         <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
         <li>Allow restoring back to 3x3 dot mode (v0.85.46)</li>
-        <li>Added 3x3 alternate mode (Based on: <a href="https://github.com/Nooko331/Wplace-MyBetterBlueMarble">@Nooko331's idea</a>) (v0.87.5)</li>
+        <li>Added 3x3 alternate mode (Inspired by: <a href="https://github.com/Nooko331/Wplace-MyBetterBlueMarble">@Nooko331's idea</a>) (v0.87.5)</li>
       </ul>
     </li>
     <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged) (v0.85.4)</li>

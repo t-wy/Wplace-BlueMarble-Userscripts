@@ -1189,7 +1189,7 @@ async function buildOverlayMain() {
             .addSelect({'id': 'bm-template-setting'}, (instance, select) => {
               const currentMode = templateManager.getTemplateMode();
               const templateModeList = {
-                0: "5x5 (Default)",
+                0: "Crosshair (Default)",
                 1: "Dot (Original)",
                 3: "3x3 Alternate",
                 // maybe can support something like per-color pattern mode
