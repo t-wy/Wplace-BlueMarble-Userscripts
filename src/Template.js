@@ -96,8 +96,7 @@ export default class Template {
     console.log('Template coordinates:', this.coords);
 
     if (this.shreadSize === null) {
-      // initialize shreadSize (usually already assigned by the template manager)
-      this.shreadSize = testCanvasSize(5000, 5000) ? 5 : 4; // Scale image factor for pixel art enhancement (must be odd)
+      this.shreadSize = 1; // as small as possible
     }
     const shreadSize = this.shreadSize;
     const bitmap = this.file instanceof ImageBitmap ? this.file : await createImageBitmap(this.file, { "colorSpaceConversion": "none" }); // Create efficient bitmap from uploaded file

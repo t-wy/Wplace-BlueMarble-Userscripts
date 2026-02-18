@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep, base64PNGSize } from "./utils";
 import { themeList, addTemplateCanvas, removeLayer, doAfterMapFound, forceRefreshTiles } from './utilsMaptiler.js';
 
 /** Manages the template system.
@@ -154,7 +154,7 @@ export default class TemplateManager {
       tileSize: this.tileSize,
     });
     this.largestSeenSortID++;
-    template.shreadSize = this.drawMult; // Copy to template's shread Size
+    // template.shreadSize = this.drawMult; // Copy to template's shread Size
     //template.chunked = await template.createTemplateTiles(this.tileSize); // Chunks the tiles
     const { templateTiles, templateTilesBuffers } = await template.createTemplateTiles(anchor || this.getAnchor()); // Chunks the tiles
     // Modify palette enabled status using the honored one
@@ -347,8 +347,6 @@ export default class TemplateManager {
 
     const isErrorMapShown = this.isErrorMapShown();
   
-    const drawMultTemplate = this.drawMult;
-    const drawMultCenterTemplate = this.drawMultCenter;
     const tileSize = this.tileSize; // Calculate draw multiplier for scaling
 
     let canvas = new OffscreenCanvas(tileSize, tileSize);
@@ -371,6 +369,11 @@ export default class TemplateManager {
     // For each template in this tile, draw them.
     for (const templateTile of templatesTilesToHandle) {
       const template = templateTile.template;
+  
+      // different template tile may have different shread size now
+      const drawMultTemplate = template.shreadSize;
+      const drawMultCenterTemplate = (drawMultTemplate - 1) >> 1;
+    
       const templateKey = template.storageKey;
       const templateTileBitmap = await template.getChunked(templateTile.tileKey, currentMemorySavingMode);
       console.log(`Template:`);
@@ -809,6 +812,142 @@ export default class TemplateManager {
     }
   }
 
+  /** Try to recover the shread size from a template without specified shread size
+   * @param {string} templateKey - The key of the template
+   * @param {object} templateValue
+   * @since 0.87.5
+   */
+  #recoverShreadSize(templateKey, templateValue, defaultShreadSize) {
+    // determine shread size
+    if (templateValue.shreadSize) return templateValue.shreadSize;
+    // find top left coords
+    let tileCoords = null;
+    let tileLookup = {};
+    const allTileCoords = Object.keys(templateValue.tiles).map(tile => {
+      const parts = tile.split(',').map(Number);
+      tileLookup[parts] = tile;
+      return parts;
+    });
+    if (templateValue.coords !== undefined) {
+      tileCoords = templateValue.coords.split(',').map(Number);
+    } else {
+      // find the tile that pxX and pxY is not 0
+      const tileTopLeft = allTileCoords.find(
+        // find the tile that pxX and pxY is not 0
+        ([tileX, tileY, pixelX, pixelY]) => pixelX !== 0 && pixelY !== 0
+      );
+      if (tileTopLeft !== undefined) {
+        tileCoords = tileTopLeft;
+      } else {
+        // find smallest tile X and tileY
+        tileCoords = allTileCoords.reduce(
+          (tile1, tile2) => {
+            const [tileX1, tileY1, pixelX1, pixelY1] = tile1;
+            const [tileX2, tileY2, pixelX2, pixelY2] = tile2;
+            const x1 = tileX1 * this.tileSize + pixelX1;
+            const x2 = tileX2 * this.tileSize + pixelX2;
+            if (x1 === x2) {
+              const y1 = tileY1 * this.tileSize + pixelY1;
+              const y2 = tileY2 * this.tileSize + pixelY2;
+              return y1 < y2 ? tile1 : tile2;
+            };
+            return x1 < x2 ? tile1 : tile2;
+          }
+        )
+      }
+    }
+    // find that tile
+    if (tileCoords !== null) {
+      const tileKey = tileLookup[tileCoords];
+      if (tileKey !== undefined) {
+        const targetTile = templateValue.tiles[tileKey];
+        try {
+          const PNGSize = base64PNGSize(targetTile);
+          const [tileWidth, tileHeight] = PNGSize;
+          if (targetTile !== undefined) {
+            // check if there is more than 1 tiles
+            const isXReliable = allTileCoords.some(
+              ([tileX, tileY, pixelX, pixelY]) => tileX !== tileCoords[0]
+            );
+            const isYReliable = allTileCoords.some(
+              ([tileX, tileY, pixelX, pixelY]) => tileY !== tileCoords[1]
+            )
+            let resultX = null;
+            if (isXReliable) {
+              const remainX = this.tileSize - tileCoords[2];
+              if (tileWidth % remainX === 0) {
+                resultX = tileWidth / remainX;
+              }
+            };
+            let resultY = null;
+            if (isYReliable) {
+              const remainY = this.tileSize - tileCoords[3];
+              if (tileHeight % remainY === 0) {
+                resultY = tileHeight / remainY;
+              }
+            }
+            if (resultX !== null && resultY !== null) {
+              if (resultX === resultY) {
+                templateValue.shreadSize = resultX; // persist
+                console.log(`Reliably recovered shread size of ${templateKey} to be ${tempShreadSize}`);
+                return resultX;
+              } else {
+                console.log(`Shread size conflict in ${templateKey}: X = ${resultX}, Y = ${resultY}`);
+                return Math.min(resultX, resultY);
+              }
+            } else if (resultX !== null) {
+              templateValue.shreadSize = resultX; // persist
+              console.log(`Reliably recovered shread size of ${templateKey} to be ${resultX}`);
+              return resultX;
+            } else if (resultY !== null) {
+              templateValue.shreadSize = resultY; // persist
+              console.log(`Reliably recovered shread size of ${templateKey} to be ${resultY}`);
+              return resultY;
+            }
+          }
+        } catch (exception) {
+          console.log(`Cannot parse the template tile size of ${templateKey}`);
+        }
+      }
+    }
+    // brute force
+    try {
+      const isPossible = Object.fromEntries([1, 2, 3, 4, 5].map(shreadSize => [shreadSize, true]));
+      for ([tileKey, tileValue] of Object.entries(templateValue.tiles)) {
+        const tilePNGSize = base64PNGSize(tileValue);
+        const [tileX, tileY, pixelX, pixelY] = tileKey.split(',').map(Number);
+        Object.keys(isPossible).forEach(shreadSize => {
+          if (!isPossible[shreadSize]) return;
+          if (
+            (tilePNGSize[0] % shreadSize !== 0) || 
+            (tilePNGSize[1] % shreadSize !== 0) ||
+            (pixelX + tilePNGSize[0] / shreadSize > this.tileSize) ||
+            (pixelY + tilePNGSize[1] / shreadSize > this.tileSize)
+          ) {
+            isPossible[shreadSize] = false;
+            return;
+          }
+        })
+      }
+      const candidates = Object.keys(isPossible).filter(shreadSize => isPossible[shreadSize]);
+      if (candidates.length === 1) {
+        templateValue.shreadSize = +candidates[0]; // persist
+        console.log(`Reliably recovered shread size of ${templateKey} to be ${candidates[0]}`);
+        return +candidates[0];
+      } else if (candidates.length > 1) {
+        console.log(`Possible shread sizes of ${templateKey} are: ${candidates.join(', ')}`);
+        if (candidates.includes(defaultShreadSize.toString())) {
+          return defaultShreadSize;
+        };
+        return +candidates[candidates.length - 1]; // largest one
+      }
+    } catch (exception) {
+      console.log(`Cannot parse the template tile size of ${templateKey}`);
+    }
+
+    return defaultShreadSize;
+  }
+
   /** Parses the Blue Marble JSON object
    * @param {string} json - The JSON string to parse
    * @since 0.72.13
@@ -823,6 +962,8 @@ export default class TemplateManager {
 
     const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
 
+    const defaultShreadSize = testCanvasSize(5000, 5000) ? 5 : 4; // for versions of BM in this fork without any shread size set
+
     if (Object.keys(templates).length > 0) {
 
       for (const template in templates) {
@@ -830,7 +971,10 @@ export default class TemplateManager {
         const templateKey = template;
         const templateValue = templates[template];
         console.log(templateKey);
-        const templateCoords = templateValue.coords.split(',').map(Number);
+        const templateCoords = templateValue.coords.split(',').map(Number); // "1,2,3,4" -> [1, 2, 3, 4]
+
+        const templateShreadSize = this.#recoverShreadSize(templateKey, templateValue, defaultShreadSize);
+        const templateShreadCenter = (templateShreadSize - 1) >> 1;
 
         if (templates.hasOwnProperty(template)) {
 
@@ -838,7 +982,6 @@ export default class TemplateManager {
           const sortID = Number(templateKeyArray?.[0]); // Sort ID of the template
           const authorID = templateKeyArray?.[1] || '0'; // User ID of the person who exported the template
           const displayName = templateValue.name || `Template ${sortID || ''}`; // Display name of the template
-          //const coords = templateValue?.coords?.split(',').map(Number); // "1,2,3,4" -> [1, 2, 3, 4]
           const tilesbase64 = templateValue.tiles;
           const templateTiles = {}; // Stores the template bitmap tiles for each tile.
           const templateTilesBuffer = {}; // Store the template bitmap tiles for each tile in Uint8Array.
@@ -846,7 +989,7 @@ export default class TemplateManager {
           const paletteMap = new Map(); // Accumulates color counts across tiles (center pixels only)
 
           for (const tile in tilesbase64) {
-            console.log(tile);
+            console.log(tile); // tile coordinates
             if (tilesbase64.hasOwnProperty(tile)) {
               const encodedTemplateBase64 = tilesbase64[tile];
               const templateUint8Array = base64ToUint8(encodedTemplateBase64); // Base 64 -> Uint8Array
@@ -874,8 +1017,8 @@ export default class TemplateManager {
                 c = null;
                 // Optimize for-loop
                 // Only count center pixels of each mult-x block
-                for (let y = this.drawMultCenter; y < h; y += this.drawMult) {
-                  for (let x = this.drawMultCenter; x < w; x += this.drawMult) {
+                for (let y = templateShreadCenter; y < h; y += templateShreadSize) {
+                  for (let x = templateShreadCenter; x < w; x += templateShreadSize) {
                     const idx = (y * w + x) * 4;
                     const r = data[idx];
                     const g = data[idx + 1];
@@ -905,7 +1048,7 @@ export default class TemplateManager {
             coords: templateCoords,
           });
           if (template.sortID > this.largestSeenSortID) { this.largestSeenSortID = template.sortID; }
-          template.shreadSize = templateValue.shreadSize ?? this.drawMult; // Copy to template's shread Size
+          template.shreadSize = templateShreadSize; // Copy to template's shread Size
           template.chunked = templateTiles;
           template.chunkedBuffer = templateTilesBuffer;
           template.requiredPixelCount = requiredPixelCount;

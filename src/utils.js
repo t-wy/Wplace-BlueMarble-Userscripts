@@ -127,6 +127,21 @@ export function base64ToUint8(base64) {
   return array;
 }
 
+/** Obtain the width and height of a base 64 encoded PNG
+ * @param {Uint8Array} base64 - The base 64 encoded Uint8Array to convert
+ * @returns {number[]} The image dimension
+ * @since 0.87.5
+ */
+export function base64PNGSize(base64) {
+  const sizeData = base64.slice(0, 32);
+  if (sizeData.length !== 32) throw new Error('Invalid PNG size data');
+  const sizeDataDecoded = base64ToUint8(sizeData);
+  if (sizeDataDecoded.length !== 24) throw new Error('Invalid PNG size data')
+  const imgWidth = (sizeDataDecoded[16] << 24) | (sizeDataDecoded[17] << 16) | (sizeDataDecoded[18] << 8) | sizeDataDecoded[19];
+  const imgHeight = (sizeDataDecoded[20] << 24) | (sizeDataDecoded[21] << 16) | (sizeDataDecoded[22] << 8) | sizeDataDecoded[23];
+  return [imgWidth, imgHeight];
+}
+
 /** Returns the coordinate input fields
  * @returns {Element[]} The 4 coordinate Inputs
  * @since 0.74.0
