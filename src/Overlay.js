@@ -370,6 +370,31 @@ export default class Overlay {
     callback(this, label, checkbox); // Runs any script passed in through the callback
     return this;
   }
+  
+  /** Adds a `label` to the overlay.
+   * This `label` element will have properties shared between all `label` elements in the overlay.
+   * You can override the shared properties by using a callback.
+   * @param {Object.<string, any>} [additionalProperties={}] - The DOM properties of the `label` that are NOT shared between all overlay `label` elements. These should be camelCase.
+   * @param {function(Overlay, HTMLLabelElement):void} [callback=()=>{}] - Additional JS modification to the `label`.
+   * @returns {Overlay} Overlay class instance (this)
+   * @since 0.87.5
+   * @example
+   * // Assume all <label> elements have a shared class (e.g. {'className': 'bar'})
+   * overlay.addLabel({'id': 'foo', 'textContent': 'Foobar.'}).buildOverlay(document.body);
+   * // Output:
+   * // (Assume <body> already exists in the webpage)
+   * <body>
+   *   <label id="foo" class="bar">Foobar.</label>
+   * </body>
+   */
+  addLabel(additionalProperties = {}, callback = () => {}) {
+
+    const properties = {}; // Shared <label> DOM properties
+
+    const label = this.#createElement('label', properties, additionalProperties); // Creates the <label> element
+    callback(this, label); // Runs any script passed in through the callback
+    return this;
+  }
 
   /** Adds a 'details' to the overlay.
    * This details element will have properties shared between all details elements in the overlay.

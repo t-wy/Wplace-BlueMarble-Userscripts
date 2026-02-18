@@ -278,7 +278,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'themeOverridden': false,
       'currentTheme': '',
       'hideStatus': false,
-      'isLegacyDisplay': false,
+      'isLegacyDisplay': false, // now used as the template display mode
       'showErrorMap': false,
       'showOnlyEnabledColorsErrorMap': false, // Hidden in settings
       'showIntegerZoom': false,
@@ -1185,17 +1185,29 @@ async function buildOverlayMain() {
               buildEventList();
             });
           }).buildElement()
-          .addCheckbox({'id': 'bm-dot-template', 'textContent': 'Use Dot Template (Original ver.)', 'checked': templateManager.isLegacyDisplay()}, (instance, label, checkbox) => {
-            checkbox.addEventListener('change', () => {
-              templateManager.setLegacyDisplay(checkbox.checked);
-              if (checkbox.checked) {
-                instance.handleDisplayStatus("Switched to the Dot Template Display.");
-              } else {
-                instance.handleDisplayStatus("Switched to the Cross Template Display.");
+          .addLabel({'id': 'bm-template-mode', 'textContent': 'Template Mode: '})
+            .addSelect({'id': 'bm-template-setting'}, (instance, select) => {
+              const currentMode = templateManager.getTemplateMode();
+              const templateModeList = {
+                0: "5x5 (Default)",
+                1: "Dot (Original)",
+                3: "3x3 Alternate",
+                // maybe can support something like per-color pattern mode
               };
-              templateManager.createOverlayOnMap();
-            });
-          }).buildElement()
+              Object.entries(templateModeList).forEach(([setValueStr, displayText]) => {
+                const option = document.createElement('option');
+                option.value = +setValueStr;
+                option.textContent = displayText;
+                if (+setValueStr === currentMode) { option.selected = true; }
+                select.appendChild(option);
+              });
+              select.addEventListener('change', async () => {
+                await templateManager.setTemplateMode(+select.value);
+                instance.handleDisplayStatus(`Changed the Template Mode to "${templateModeList[select.value]}".`);
+                templateManager.createOverlayOnMap();
+              })
+            }).buildElement()
+          .buildElement()
           .addCheckbox({'id': 'bm-show-zoom-buttons', 'textContent': 'Show Integer Zoom Buttons', 'checked': templateManager.areIntegerZoomButtonsShown()}, (instance, label, checkbox) => {
             checkbox.addEventListener('change', () => {
               templateManager.setIntegerZoomButtonsShown(checkbox.checked);

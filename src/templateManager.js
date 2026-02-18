@@ -683,14 +683,29 @@ export default class TemplateManager {
         removeLayer("overlay", template.sortID);
         continue;
       };
-      const isLegacyDisplay = this.isLegacyDisplay();
+      const templateMode = this.getTemplateMode();
       for (const tileKey of Object.keys(template.chunked)) {
         console.log(`Handling tile chunk ${tileKey}...`, performance.now() - timeStart + ' ms');
         const coords = tileKey.split(','); // [x, y, x, y] Tile/pixel coordinates
 
         const drawMultTemplate = template.shreadSize;
         const drawMultCenterTemplate = (template.shreadSize - 1) >> 1;
-        const drawMultResult = isLegacyDisplay ? 3 : this.drawMult;
+        const drawMultResult = (
+          templateMode === 1 ? 3
+          : templateMode === 3 ? 3 // alternate
+          : this.drawMult
+        );
+
+        const maskPointsOdd = (
+          templateMode === 1 ? [[1, 1]]
+          : templateMode === 3 ? [[0, 1], [1, 1], [2, 1]] // alternate
+          : template.customMaskPoints(drawMultResult)
+        );
+        const maskPointsEven = (
+          templateMode === 3 ? [[1, 0], [1, 1], [1, 2]] // alternate
+          : maskPointsOdd
+        );
+        const maskPointsPicker = [ maskPointsOdd, maskPointsEven ];
       
         const templateTileBitmap = await template.getChunked(tileKey, currentMemorySavingMode);
         const originalWidth = templateTileBitmap.width / template.shreadSize;
@@ -732,19 +747,18 @@ export default class TemplateManager {
 
             const image = resultContext.getImageData(0, 0, resultWidth, resultHeight);
             const imageData = image.data;
-            const maskPoints = isLegacyDisplay ? [[1, 1]] : template.customMaskPoints(drawMultResult);
-            for (const [offsetX, offsetY] of maskPoints) {
+            for (
+              let yt = drawMultCenterTemplate, yr = 0, parityY = false;
+              yt < templateHeight;
+              yt += drawMultTemplate, yr += drawMultResult, parityY = !parityY
+            ) {
+              // await sleep(0);
               for (
-                let yt = drawMultCenterTemplate, yr = offsetY;
-                yt < templateHeight;
-                yt += drawMultTemplate, yr += drawMultResult
+                let xt = drawMultCenterTemplate, xr = 0, parityX = parityY;
+                xt < templateWidth;
+                xt += drawMultTemplate, xr += drawMultResult, parityX = !parityX
               ) {
-                // await sleep(0);
-                for (
-                  let xt = drawMultCenterTemplate, xr = offsetX;
-                  xt < templateWidth;
-                  xt += drawMultTemplate, xr += drawMultResult
-                ) {
+                for (const [offsetX, offsetY] of maskPointsPicker[+parityX]) {
 
                   const templatePixelCenter = (yt * templateWidth + xt) * 4; // Shread block center pixel
                   const templatePixelCenterRed = templateData[templatePixelCenter]; // Shread block's center pixel's RED value
@@ -757,7 +771,9 @@ export default class TemplateManager {
                   let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
                   if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
                   if (displayedColorSet.has(key)) {
-                    const realPixelCenter = (yr * resultWidth + xr) * 4;
+                    const realPixelCenter = (
+                      (yr + offsetY) * resultWidth + (xr + offsetX)
+                    ) * 4;
 
                     // // show enabled color center pixel
                     imageData[realPixelCenter] = templatePixelCenterRed;
@@ -1579,18 +1595,18 @@ export default class TemplateManager {
   }
 
   /** A utility to check if it uses the 3x3 template display
-   * @returns {boolean}
+   * @returns {number} - Changed from boolean to number in ver. 0.87.5
    * @since 0.85.46
    */
-  isLegacyDisplay() {
-    return this.userSettings?.legacyDisplay ?? false;
+  getTemplateMode() {
+    return +(this.userSettings?.legacyDisplay ?? 0);
   }
 
   /** Sets the legacyDisplay to a value.
-   * @param {boolean} value - The value
+   * @param {number} value - The value, changed from boolean to number in ver. 0.87.5
    * @since 0.85.46
    */
-  async setLegacyDisplay(value) {
+  async setTemplateMode(value) {
     this.userSettings.legacyDisplay = value;
     await this.storeUserSettings();
   }

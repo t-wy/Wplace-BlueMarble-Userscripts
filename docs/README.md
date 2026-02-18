@@ -103,9 +103,14 @@ To use it, copy the content and paste it in the URL field when creating a bookma
   <ul>
     <li>Show Charges Count outside the Button that may be covered by Cloudflare Turnstile. (v0.85.3)</li>
     <li>Show Remaining Time to Full Charges. (v0.85.9)</li>
-    <li>Display the palette hints as crosshair instead of a dot for better visibility. (v0.85.2)</li>
-    <li>(Can be restored to dot mode since v0.85.46)</li>
-    <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
+    <li>Allow selecting different mode to display the template
+      <ul>
+        <li>Display the palette hints as crosshair instead of a dot for better visibility by default. (v0.85.2)</li>
+        <li>(Due to Mobile Safari's Canvas size limitation (4096x4096), the maximum zooming can only be 4 instead of 5)</li>
+        <li>Allow restoring back to 3x3 dot mode (v0.85.46)</li>
+        <li>Added 3x3 alternate mode (Based on: <a href="https://github.com/Nooko331/Wplace-MyBetterBlueMarble">@Nooko331's idea</a>) (v0.87.5)</li>
+      </ul>
+    </li>
     <li>Remember the loaded tiles to prevent lag / redundant computations (whenever the Last-Modified header is unchanged) (v0.85.4)</li>
     <li>Fixed the non-persistent palette toggle bug. (v0.85.1)</li>
     <li>Fixed the bug that the count of total blocks to count being 1 or 2 after refresh. (v0.85.2)</li>
