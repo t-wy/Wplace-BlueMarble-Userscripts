@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - custom-improve
+  workflow_dispatch:
 
 
 jobs:
