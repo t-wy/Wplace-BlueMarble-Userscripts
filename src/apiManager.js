@@ -212,25 +212,34 @@ export default class ApiManager {
   */
   getCloseButton() {
     /*
-    Old .gap-2 UI:
+    1.1.0 .gap-2 UI:
     (Y) Pixel: 1337, 337 ([Flag] Region #No)      (x)
             < Coords to be added here
     Painted by: (Icon) Username #ID (Alliance) (:)
     ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
     Button Class List: btn btn-primary btn-soft
 
-    New .gap-2 UI:
+    1.1.1 .gap-2 UI:
     (Icon) Username #ID  (Alliance)               (:)
     -------------------------------------------------
     (Y) 1337, 337 ([Flag] Region #No)             (x)
             < Coords to be added here
     ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
     Button Class List: btn btn-sm btn-primary btn-soft
+
+    1.1.2 .gap-2 UI:
+    (Icon) Username #ID  (Alliance) (:)           (x)
+    -------------------------------------------------
+    (Y) 1337, 337 ([Flag] Region #No)
+            < Coords to be added here
+    ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
+    Button Class List: btn btn-sm btn-primary btn-soft
     */
 
     return document.querySelector(
-      ".flex.gap-2.px-3>button.btn-circle," + 
-      ".flex.gap-1\\.5.px-3>button.btn-circle"
+      // ".flex.gap-2.px-3>button.btn-circle," + 
+      // ".flex.gap-1\\.5.px-3>button.btn-circle"
+      ".flex.px-3>button.btn-circle"
     ); // close button
   }
 
@@ -269,7 +278,11 @@ export default class ApiManager {
     if (!displayCoords1) {
       const closeButton = this.getCloseButton();
       if (!closeButton) return;
-      const coordRow = closeButton.parentElement;
+      let coordRow = closeButton.parentElement;
+      if (!coordRow.classList.contains("gap-1.5") && !coordRow.classList.contains("gap-2")) {
+        // 1.1.2: Wplace moved the close button to the user name row
+        coordRow = coordRow.nextElementSibling;
+      };
       // For every span element, find the one we want (pixel numbers when canvas clicked)
       displayCoords1 = document.createElement('span');
       displayCoords1.id = 'bm-display-coords1';
