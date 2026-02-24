@@ -183,7 +183,7 @@ export default class TemplateManager {
     template.storageKey = storageKey;
     this.templatesJSON.templates[storageKey] = {
       "name": template.displayName, // Display name of template
-      "coords": coords.join(', '), // The coords of the template
+      "coords": template.coords.join(', '), // The coords of the template
       "enabled": true,
       "tiles": templateTilesBuffers, // Stores the chunked tile buffers
       "palette": template.colorPalette, // Persist palette and enabled flags
