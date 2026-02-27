@@ -234,13 +234,31 @@ export default class ApiManager {
             < Coords to be added here
     ( Paint ) ( Favorite ) ( Share ) < Shape buttons to be added here
     Button Class List: btn btn-sm btn-primary btn-soft
+
+    1.1.2-2 .gap-2 UI:
+    (    ) Username #ID                       (:) (x)
+    (Icon) (Alliance)
+    (    ) (Y 1337, 337) ([Flag] Region #No)  (☆) (<)
+            < Coords to be added here
+    (                      Paint                    )
+    Button Class List: btn btn-sm btn-primary btn-soft
     */
 
     return document.querySelector(
-      // ".flex.gap-2.px-3>button.btn-circle," + 
-      // ".flex.gap-1\\.5.px-3>button.btn-circle"
-      ".flex.px-3>button.btn-circle"
+      ".flex.gap-2.px-3>button.btn-circle," + 
+      ".flex.gap-1\\.5.px-3>button.btn-circle," + 
+      ".flex.gap-1>button.btn-circle.btn-xs"
     ); // close button
+  }
+
+  /** Get the container with pixel info
+   * 
+   * @since 0.87.8
+  */
+  getPixelInfoContainer() {
+    return document.querySelector(
+      ".absolute.bottom-0>.rounded-t-box>div"
+    );
   }
 
   /** Get the container containing the three button, namely Paint, Favorite, and Share, for anchoring
@@ -248,12 +266,29 @@ export default class ApiManager {
    * @since 0.87.4
   */
   getPaintButtonContainer() {
-    const anchorElement = this.getCloseButton();
-    if (!anchorElement) return;
-    // .parentElement: The row containing the pixel
-    // .parentElement: The whole container
-    // .lastElementChild: The button container
-    return anchorElement.parentElement.parentElement.lastElementChild;
+    const pixelInfoContainer = this.getPixelInfoContainer();
+    if (!pixelInfoContainer) return;
+    const paintButton = pixelInfoContainer.querySelector(".btn-primary:not(.btn-soft)");
+    if (!paintButton) return;
+    return paintButton.parentElement;
+  }
+
+  /** Get the container containing the three button, namely Paint, Favorite, and Share, for anchoring
+   * 
+   * @since 0.87.7
+  */
+  getShareButtonContainer() {
+    // const anchorElement = this.getCloseButton();
+    // if (!anchorElement) return;
+    // // .parentElement: The row containing the pixel
+    // // .parentElement: The whole container
+    // // .lastElementChild: The button container
+    // return anchorElement.parentElement.parentElement.lastElementChild;
+    const pixelInfoContainer = this.getPixelInfoContainer();
+    if (!pixelInfoContainer) return;
+    const favShareButton = pixelInfoContainer.querySelector(".btn-primary.btn-soft");
+    if (!favShareButton) return;
+    return favShareButton.parentElement;
   }
 
   /** Update the texts and related functions shown on the pixel info overlay
@@ -276,13 +311,8 @@ export default class ApiManager {
   
     // If we could not find the addition coord span, we make it then update the textContent with the new coords
     if (!displayCoords1) {
-      const closeButton = this.getCloseButton();
-      if (!closeButton) return;
-      let coordRow = closeButton.parentElement;
-      if (!coordRow.classList.contains("gap-1.5") && !coordRow.classList.contains("gap-2")) {
-        // 1.1.2: Wplace moved the close button to the user name row
-        coordRow = coordRow.nextElementSibling;
-      };
+      let coordRow = this.getPaintButtonContainer()?.previousElementSibling;
+      if (!coordRow) return;
       // For every span element, find the one we want (pixel numbers when canvas clicked)
       displayCoords1 = document.createElement('span');
       displayCoords1.id = 'bm-display-coords1';
@@ -349,14 +379,18 @@ export default class ApiManager {
       let btnLineTemplate = document.getElementById('bm-create-line-template');
       const that = this;
       if (!btnLineTemplate) {
-        const buttonContainer = this.getPaintButtonContainer();
+        const buttonContainer = this.getShareButtonContainer();
         if (!buttonContainer) return;
         btnLineTemplate = document.createElement('span');
         btnLineTemplate.id = 'bm-create-line-template';
-        btnLineTemplate.textContent = "+ Line";
+        btnLineTemplate.textContent = "／ Line Template";
         btnLineTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
         btnLineTemplate.classList.add("btn-soft"); // not the primary button
-        buttonContainer.appendChild(btnLineTemplate);
+        btnLineTemplate.style.marginLeft = "12px";
+        btnLineTemplate.style.marginBottom = "8px";
+        const pixelInfoContainer = this.getPixelInfoContainer();
+        if (!pixelInfoContainer) return;
+        pixelInfoContainer.appendChild(btnLineTemplate);
         btnLineTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
             alert(`Some coordinates textboxes are empty or invalid!`);
@@ -415,14 +449,18 @@ export default class ApiManager {
       let btnCircleTemplate = document.getElementById('bm-create-circle-template');
       const that = this;
       if (!btnCircleTemplate) {
-        const buttonContainer = this.getPaintButtonContainer();
+        const buttonContainer = this.getShareButtonContainer();
         if (!buttonContainer) return;
         btnCircleTemplate = document.createElement('span');
         btnCircleTemplate.id = 'bm-create-circle-template';
-        btnCircleTemplate.textContent = "+ Circle";
+        btnCircleTemplate.textContent = "○ Circle Template";
         btnCircleTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
         btnCircleTemplate.classList.add("btn-soft"); // not the primary button
-        buttonContainer.appendChild(btnCircleTemplate);
+        btnCircleTemplate.style.marginLeft = "12px";
+        btnCircleTemplate.style.marginBottom = "8px";
+        const pixelInfoContainer = this.getPixelInfoContainer();
+        if (!pixelInfoContainer) return;
+        pixelInfoContainer.appendChild(btnCircleTemplate);
         btnCircleTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
             alert(`Some coordinates textboxes are empty or invalid!`);
@@ -730,7 +768,8 @@ export default class ApiManager {
           this.updateDownloadButton();
           break;
         
-        case 'tiles':
+        case 'tile':  // https://backend.wplace.live/tile/{tx}/{ty}.png
+        case 'tiles': // https://backend.wplace.live/files/s0/tiles/{tx}/{ty}.png
 
           // Runs only if the tile has the template
           let tileCoordsTile = data['endpoint'].split('/');

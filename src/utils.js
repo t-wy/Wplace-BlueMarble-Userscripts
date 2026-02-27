@@ -478,7 +478,7 @@ export function testAntiFingerprint() {
  * @since 0.85.28
  */
 export function downloadTile(tx, ty) {
-  const remoteURL = "https://backend.wplace.live/files/s0/tiles/" + (tx % 2048) + "/" + ty + ".png";
+  const remoteURL = "https://backend.wplace.live/tile/" + (tx % 2048) + "/" + ty + ".png";
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
