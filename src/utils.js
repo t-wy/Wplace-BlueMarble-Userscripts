@@ -478,7 +478,8 @@ export function testAntiFingerprint() {
  * @since 0.85.28
  */
 export function downloadTile(tx, ty) {
-  const remoteURL = "https://backend.wplace.live/tile/" + (tx % 2048) + "/" + ty + ".png";
+  const remoteURL1 = "https://backend.wplace.live/files/s0/tiles/" + (tx % 2048) + "/" + ty + ".png";
+  const remoteURL2 = "https://backend.wplace.live/tile/" + (tx % 2048) + "/" + ty + ".png"; // new URL
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -486,9 +487,13 @@ export function downloadTile(tx, ty) {
       resolve(img);
     };
     img.onerror = function(error) {
+      if (img.src === remoteURL1) {
+        img.src = remoteURL2;
+        return;
+      };
       reject(error);
     }
-    img.src = remoteURL;
+    img.src = remoteURL1;
   })
 }
 
