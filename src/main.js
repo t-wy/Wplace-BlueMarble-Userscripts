@@ -466,11 +466,7 @@ function observeBlack() {
 
       // If the move button does not exist, we make a new one
       if (!paint) {
-        paint = document.createElement('button');
-        paint.id = 'bm-button-paint';
-        paint.textContent = 'Paint';
-        paint.className = 'btn btn-soft';
-        paint.onclick = function() {
+        const paint_onclick = function(out_of_screen = true) {
           const currentCharges = Math.floor(apiManager.getCurrentCharges());
           if (currentCharges === 0) return;
           let examples = [];
@@ -498,6 +494,7 @@ function observeBlack() {
           //     ty * templateManager.tileSize + py,
           //   ];
           // } else {
+
           try {
             const geoCoords = getCenterGeoCoords();
             const tileCoords = coordsGeoCoordsToTileCoords(geoCoords[0], geoCoords[1]);
@@ -512,6 +509,26 @@ function observeBlack() {
               example[0][1] * templateManager.tileSize + example[1][1],
             ];
           };
+
+          const canvas = document.querySelector("canvas.maplibregl-canvas");
+          if (!canvas) return;
+          if (!out_of_screen) {
+            const wplaceBad = !isMapTilerLoaded();
+            const pxPerW = wplaceBad ? (512 * 2 ** (13 + 0)) / 2048000 : getPixelPerWplacePixel(); // teleport zoom is 13
+            examples = examples.filter(([color1, coord1]) => {
+              const _coord1 = [
+                coord1[0][0] * templateManager.tileSize + coord1[1][0],
+                coord1[0][1] * templateManager.tileSize + coord1[1][1],
+              ];
+              return (
+                Math.abs(_coord1[0] - exampleCoord[0]) * pxPerW * 2 < canvas.offsetWidth &&
+                Math.abs(_coord1[1] - exampleCoord[1]) * pxPerW * 2 < canvas.offsetHeight
+              );
+            })
+            if (examples.length === 0) return;
+          }
+
+
           // }
           if (examples.length <= currentCharges) {
             // do nothing as all are going to be painted anyway
@@ -556,7 +573,6 @@ function observeBlack() {
             }
             examples = resultExamples.slice(0, currentCharges);
           }
-          const canvas = document.querySelector("canvas.maplibregl-canvas");
           // for (let i = 0; i < examples.length; i++) {
           //   const [colorId, example] = examples[i];
           //   document.getElementById("color-" + colorId).click();
@@ -567,18 +583,23 @@ function observeBlack() {
           //   canvas.dispatchEvent(ev);
           // }
           // Get back to the first point to show where the painted pixels are based on
-          teleportToTileCoords(examples[0][1][0], examples[0][1][1]);
+          let refCoord;
+          if (out_of_screen) {
+            refCoord = examples[0][1];
+            teleportToTileCoords(refCoord[0], refCoord[1]);
+          } else {
+            const geoCoords = getCenterGeoCoords();
+            refCoord = coordsGeoCoordsToTileCoords(geoCoords[0], geoCoords[1]);
+          }
           const wplaceBad = !isMapTilerLoaded();
           setTimeout(() => {
-            let currentColorId = examples[0][0];
-            document.getElementById("color-" + currentColorId).click();
-
+            const pxPerW = wplaceBad ? (512 * 2 ** (13 + 0)) / 2048000 : getPixelPerWplacePixel(); // teleport zoom is 13
+            let currentColorId = null;
             const refW = [
-              examples[0][1][0][0] * templateManager.tileSize + examples[0][1][1][0],
-              examples[0][1][0][1] * templateManager.tileSize + examples[0][1][1][1],
+              refCoord[0][0] * templateManager.tileSize + refCoord[1][0],
+              refCoord[0][1] * templateManager.tileSize + refCoord[1][1],
             ]; // reference Wplace coord
             const cliC = [canvas.offsetWidth / 2, canvas.offsetHeight / 2]; // reference canvas coord
-            const pxPerW = wplaceBad ? (512 * 2 ** (13 + 0)) / 2048000 : getPixelPerWplacePixel(); // teleport zoom is 13
             for (let i = 0; i < examples.length; i++) {
               const [colorId, example] = examples[i];
               if (currentColorId !== colorId) {
@@ -600,10 +621,22 @@ function observeBlack() {
           }, wplaceBad ? 10000 : 0);
         }
 
+        paint = document.createElement('button');
+        paint.id = 'bm-button-paint';
+        paint.textContent = 'Paint';
+        paint.className = 'btn btn-soft';
+        paint.onclick = () => paint_onclick(true);
+
+        const paint2 = document.createElement('button');
+        paint2.id = 'bm-button-paint';
+        paint2.textContent = 'Fill Screen';
+        paint2.className = 'btn btn-soft';
+        paint2.onclick = () => paint_onclick(false);
         // Attempts to find the "Paint Pixel" element for anchoring
         const paintPixel = black.parentNode.parentNode.parentNode.parentNode.querySelector('h2');
 
         paintPixel.parentNode?.appendChild(paint); // Adds the paint button
+        paintPixel.parentNode?.appendChild(paint2); // Adds the paint button
       }
     };
 
