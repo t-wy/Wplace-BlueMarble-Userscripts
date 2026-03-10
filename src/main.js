@@ -590,6 +590,7 @@ function observeBlack() {
           } else {
             const geoCoords = getCenterGeoCoords();
             refCoord = coordsGeoCoordsToTileCoords(geoCoords[0], geoCoords[1]);
+            teleportToTileCoords(refCoord[0], refCoord[1], true);
           }
           const wplaceBad = !isMapTilerLoaded();
           setTimeout(() => {
