@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep, base64PNGSize } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep, base64PNGSize, calculateTileKey } from "./utils";
 import { themeList, addTemplateCanvas, removeLayer, doAfterMapFound, forceRefreshTiles } from './utilsMaptiler.js';
 
 /** Manages the template system.
@@ -296,7 +296,7 @@ export default class TemplateManager {
     const timeStart = performance.now();
     
     // Format tile coordinates with proper padding for consistent lookup
-    const tileCoordsPadded = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
+    const tileCoordsPadded = calculateTileKey(tileCoords);
 
     console.log(`Start checking touching templates...`, performance.now() - timeStart + ' ms');
 
@@ -686,7 +686,7 @@ export default class TemplateManager {
       const templateMode = this.getTemplateMode();
       for (const tileKey of Object.keys(template.chunked)) {
         console.log(`Handling tile chunk ${tileKey}...`, performance.now() - timeStart + ' ms');
-        const coords = tileKey.split(','); // [x, y, x, y] Tile/pixel coordinates
+        // const coords = tileKey.split(','); // [x, y, x, y] Tile/pixel coordinates
 
         const drawMultTemplate = template.shreadSize;
         const drawMultCenterTemplate = (template.shreadSize - 1) >> 1;
@@ -1192,7 +1192,7 @@ export default class TemplateManager {
    * @since 0.85.30
    */
   getInvolvedTemplates(tileCoords) {
-    const tileCoordsPadded = tileCoords[0].toString().padStart(4, '0') + ',' + tileCoords[1].toString().padStart(4, '0');
+    const tileCoordsPadded = calculateTileKey(tileCoords);
     return this.templatesArray.filter( template => {
       if (!template?.chunked) return false; // no bitmap
       // Fast path via recorded tile prefixes if available

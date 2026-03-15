@@ -1542,13 +1542,33 @@ async function buildOverlayMain() {
   }
 
   window.buildColorFilterList = function buildColorFilterList() {
-    const listContainer = document.querySelector('#bm-colorfilter-list');
+    const listContainer = document.getElementById('bm-colorfilter-list');
+    const colorFilterHeader = document.querySelector('#bm-contain-colorfilter > summary');
     const toggleStatus = templateManager.getPaletteToggledStatus();
     const hideCompleted = templateManager.areCompletedColorsHidden();
     const hideLocked = templateManager.areLockedColorsHidden();
     listContainer.innerHTML = '';
 
     const { paletteSum, combinedProgress } = templateManager.getOverallPerColorProgress();
+    const templateEnabledState = Object.fromEntries(
+      (templateManager?.templatesArray ?? []).map(
+        t => [t.storageKey, t.enabled]
+      )
+    );
+    const enabledTilesCount = templateManager.templatesArray.filter(
+      template => template.enabled
+    ).reduce(
+      (curr, template) => curr + Object.keys(template?.chunked ?? {}).length,
+      0
+    );
+    const loadedTilesCount = [...templateManager.tileProgress.values()].reduce(
+      (curr, progress) => curr + Object.keys(progress.template).filter(
+        storageKey => templateEnabledState[storageKey]
+      ).length,
+      0
+    );
+
+    colorFilterHeader.textContent = `Colors (${loadedTilesCount} / ${enabledTilesCount} Tiles Loaded)`
 
     if (!listContainer || !(Object.keys(paletteSum).length)) {
       if (listContainer) { listContainer.innerHTML = '<small>No template colors to display.</small>'; }
@@ -1692,7 +1712,8 @@ async function buildOverlayMain() {
   };
 
   window.buildTemplateFilterList = function buildTemplateFilterList() {
-    const listContainer = document.querySelector('#bm-templatefilter-list');
+    const listContainer = document.getElementById('bm-templatefilter-list');
+    const templateFilterHeader = document.querySelector('#bm-contain-templatefilter > summary');
     consoleLog(templateManager);
     if (templateManager.templatesArray?.length === 0) {
       if (listContainer) { listContainer.innerHTML = '<small>No templates to display.</small>'; }
@@ -1700,6 +1721,13 @@ async function buildOverlayMain() {
     }
 
     listContainer.innerHTML = '';
+
+    const enabledTemplatesCount = templateManager.templatesArray.filter(
+      template => template.enabled
+    ).length;
+
+    templateFilterHeader.textContent = `Templates (${enabledTemplatesCount} / ${templateManager.templatesArray.length} Enabled)`
+  
     const entries = templateManager.templatesArray;
 
     const combinedTemplate = {};
@@ -1778,6 +1806,14 @@ async function buildOverlayMain() {
         template.enabled = toggle.checked;
         overlayMain.handleDisplayStatus(`${toggle.checked ? 'Enabled' : 'Disabled'} ${templateName}`);
         if (toggle.checked) {
+          // reset cache if it is being toggled on
+          // since we need the updated enabled count for each color
+          template.tilePrefixes.forEach(tileKey => {
+            if (apiManager.tileCache[tileKey]) {
+              delete apiManager.tileCache[tileKey];
+            }
+          });
+          templateManager.clearTileProgress(template);
           templateManager.createOverlayOnMap(template.sortID);
         } else {
           // reset related tiles if it is being toggled off

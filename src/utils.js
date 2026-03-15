@@ -677,3 +677,12 @@ export function circleBitmap([x0, y0], [x1, y1], [r, g, b]) {
     offsetY: minY
   };
 }
+
+/** Convert tile coordinates to a string
+ * @param {number[]} coordsTile - The tile coordinates
+ * @returns {string}
+ * @since 0.87.12
+ */
+export function calculateTileKey(coordsTile) {
+  return coordsTile[0].toString().padStart(4, '0') + ',' + coordsTile[1].toString().padStart(4, '0');
+}

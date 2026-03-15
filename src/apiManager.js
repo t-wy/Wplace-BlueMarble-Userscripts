@@ -5,7 +5,7 @@
  */
 
 import TemplateManager from "./templateManager.js";
-import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog, lineBitmap, getCurrentColor, colorpalette, midPointDistance, circleBitmap } from "./utils.js";
+import { consoleError, escapeHTML, numberToEncoded, serverTPtoDisplayTP, cleanUpCanvas, copyToClipboard, getOverlayCoords, areOverlayCoordsFilledAndValid, calculateTopLeftAndSize, downloadTile, testCanvasSize, consoleLog, lineBitmap, getCurrentColor, colorpalette, midPointDistance, circleBitmap, calculateTileKey } from "./utils.js";
 import { coordsTileCoordsToGeoCoords, overrideRandom } from "./utilsMaptiler.js";
 
 export default class ApiManager {
@@ -735,7 +735,7 @@ export default class ApiManager {
               return; // Kills itself
             }
             // Force remove the tile from the cache since Last-Modified updates not at the same time as pixel submissions
-            const tileKey = coordsTile[0].toString().padStart(4, '0') + ',' + coordsTile[1].toString().padStart(4, '0');
+            const tileKey = calculateTileKey(coordsTile);
             if (this.tileCache[tileKey]) {
               delete this.tileCache[tileKey];
             }
@@ -776,7 +776,7 @@ export default class ApiManager {
           tileCoordsTile = [parseInt(tileCoordsTile[tileCoordsTile.length - 2]), parseInt(tileCoordsTile[tileCoordsTile.length - 1].replace('.png', ''))];
           
           const blobData = data['blobData'];
-          const tileKey = tileCoordsTile[0].toString().padStart(4, '0') + ',' + tileCoordsTile[1].toString().padStart(4, '0');
+          const tileKey = calculateTileKey(tileCoordsTile);
           const lastModified = data["lastModified"];
           // We need the list of enabled colors to generate the unpainted list
           const fullKey = this.templateManager.getTileCacheKey(tileCoordsTile);
