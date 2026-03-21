@@ -1,4 +1,4 @@
-import { uint8ToBase64, cleanUpCanvas, rgbToMeta, testCanvasSize } from "./utils";
+import { uint8ToBase64, cleanUpCanvas, countPixels } from "./utils";
 
 /** An instance of a template.
  * Handles all mathematics, manipulation, and analysis regarding a single template.
@@ -53,11 +53,6 @@ export default class Template {
     // Creates a Set of Wplace palette colors excluding "transparent"
     // const allowed = Array.isArray(colorpalette) ? colorpalette : [];
     // this.allowedColorsSet = allowedColorsSet;
-
-    // Map rgb-> {id, premium}
-    // this.rgbToMeta = rgbToMeta;
-
-    console.log('Allowed colors for template:', new Set(rgbToMeta.keys()));
 
     this.shreadSize = null; // Scale image factor, same as TemplateManager's drawMult
   }
@@ -148,25 +143,8 @@ export default class Template {
       cleanUpCanvas(inspectCanvas);
       inspectCanvas = null;
 
-      let required = 0;
-      let deface = 0;
       const paletteMap = new Map();
-      for (let y = 0; y < imageHeight; y++) {
-        for (let x = 0; x < imageWidth; x++) {
-          const idx = (y * imageWidth + x) * 4;
-          const r = inspectData[idx];
-          const g = inspectData[idx + 1];
-          const b = inspectData[idx + 2];
-          const a = inspectData[idx + 3];
-          if (a === 0) { continue; } // Ignored transparent pixel
-          if (r === 0xde && g === 0xfa && b === 0xce) { deface++; }
-          // this key also includes #deface as "222,250,206"
-          const key = rgbToMeta.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
-          //if (!rgbToMeta.has(key)) { continue; } // Skip non-palette colors (but #deface added to allowed)
-          required++;
-          paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
-        }
-      }
+      const { required, deface } = countPixels(inspectData, imageWidth, imageHeight, paletteMap);
 
       this.requiredPixelCount = required;
       this.defacePixelCount = deface;
@@ -260,9 +238,9 @@ export default class Template {
             const pixelIndex = (y * canvasWidth + x) * 4; // Find the pixel index in an array where every 4 indexes are 1 pixel
             // If the pixel is the color #deface, draw a translucent gray checkerboard pattern
             if (
-              imageData.data[pixelIndex] === 0xde &&
-              imageData.data[pixelIndex + 1] === 0xfa &&
-              imageData.data[pixelIndex + 2] === 0xce
+              ((imageData.data[pixelIndex + 0] ^ 0xde) & 0xfe) === 0 &&
+              ((imageData.data[pixelIndex + 1] ^ 0xfa) & 0xfe) === 0 &&
+              ((imageData.data[pixelIndex + 2] ^ 0xce) & 0xfe) === 0
             ) {
               if ((x + y) % 2 === 0) { // Formula for checkerboard pattern
                 imageData.data[pixelIndex] = 0;
@@ -276,15 +254,6 @@ export default class Template {
               imageData.data[pixelIndex + 3] = 32; // Make it translucent
             } else if (!this.customMask(x, y, shreadSize)) { // Otherwise only draw the middle pixel
               imageData.data[pixelIndex + 3] = 0; // Make the pixel transparent on the alpha channel
-            /* } else {
-              // Center pixel: keep only if in allowed site palette
-              const r = imageData.data[pixelIndex];
-              const g = imageData.data[pixelIndex + 1];
-              const b = imageData.data[pixelIndex + 2];
-              if (!rgbToMeta.has(`${r},${g},${b}`)) {
-                //imageData.data[pixelIndex + 3] = 0; // hide non-palette colors
-              }
-            */
             }
           }
         }

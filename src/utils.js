@@ -232,39 +232,33 @@ export const colorpalette = [
 ];
 // All entries include fixed id (index-based) and premium flag by design.
 
-// This actually should have the exact same keys as rgbToMeta
-// export const allowedColorsSet = new Set(
-//   colorpalette
-//     .filter(color => (color?.name || '').toLowerCase() !== 'transparent' && Array.isArray(color?.rgb))
-//     .map(color => `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`)
-// );
-
-export const rgbToMeta = new Map(
-  colorpalette
-    .filter(color => Array.isArray(color?.rgb))
-    .map(color => [
-      `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`,
-      { id: color.id, premium: !!color.premium, name: color.name }
-    ])
-); // Notice that transparent (0) is overriden by black (1) here
-
-// Ensure template #deface marker is treated as allowed (maps to Transparent color)
-const defaceKey = '222,250,206';
-// allowedColorsSet.add(defaceKey);
-// Map #deface to Transparent meta for UI naming and ID continuity
-try {
-  const transparent = colorpalette.find(color => (color?.name || '').toLowerCase() === 'transparent');
-  if (transparent && Array.isArray(transparent.rgb)) {
-    rgbToMeta.set(defaceKey, { id: transparent.id, premium: !!transparent.premium, name: transparent.name });
-  }
-} catch (ignored) {}
-
+export const rgbToMeta = new Map();
+export const rgbToKey = new Map();
+const transparent = colorpalette.find(color => (color?.name || '').toLowerCase() === 'transparent');
+for (const {id, premium, name, rgb} of [
+  ...colorpalette,
+  // Ensure template #deface marker is treated as allowed (maps to Transparent color)
+  // Map #deface to Transparent meta for UI naming and ID continuity
+  {id: transparent.id, premium: transparent.premium, name: transparent.name, rgb: [222, 250, 206]}
+]) {
+  const [r, g, b] = rgb;
+  const colorKey = `${r},${g},${b}`;
+  rgbToMeta.set(colorKey, {id, premium, name, rgb});
+  // anti-fingerprinting
+  rgbToKey.set(`${r    },${g    },${b    }`, colorKey);
+  rgbToKey.set(`${r    },${g    },${b ^ 1}`, colorKey);
+  rgbToKey.set(`${r    },${g ^ 1},${b    }`, colorKey);
+  rgbToKey.set(`${r    },${g ^ 1},${b ^ 1}`, colorKey);
+  rgbToKey.set(`${r ^ 1},${g    },${b    }`, colorKey);
+  rgbToKey.set(`${r ^ 1},${g    },${b ^ 1}`, colorKey);
+  rgbToKey.set(`${r ^ 1},${g ^ 1},${b    }`, colorKey);
+  rgbToKey.set(`${r ^ 1},${g ^ 1},${b ^ 1}`, colorKey);
+}
+// Special "other" key for non-palette colors
 // Map other key to Other meta for UI naming and ID continuity
 const keyOther = 'other';
-// allowedColorsSet.add(keyOther); // Special "other" key for non-palette colors
-try {
-  rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
-} catch (ignored) {}
+rgbToKey.set('other', keyOther);
+rgbToMeta.set(keyOther, { id: 'other', premium: false, name: 'Other' });
 
 /** Releases the canvas content to free up memory.
  * @since 0.85.5
@@ -688,4 +682,42 @@ export function circleBitmap([x0, y0], [x1, y1], [r, g, b]) {
  */
 export function calculateTileKey(coordsTile) {
   return coordsTile[0].toString().padStart(4, '0') + ',' + coordsTile[1].toString().padStart(4, '0');
+}
+
+/** Count pixel colors in both TM.#parseBlueMarble and T.createTemplateTiles
+ * @param {ImageDataArray} inspectData - The image data to inspect
+ * @param {number} imageWidth
+ * @param {number} imageHeight
+ * @param {Map<string, number>} paletteMap - The palette map to store the pixel count
+ * @param {number} shreadSize
+ * @param {number} shreadCenter
+ * @since 0.87.13
+ */
+export function countPixels(inspectData, imageWidth, imageHeight, paletteMap, shreadSize = 1, shreadCenter = 0) {
+  let required = 0;
+  let deface = 0;
+  for (let y = shreadCenter; y < imageHeight; y += shreadSize) {
+    for (let x = shreadCenter; x < imageWidth; x += shreadSize) {
+      const idx = (y * imageWidth + x) * 4;
+      const r = inspectData[idx];
+      const g = inspectData[idx + 1];
+      const b = inspectData[idx + 2];
+      const a = inspectData[idx + 3];
+      if (a < 64) { continue; } // Ignored transparent pixel
+      if (
+        ((r ^ 0xde) & 0xfe) === 0 &&
+        ((g ^ 0xfa) & 0xfe) === 0 &&
+        ((b ^ 0xce) & 0xfe) === 0
+      ) { deface++; }
+      // this key also includes #deface as "222,250,206"
+      const tempKey = `${r},${g},${b}`;
+      const key = rgbToKey.get(tempKey) ?? 'other';
+      required++;
+      paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
+    }
+  }
+  return {
+    required,
+    deface
+  };
 }

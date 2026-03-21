@@ -1,5 +1,5 @@
 import Template from "./Template";
-import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep, base64PNGSize, calculateTileKey } from "./utils";
+import { base64ToUint8, numberToEncoded, cleanUpCanvas, rgbToKey, rgbToMeta, sortByOptions, testCanvasSize, getCurrentColor, sleep, base64PNGSize, calculateTileKey, countPixels } from "./utils";
 import { themeList, addTemplateCanvas, removeLayer, doAfterMapFound, forceRefreshTiles } from './utilsMaptiler.js';
 
 /** Manages the template system.
@@ -452,7 +452,7 @@ export default class TemplateManager {
 
             if (templatePixelCenterAlpha < 64) {
               try {
-                const key = rgbToMeta.has(`${realPixelRed},${realPixelCenterGreen},${realPixelCenterBlue}`) ? `${realPixelRed},${realPixelCenterGreen},${realPixelCenterBlue}` : 'other';
+                const key = rgbToKey.get(`${realPixelRed},${realPixelCenterGreen},${realPixelCenterBlue}`) ?? 'other';
                 
                 // IF the alpha of the center pixel that is placed on the canvas is greater than or equal to 64, AND the pixel is a Wplace palette color, then it is incorrect.
                 if (realPixelCenterAlpha >= 64 && key !== "other") {
@@ -469,8 +469,7 @@ export default class TemplateManager {
             }
 
             // errorMapOnlyEnabledColors
-            let colorKey = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-            if (!rgbToMeta.has(colorKey)) colorKey = 'other';
+            const colorKey = rgbToKey.get(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`) ?? 'other';
             const shouldThisColorInvolvedInErrorMap = (!errorMapOnlyEnabledColors) || displayedColors.has(colorKey);
 
             // IF the alpha of the pixel is less than 64...
@@ -486,7 +485,11 @@ export default class TemplateManager {
               }
 
               // ELSE IF the pixel matches the template center pixel color
-            } else if (realPixelRed === templatePixelCenterRed && realPixelCenterGreen === templatePixelCenterGreen && realPixelCenterBlue === templatePixelCenterBlue) {
+            } else if (
+              ((realPixelRed ^ templatePixelCenterRed) & 0xfe) === 0 &&
+              ((realPixelCenterGreen ^ templatePixelCenterGreen) & 0xfe) === 0 &&
+              ((realPixelCenterBlue ^ templatePixelCenterBlue) & 0xfe) === 0
+            ) {
               paintedCount++; // ...the pixel is painted correctly
               isPainted = true;
               if (paletteStats[colorKey] === undefined) {
@@ -527,8 +530,7 @@ export default class TemplateManager {
             }
             if (!isPainted) {
               // add to palette stat
-              let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-              if (!rgbToMeta.has(key)) key = 'other';
+              const key = rgbToKey.get(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`) ?? 'other';
               const example = [ // use this tile as example
                 tileCoords,
                 [ gxr, gyr ]
@@ -768,8 +770,7 @@ export default class TemplateManager {
 
                   if (templatePixelCenterAlpha < 1) { continue; } // leave transparent pixels as is
 
-                  let key = `${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`;
-                  if (!rgbToMeta.has(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`)) key = 'other';
+                  let key = rgbToKey.get(`${templatePixelCenterRed},${templatePixelCenterGreen},${templatePixelCenterBlue}`) ?? 'other';
                   if (displayedColorSet.has(key)) {
                     const realPixelCenter = (
                       (yr + offsetY) * resultWidth + (xr + offsetX)
@@ -1031,22 +1032,8 @@ export default class TemplateManager {
                 const data = cx.getImageData(0, 0, w, h).data;
                 cleanUpCanvas(c);
                 c = null;
-                // Optimize for-loop
-                // Only count center pixels of each mult-x block
-                for (let y = templateShreadCenter; y < h; y += templateShreadSize) {
-                  for (let x = templateShreadCenter; x < w; x += templateShreadSize) {
-                    const idx = (y * w + x) * 4;
-                    const r = data[idx];
-                    const g = data[idx + 1];
-                    const b = data[idx + 2];
-                    const a = data[idx + 3];
-                    if (a < 64) { continue; }
-                    if (r === 0xde && g === 0xfa && b === 0xce) { continue; }
-                    requiredPixelCount++;
-                    const key = Object.hasOwn(templates[templateKey].palette, `${r},${g},${b}`) ? `${r},${g},${b}` : "other";
-                    paletteMap.set(key, (paletteMap.get(key) || 0) + 1);
-                  }
-                }
+                const { required } = countPixels(data, w, h, paletteMap, templateShreadSize, templateShreadCenter);
+                requiredPixelCount += required;
               } catch (e) {
                 console.warn('Failed to count required pixels for imported tile', e);
               }

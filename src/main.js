@@ -1611,7 +1611,7 @@ async function buildOverlayMain() {
         swatch.style.background = '#888'; // Neutral color for "Other"
         colorName = "Other";
         colorKey = "other";
-      } else if (rgb === '#deface') {
+      } else if (rgb === '#deface') { // legacy name?
         swatch.style.background = '#deface';
         colorName = "Transparent";
         colorKey = "transparent";
