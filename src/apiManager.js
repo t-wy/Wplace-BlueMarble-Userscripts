@@ -738,7 +738,10 @@ export default class ApiManager {
             const tileKey = calculateTileKey(coordsTile);
             if (this.tileCache[tileKey]) {
               delete this.tileCache[tileKey];
-            }
+            };
+            if (this.templateManager.tileProgress.has(tileKey)) {
+              this.templateManager.tileProgress.get(tileKey).outdated = true;
+            };
             break;
           }
           const payloadExtractor = new URLSearchParams(data['endpoint'].split('?')[1]); // Declares a new payload deconstructor and passes in the fetch request payload

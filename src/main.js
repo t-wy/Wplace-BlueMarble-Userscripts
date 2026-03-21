@@ -1561,10 +1561,14 @@ async function buildOverlayMain() {
       (curr, template) => curr + Object.keys(template?.chunked ?? {}).length,
       0
     );
+    // progress.template: { templateKey: status } that lists the templates corr to that tile
     const loadedTilesCount = [...templateManager.tileProgress.values()].reduce(
-      (curr, progress) => curr + Object.keys(progress.template).filter(
-        storageKey => templateEnabledState[storageKey]
-      ).length,
+      (curr, progress) => curr + (
+        (progress.outdated ?? false) ? 0 :
+        Object.keys(progress.template).filter(
+          storageKey => templateEnabledState[storageKey]
+        ).length
+      ),
       0
     );
 

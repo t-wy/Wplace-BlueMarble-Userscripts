@@ -610,6 +610,7 @@ export default class TemplateManager {
         wrong: wrongCount,
         palette: paletteStats,
         template: templateStats,
+        outdated: false, // set to true if the tile is expected to have updated
       });
       // this.tileOverlay.set(tileCoordsPadded, ...);
     }
