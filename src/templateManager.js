@@ -1041,7 +1041,7 @@ export default class TemplateManager {
                     const b = data[idx + 2];
                     const a = data[idx + 3];
                     if (a < 64) { continue; }
-                    if (r === 222 && g === 250 && b === 206) { continue; }
+                    if (r === 0xde && g === 0xfa && b === 0xce) { continue; }
                     requiredPixelCount++;
                     const key = Object.hasOwn(templates[templateKey].palette, `${r},${g},${b}`) ? `${r},${g},${b}` : "other";
                     paletteMap.set(key, (paletteMap.get(key) || 0) + 1);

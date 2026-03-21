@@ -242,7 +242,10 @@ export const colorpalette = [
 export const rgbToMeta = new Map(
   colorpalette
     .filter(color => Array.isArray(color?.rgb))
-    .map(color => [ `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`, { id: color.id, premium: !!color.premium, name: color.name } ])
+    .map(color => [
+      `${color.rgb[0]},${color.rgb[1]},${color.rgb[2]}`,
+      { id: color.id, premium: !!color.premium, name: color.name }
+    ])
 ); // Notice that transparent (0) is overriden by black (1) here
 
 // Ensure template #deface marker is treated as allowed (maps to Transparent color)

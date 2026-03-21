@@ -159,7 +159,7 @@ export default class Template {
           const b = inspectData[idx + 2];
           const a = inspectData[idx + 3];
           if (a === 0) { continue; } // Ignored transparent pixel
-          if (r === 222 && g === 250 && b === 206) { deface++; }
+          if (r === 0xde && g === 0xfa && b === 0xce) { deface++; }
           // this key also includes #deface as "222,250,206"
           const key = rgbToMeta.has(`${r},${g},${b}`) ? `${r},${g},${b}` : 'other';
           //if (!rgbToMeta.has(key)) { continue; } // Skip non-palette colors (but #deface added to allowed)
@@ -260,9 +260,9 @@ export default class Template {
             const pixelIndex = (y * canvasWidth + x) * 4; // Find the pixel index in an array where every 4 indexes are 1 pixel
             // If the pixel is the color #deface, draw a translucent gray checkerboard pattern
             if (
-              imageData.data[pixelIndex] === 222 &&
-              imageData.data[pixelIndex + 1] === 250 &&
-              imageData.data[pixelIndex + 2] === 206
+              imageData.data[pixelIndex] === 0xde &&
+              imageData.data[pixelIndex + 1] === 0xfa &&
+              imageData.data[pixelIndex + 2] === 0xce
             ) {
               if ((x + y) % 2 === 0) { // Formula for checkerboard pattern
                 imageData.data[pixelIndex] = 0;
