@@ -256,7 +256,7 @@ export function addTemplateCanvas(sortID, tileName, templateSize, blob, usage) {
  * @since 0.86.1
  */
 export function removeLayer(usage = null, sortID = null) {
-  // sourceID = null: remove all
+  // sortID = null: remove all
   const matchSuffix = sortID ? "-" + sortID : "";
   const toRemove = [];
   const removeUsages = usage ? [usage] : ["overlay", "error"];

@@ -665,6 +665,10 @@ export default class TemplateManager {
   async createOverlayOnMap(sortID = null) {
     const timeStart = performance.now();
 
+    if (this.areTemplatesHidden()) {
+      return;
+    }
+
     console.log(`Start creating overlay for template ${sortID}...`, performance.now() - timeStart + ' ms');
 
     const currentMemorySavingMode = this.isMemorySavingModeOn(); // To make sure that we do not free the object if it is stored due to race conditions.
@@ -1579,6 +1583,23 @@ export default class TemplateManager {
    */
   async setStatusHidden(value) {
     this.userSettings.hideStatus = value;
+    await this.storeUserSettings();
+  }
+
+  /** A utility to check if the status textbox is hidden.
+   * @returns {boolean}
+   * @since 0.87.15
+   */
+  areTemplatesHidden() {
+    return this.userSettings?.hideTemplates ?? false;
+  }
+
+  /** Sets the hideStatus to a value.
+   * @param {boolean} value - The value
+   * @since 0.87.15
+   */
+  async setTemplatesHidden(value) {
+    this.userSettings.hideTemplates = value;
     await this.storeUserSettings();
   }
 

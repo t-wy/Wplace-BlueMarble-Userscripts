@@ -278,6 +278,7 @@ GM.getValue('bmTemplates', '{}').then(async storageTemplatesValue => {
       'themeOverridden': false,
       'currentTheme': '',
       'hideStatus': false,
+      'hideTemplates': false,
       'isLegacyDisplay': false, // now used as the template display mode
       'showErrorMap': false,
       'showOnlyEnabledColorsErrorMap': false, // Hidden in settings
@@ -1104,6 +1105,18 @@ async function buildOverlayMain() {
               if (templateManager.isErrorMapShown() && templateManager.isErrorMapOnlyEnabledColorsShown()) {
                 // This setting may change the enabled color list
                 forceRefreshTiles();
+              }
+            });
+          }).buildElement()
+          .addCheckbox({'id': 'bm-status-hidden', 'textContent': 'Disable Template Overlays', 'checked': templateManager.areTemplatesHidden()}, (instance, label, checkbox) => {
+            checkbox.addEventListener('change', () => {
+              templateManager.setTemplatesHidden(checkbox.checked);
+              if (checkbox.checked) {
+                instance.handleDisplayStatus("Template Overlays Disabled.");
+                removeLayer("overlay");
+              } else {
+                instance.handleDisplayStatus("Template Overlays Enabled.");
+                templateManager.createOverlayOnMap();
               }
             });
           }).buildElement()

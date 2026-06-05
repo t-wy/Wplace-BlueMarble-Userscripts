@@ -177,6 +177,11 @@ To use it, copy the content and paste it in the URL field when creating a bookma
         <li>Wplace: Pixel Info not displaying when picking a pixel from Tile X = 0 when the Map Center is at Tile X = 2047.</li>
       </ul>
     </li>
+    <li>Allow templates not to create overlays on map to save processing time. Useful when used together with official overlay feature or other overlay tools. (v0.87.15)
+      <ul>
+        <li>Notice that in this case, the colors displayed on the overlay are managed by the exteral overlay tool, not this script.</li>
+      </ul>
+    </li>
   </ul>
 </p>
 
