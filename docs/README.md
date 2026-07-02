@@ -130,7 +130,11 @@ To use it, copy the content and paste it in the URL field when creating a bookma
     </li>
     <li>Provide the bookmarklet version. (v0.85.22)</li>
     <li>Allow completed colors to be hidden from the color list. (v0.85.23)</li>
-    <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance. (v0.85.23)</li>
+    <li>Different options to change the display order of the colors, including (un)painted count, hue, and luminance. (v0.85.23)
+      <ul>
+        <li>Added the option to sort by Color ID. (v0.87.16)</li>
+      </ul>
+    </li>
     <li>Progress bar behind each color in the list that shows the relative progress (v0.85.24)</li>
     <li>Allow different coordinate formats (`a, b, c, d`, `a b c d`, and `Tl X: a, Tl Y: b, Px X: c, Px Y: d`) to be pasted to the first coordinate textbox. (v0.85.28)</li>
     <li>Allow downloading artworks (in exact size) from the map via the Share Button by two coordinates of opposite corners (One from the textboxes, another from the pixel you pick from the map before clicking the "Share" button) (v0.85.28)</li>
