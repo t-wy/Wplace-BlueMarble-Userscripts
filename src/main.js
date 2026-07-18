@@ -210,30 +210,36 @@ inject(() => {
   const hookedMapFuncs = {
     "values": Map.prototype.values
   };
-  const hookedMapValues = function () {
-    const temp = hookedMapFuncs.values.call(this);
-    Array.from(temp).forEach(x => {
-        if (x && x["maps"] instanceof Set) {
-            Array.from(x["maps"]).forEach(y => {
-                if (y && y["flyTo"]) (document.head["__bmmap"] = y, restoreMapPrototype());
-            });
-        };
-    })
-    return temp;
+  const hookedMapValues = function (...args) {
+    const iter = Reflect.apply(hookedMapFuncs["values"], this, args);
+    return {
+      [Symbol.iterator]() { return this; },
+      next() {
+        const r = iter.next();
+        if (!r["done"]) {
+            const x = r["value"];
+            if (x?.["maps"] instanceof Set) {
+                for (const y of x["maps"]) {
+                    if (y?.["flyTo"]) {
+                        document.head["__bmmap"] = y;
+                        restoreMapPrototype();
+                        break;
+                    }
+                }
+            } else if (x?.["_map"]?.["flyTo"]) {
+              document.head["__bmmap"] = x?.["_map"];
+              restoreMapPrototype();
+            }
+        }
+        return r;
+      }
+    };
   };
   const restoreMapPrototype = function () {
     for (const key in hookedMapFuncs) {
       Map.prototype[key] = hookedMapFuncs[key];
     }
   };
-  // Don't hook "set", "get", "has", some Proxy object doing something like "setDefault" may make it into infinite recursion
-  // [].forEach(key => {
-  //   hookedMapFuncs[key] = Map.prototype[key];
-  //   Map.prototype[key] = function (...args) {
-  //     this.values(); // call this once
-  //     return hookedMapFuncs[key].call(this, ...args);
-  //   };
-  // });
   Map.prototype.values = hookedMapValues;
 });
 
