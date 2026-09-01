@@ -1,10 +1,7 @@
 export function isMapTilerLoaded() {
   if (isMapFound) return true;
   const myLocationButton = document.querySelector(".right-3>button");
-  if ( myLocationButton === null ) {
-    return false;
-  }
-  if (myLocationButton["__click"] !== undefined) {
+  if (myLocationButton !== null && myLocationButton["__click"] !== undefined) {
     isMapFound = (
       typeof myLocationButton["__click"] === "object" && // not a function yet
       myLocationButton["__click"][3] !== undefined &&
@@ -50,10 +47,7 @@ export function isMapTilerLoaded() {
  */
 export function isWplaceDoingBadThing() {
   const myLocationButton = document.querySelector(".right-3>button");
-  if ( myLocationButton === null ) {
-    return false;
-  }
-  if (myLocationButton["__click"] !== undefined) {
+  if (myLocationButton !== null && myLocationButton["__click"] !== undefined) {
     return (
       typeof myLocationButton["__click"] !== "object"
     ) && document.head.__bmmap === undefined;
@@ -98,28 +92,26 @@ function controlMapTiler(func, ...args) {
   if (document.head.__bmmap) {
     const map = document.head.__bmmap;
     return func(map, ...args);
-  } else if ( myLocationButton !== null ) {
-    if (myLocationButton["__click"]) {
+  } else if ( myLocationButton !== null && myLocationButton["__click"]) {
       const map = myLocationButton["__click"][3]["v"];
       return func(map, ...args);
-    } else {
-      const getMap = () => {
-          return document.head.__bmmap || document.querySelector(".right-3>button")["__click"][3]["v"];
-      };
-      const injector = result => {
-          const script = document.currentScript;
-          script.setAttribute('bm-result', JSON.stringify(result ?? null));
-      }
-      const passArgs = args.map(arg => JSON.stringify(arg)).join(',');
-      const script = document.createElement('script');
-      script.textContent = `(${injector})((${func})((${getMap})(), ${passArgs}));`;
-      document.documentElement?.appendChild(script);
-      const result = JSON.parse(script.getAttribute('bm-result'));
-      script.remove();
-      return result;
-    }
   } else {
-    throw new Error("Could not find the \"My location\" button.");
+    const getMap = () => {
+        return document.head.__bmmap || document.querySelector(".right-3>button")["__click"][3]["v"];
+    };
+    const injector = result => {
+        const script = document.currentScript;
+        script.setAttribute('bm-result', JSON.stringify(result ?? null));
+    }
+    const passArgs = args.map(arg => JSON.stringify(arg)).join(',');
+    const script = document.createElement('script');
+    script.textContent = `(${injector})((${func})((${getMap})(), ${passArgs}));`;
+    document.documentElement?.appendChild(script);
+    const result = JSON.parse(script.getAttribute('bm-result'));
+    script.remove();
+    return result;
+  // } else {
+  //   throw new Error("Could not find the \"My location\" button.");
   }
 }
 
