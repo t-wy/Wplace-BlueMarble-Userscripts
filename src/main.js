@@ -2009,8 +2009,8 @@ async function buildOverlayMain() {
             ++forceClickCenter.clickCount;
           };
         }
+        setTimeout(forceClickCenter, 100 + 100 * forceClickCenter.clickCount);
       };
-      setTimeout(forceClickCenter, 100);
     };
   }
 
