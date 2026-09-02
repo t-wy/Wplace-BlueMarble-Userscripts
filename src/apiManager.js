@@ -512,10 +512,10 @@ export default class ApiManager {
   }
 
   /** Update the download button in share dialog
-   * 
+   * @param {boolean} onlyCreate - Only create the download section if it did not exist
    * @since 0.85.28
   */
-  updateDownloadButton() {
+  updateDownloadButton(onlyCreate = false) {
     if (this.coordsTilePixel.length !== 4) return;
     const coordsTile = [ this.coordsTilePixel[0], this.coordsTilePixel[1] ];
     const coordsPixel = [ this.coordsTilePixel[2], this.coordsTilePixel[3] ];
@@ -526,9 +526,17 @@ export default class ApiManager {
       let downloadBtnDim = document.querySelector('#bm-download-coords-dim');
       let progress = document.querySelector('#bm-download-progress');
       let progressText = document.querySelector('#bm-download-progress-text');
-      if (!downloadBtn) {
+      if (downloadBtn) {
+        if (onlyCreate) return;
+      } else {
+        const betterElement = element.querySelector(':scope > header + div > div');
         const container = document.createElement('div');
-        element.appendChild(container);
+        if (betterElement) {
+          betterElement.appendChild(container);
+        } else {
+          element.appendChild(container);
+        }
+        element.style.maxHeight = "91.6667vh"; // Safari is too stupid to handle the original percentage max-height
 
         const h3 = document.createElement('h3');
         h3.innerText = 'Download as Template';

@@ -436,6 +436,7 @@ function createZoomButtons() {
 function observeBlack() {
   const observer = new MutationObserver((mutations, observer) => {
     createZoomButtons();
+    apiManager.updateDownloadButton(true); // true to prevent triggering the observer infinitely
 
     const black = document.querySelector('#color-1'); // Attempt to retrieve the black color element for anchoring
 
