@@ -462,9 +462,14 @@ function observeBlack() {
       }
 
       // Attempts to find the "Paint Pixel" element for anchoring
-      const paintPixel = black.parentNode.parentNode.parentNode.parentNode.querySelector('h2');
+      const fourthParent = black.parentNode.parentNode.parentNode.parentNode;
+      const fifthParent = fourthParent.parentNode;
+      const paintPixel = fourthParent.querySelector('h2');
+      const container = paintPixel ? paintPixel.parentNode : fifthParent.querySelector('h2 + div');
 
-      paintPixel.parentNode?.appendChild(move); // Adds the move button
+      if (container) {
+        container.appendChild(move); // Adds the move button
+      }
     }
 
     // should not be enabled on its own as it would break the wplace rules
@@ -642,10 +647,15 @@ function observeBlack() {
         paint2.className = 'btn btn-soft';
         paint2.onclick = () => paint_onclick(false);
         // Attempts to find the "Paint Pixel" element for anchoring
-        const paintPixel = black.parentNode.parentNode.parentNode.parentNode.querySelector('h2');
-
-        paintPixel.parentNode?.appendChild(paint); // Adds the paint button
-        paintPixel.parentNode?.appendChild(paint2); // Adds the paint button
+        const fourthParent = black.parentNode.parentNode.parentNode.parentNode;
+        const fifthParent = fourthParent.parentNode;
+        const paintPixel = fourthParent.querySelector('h2');
+        const container = paintPixel ? paintPixel.parentNode : fifthParent.querySelector('h2 + div');
+        
+        if (container) {
+          container.appendChild(paint); // Adds the paint button
+          container.appendChild(paint2); // Adds the paint button
+        }
       }
     };
 
