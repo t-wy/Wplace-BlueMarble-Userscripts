@@ -258,6 +258,8 @@ export default class ApiManager {
   getPixelInfoContainer() {
     return document.querySelector(
       ".absolute.bottom-0>.rounded-t-box>div"
+    ) || document.querySelector(
+      ".game-floating-panel>.game-panel-surface>.selected-pixel"
     );
   }
 
