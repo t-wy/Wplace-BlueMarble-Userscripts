@@ -430,6 +430,19 @@ function createZoomButtons() {
   [0, 1, 2, 3, 4, 5, 10, 25].forEach( zoom => createZoomButton(zoom) );
 }
 
+function findToolContainer() {
+    // Attempts to find the "Paint Pixel" element for anchoring
+    const containerNew = document.getElementsByClassName("paint-layout-tools"); // 1.7.7 update
+    if (containerNew.length) return containerNew[0];
+    const black = document.querySelector('#color-1');
+    if (!black) return null;
+    const fourthParent = black.parentNode.parentNode.parentNode.parentNode;
+    const fifthParent = fourthParent.parentNode;
+    const paintPixel = fourthParent.querySelector('h2'); // original
+    if (paintPixel) return paintPixel;
+    return fifthParent.querySelector('h2 + div');
+}
+
 /** Observe the black color, and add the "Move" button.
  * @since 0.66.3
  */
@@ -461,11 +474,7 @@ function observeBlack() {
         this.textContent = shouldMoveUp ? 'Move ↓' : 'Move ↑';
       }
 
-      // Attempts to find the "Paint Pixel" element for anchoring
-      const fourthParent = black.parentNode.parentNode.parentNode.parentNode;
-      const fifthParent = fourthParent.parentNode;
-      const paintPixel = fourthParent.querySelector('h2');
-      const container = paintPixel ? paintPixel.parentNode : fifthParent.querySelector('h2 + div');
+      const container = findToolContainer();
 
       if (container) {
         container.appendChild(move); // Adds the move button
@@ -646,11 +655,7 @@ function observeBlack() {
         paint2.textContent = 'Fill Screen';
         paint2.className = 'btn btn-soft';
         paint2.onclick = () => paint_onclick(false);
-        // Attempts to find the "Paint Pixel" element for anchoring
-        const fourthParent = black.parentNode.parentNode.parentNode.parentNode;
-        const fifthParent = fourthParent.parentNode;
-        const paintPixel = fourthParent.querySelector('h2');
-        const container = paintPixel ? paintPixel.parentNode : fifthParent.querySelector('h2 + div');
+        const container = findToolContainer();
         
         if (container) {
           container.appendChild(paint); // Adds the paint button
