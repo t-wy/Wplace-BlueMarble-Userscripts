@@ -510,8 +510,9 @@ export async function teleportToGeoCoords(lat, lng, noZoom = false) {
       };
       map[funcName](payload);
     }, lat, lng, funcName, noZoom ?? false);
-    const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
-    if (allianceOrRankingButton) {
+    // const allianceOrRankingButton = document.querySelector(".flex>.btn.btn-square.relative.shadow-md");
+    const informationButton = document.querySelector("h1~.flex>.btn.btn-circle");
+    if (informationButton) {
       // not in painting mode, click on center to show pixel info
       const canvas = document.querySelector("canvas.maplibregl-canvas");
       const ev = new MouseEvent("click", {
@@ -523,7 +524,7 @@ export async function teleportToGeoCoords(lat, lng, noZoom = false) {
       canvas.dispatchEvent(ev);
     }
   } else {
-    const randomTeleportBtn = document.querySelector(".mb-2>.btn-ghost");
+    const randomTeleportBtn = document.querySelector(".mb-2>.btn-ghost") || document.querySelector(".game-button.hover\\:bg-base-200.gap-3");
     if (randomTeleportBtn !== undefined) {
       // Notice that it teleports to the .0 point instead of .5 (center) of the pixel, so we do not need to add an extra 0.5
       overrideRandom["data"] = coordsGeoCoordsToTileCoords(lat, lng, false);
