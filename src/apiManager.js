@@ -313,13 +313,22 @@ export default class ApiManager {
   
     // If we could not find the addition coord span, we make it then update the textContent with the new coords
     if (!displayCoords1) {
-      let coordRow = this.getPaintButtonContainer()?.previousElementSibling;
+      let paintContainer = this.getPaintButtonContainer();
+      let coordRow = paintContainer?.previousElementSibling;
       if (!coordRow) return;
+      // document.querySelector(".\\[grid-area\\:paint\\]")
+      let coordContainer = document.createElement("div");
+      if (paintContainer.classList.contains("[grid-area:paint]")) {
+        // the new messy CSS layout
+        paintContainer.prepend(coordContainer);
+      } else {
+        coordRow.insertAdjacentElement('afterend', coordContainer);
+      }
       // For every span element, find the one we want (pixel numbers when canvas clicked)
       displayCoords1 = document.createElement('span');
       displayCoords1.id = 'bm-display-coords1';
       displayCoords1.style = 'margin-left: calc(var(--spacing)*3); font-size: small;';
-      coordRow.insertAdjacentElement('afterend', displayCoords1);
+      coordContainer.appendChild(displayCoords1);
 
       const buttonCopy = function () {
         const content = this.dataset.text;
@@ -388,10 +397,13 @@ export default class ApiManager {
         btnLineTemplate.textContent = "／ Line Template";
         btnLineTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
         btnLineTemplate.classList.add("btn-soft"); // not the primary button
-        btnLineTemplate.style.marginLeft = "12px";
-        btnLineTemplate.style.marginBottom = "8px";
-        const pixelInfoContainer = this.getPixelInfoContainer();
+        const paintContainer = this.getPaintButtonContainer();
+        const pixelInfoContainer = paintContainer ?? this.getPixelInfoContainer();
         if (!pixelInfoContainer) return;
+        btnLineTemplate.style.marginLeft = paintContainer ? "0" : "12px";
+        btnLineTemplate.style.marginBottom = paintContainer ? "0" : "8px";
+        btnLineTemplate.style.marginTop = paintContainer ? "4px" : "0";
+        btnLineTemplate.style.width = "fit-content";
         pixelInfoContainer.appendChild(btnLineTemplate);
         btnLineTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
@@ -458,10 +470,13 @@ export default class ApiManager {
         btnCircleTemplate.textContent = "○ Circle Template";
         btnCircleTemplate.className = buttonContainer.querySelector("button").className; // Copy from an existing button
         btnCircleTemplate.classList.add("btn-soft"); // not the primary button
-        btnCircleTemplate.style.marginLeft = "12px";
-        btnCircleTemplate.style.marginBottom = "8px";
-        const pixelInfoContainer = this.getPixelInfoContainer();
+        const paintContainer = this.getPaintButtonContainer();
+        const pixelInfoContainer = paintContainer ?? this.getPixelInfoContainer();
         if (!pixelInfoContainer) return;
+        btnCircleTemplate.style.marginLeft = paintContainer ? "4px" : "12px";
+        btnCircleTemplate.style.marginBottom = paintContainer ? "0" : "8px";
+        btnCircleTemplate.style.marginTop = paintContainer ? "4px" : "0";
+        btnCircleTemplate.style.width = "fit-content";
         pixelInfoContainer.appendChild(btnCircleTemplate);
         btnCircleTemplate.addEventListener('click', function () {
           if (!areOverlayCoordsFilledAndValid()) {
