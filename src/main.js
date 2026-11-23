@@ -393,7 +393,7 @@ function createZoomButtons() {
   // If the 1x zoom button does not exist, we make new zoom level buttons
   const zoom1 = document.getElementById('BM-zoom-1x');
   if (zoom1) return;
-  const ref = Array.from(document.querySelectorAll(".gap-1>.btn[title]")).slice(-1)[0];
+  const ref = Array.from(document.querySelectorAll(".gap-1>.btn[title],.flex-col.gap-1>.btn[data-tooltip]")).slice(-1)[0];
   if (!ref) return;
   const container = ref.parentNode;
   if (!container) return;
